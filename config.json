@@ -1,0 +1,10 @@
+{
+	"auth_server" : {
+		"listen_url" : "127.0.0.1:3333",
+		"use_tls" : true
+	},
+	"db_name" : "sqlite3",
+	"db_path" : "webauthn.db",
+	"migrations_prefix" : "db/db_",
+	"host_address": "127.0.0.1:9005"
+}

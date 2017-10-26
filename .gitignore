@@ -1,0 +1,3 @@
+*.db
+web-authn
+static/.sass-cache

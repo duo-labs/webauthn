@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <title>WebAuthn Demo - W3C WD-05</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <script type="text/javascript" src="/js/webauthn.js"></script>
+        <script type="text/javascript" src="/js/dashboard.js"></script>
+        <script type="text/javascript" src="/js/cbor.js"></script>
+        <script type="text/javascript" src="/js/base64.js"></script>
+        <script type="text/javascript" src="/js/jquery-3.2.1.min.js"></script>        
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/6.10.1/sweetalert2.min.css" />
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+        <link href="/stylesheets/styles.css" rel="stylesheet" type="text/css" />        
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+    </head>
+
+    <body>
+        <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="/">
+                    Webauthn.io
+                </a>                
+            </div>
+        </nav>
+        <div class="dashboard container">
+            <div class="jumbotron">
+                <h2>You're logged in!</h2>
+                <p>You've logged in to an account using WebAuthn</p>
+                <a class="btn btn-lg btn-primary" href="https://www.w3.org/TR/webauthn/" role="button">Read the WebAuthn Spec »</a>
+            </div>
+            <div class="credentials container">        
+            {{ range $index, $element := .Credentials }}
+                <div class="credential">      
+                    <button type="button" class="close delete-credential" data-cred={{ .CredID }} aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>          
+                    <h4>
+                        Credential
+                    </h4>
+                    <h5 class="format">
+                        {{ .CredType }}                            
+                    </h5>
+                    <p>
+                        Credential ID: 
+                        <pre>{{ .CredID }}</pre>
+                    </p>
+                    <p>
+                        {{ .PubKeyType }} Public Key
+                    </p>                           
+                    <pre>X: {{ .PubKeyX }}</pre>
+                    <pre>Y: {{ .PubKeyY }}</pre>         
+                    <p class="create-date">
+                        Created {{ .CreateDate }}
+                    </p>                
+                </div>                   
+                {{ end }}
+                </div>
+            </div>
+        </div>
+    </body>
+
+</html>
