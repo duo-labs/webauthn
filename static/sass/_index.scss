@@ -2,22 +2,37 @@
     margin-bottom: 20px;
 }
 
-.credential {
-    word-wrap: break-word;
-    background: #fff;
-    padding: 15px;
-    border-radius: 10px;
-    margin: 10px 15px;
-    
-    .format {
-        text-transform: uppercase;
-    }
+.credentials {
+    .credential {
+        word-wrap: break-word;
+        background: #fff;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 10px 15px;
+        
+        .create-date {
+            font-style: italic;
+        }
 
-    .create-date {
-        font-style: italic;
+        .delete {
+            float: right;
+            a {
+                color: red;
+            }
+        }
     }
 }
 
-.glyphicon {
-    float: right;
+.table {
+    .format {
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+    .no-wrap {
+        white-space: nowrap;
+    }
+
+    .break {
+        word-break: break-all;
+    }
 }

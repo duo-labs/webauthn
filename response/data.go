@@ -1,7 +1,7 @@
 package response
 
 import "duo.com/labs/web-authn/models"
-import "time"
+
 import "encoding/base64"
 
 type CredentialActionResponse struct {
@@ -52,7 +52,7 @@ func FormatCredentials(creds []models.Credential) ([]FormattedCredential, error)
 			return nil, err
 		}
 		fcs[x] = FormattedCredential{
-			CreateDate: cred.CreatedAt.Format(time.RFC850),
+			CreateDate: cred.CreatedAt.Format("Mon, 3:04PM MST"),
 			CredID:     cred.CredID,
 			CredType:   cred.Format,
 			PubKeyType: string(pk.Type),
