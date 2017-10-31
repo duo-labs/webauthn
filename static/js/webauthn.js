@@ -116,6 +116,7 @@ function makeCredential() {
                     swal.clickConfirm()
             }).catch(function (err) {
                 console.log(err);
+                swal.closeModal();
             });
         });
 }
@@ -126,8 +127,6 @@ function registerNewCredential(newCredential) {
     let attestationObject = new Uint8Array(newCredential.response.attestationObject);
     let clientDataJSON = new Uint8Array(newCredential.response.clientDataJSON);
     let rawId = new Uint8Array(newCredential.rawId);
-
-    console.log(b64RawEnc(attestationObject))
 
     $.post('/makeCredential', {
         id: newCredential.id,
@@ -196,7 +195,9 @@ function getAssertion() {
                     verifyAssertion(credential);
                     swal.clickConfirm();
                 }).catch(function (err) {
-                    showErrorAlert(err.responseText)
+                    console.log(err);
+                    showErrorAlert(err.message);
+                    swal.closeModal();
                 });
         });
 }
@@ -220,6 +221,7 @@ function verifyAssertion(assertedCredential) {
             window.location.href = "/dashboard/" + state.user.name;
         } else {
             showErrorAlert("Error Doing Assertion");
+            swal.closeModal();
         }
     });
 }

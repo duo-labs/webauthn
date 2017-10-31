@@ -216,12 +216,8 @@ func getAssertion(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 
 	type AllowedCredential struct {
-		// We gotta convert this back from b64
-		CredID string `json:"id"`
-		// Should be 'public-key
-		Type string `json:"type"`
-		// Transports is really a policy decision so can
-		// be abstracted from models.Credential
+		CredID     string   `json:"id"`
+		Type       string   `json:"type"`
 		Transports []string `json:"transports"`
 	}
 
@@ -240,7 +236,7 @@ func getAssertion(w http.ResponseWriter, r *http.Request) {
 
 	ac := AllowedCredential{
 		CredID:     cred.CredID,
-		Type:       cred.Type,
+		Type:       "public-key", // This should always be type 'public-key' for now
 		Transports: []string{"usb", "nfc", "ble"},
 	}
 
