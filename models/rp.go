@@ -3,7 +3,7 @@ package models
 import (
 	"fmt"
 
-	"duo.com/labs/web-authn/config"
+	"github.com/duo-labs/webauthn/config"
 )
 
 // RelyingParty is the group the User is authenticating with

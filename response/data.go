@@ -1,6 +1,6 @@
 package response
 
-import "duo.com/labs/web-authn/models"
+import "github.com/duo-labs/webauthn/models"
 
 import "encoding/base64"
 

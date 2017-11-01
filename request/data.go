@@ -3,7 +3,7 @@ package request
 import (
 	"crypto/x509"
 
-	"duo.com/labs/web-authn/models"
+	"github.com/duo-labs/webauthn/models"
 )
 
 type EncodedAttestationStatement struct {

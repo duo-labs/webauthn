@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"duo.com/labs/web-authn/config"
+	"github.com/duo-labs/webauthn/config"
 	"github.com/stretchr/testify/suite"
 )
 

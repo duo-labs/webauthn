@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"testing"
 
-	"duo.com/labs/web-authn/config"
-	"duo.com/labs/web-authn/models"
+	"github.com/duo-labs/webauthn/config"
+	"github.com/duo-labs/webauthn/models"
 	"github.com/stretchr/testify/suite"
 )
 

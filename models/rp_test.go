@@ -3,7 +3,7 @@ package models
 import (
 	"reflect"
 
-	"duo.com/labs/web-authn/config"
+	"github.com/duo-labs/webauthn/config"
 	"github.com/jinzhu/gorm"
 )
 

@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"duo.com/labs/web-authn/config"
+	"github.com/duo-labs/webauthn/config"
 
 	_ "github.com/go-sql-driver/mysql" // Blank import needed to import mysql
 	"github.com/jinzhu/gorm"

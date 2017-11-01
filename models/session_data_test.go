@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/sessions"
 
-	"duo.com/labs/web-authn/config"
+	"github.com/duo-labs/webauthn/config"
 )
 
 func (ms *ModelsSuite) TestCreateChallenge() {

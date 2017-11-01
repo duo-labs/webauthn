@@ -23,10 +23,10 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/ugorji/go/codec"
 
-	"duo.com/labs/web-authn/config"
-	"duo.com/labs/web-authn/models"
-	req "duo.com/labs/web-authn/request"
-	res "duo.com/labs/web-authn/response"
+	"github.com/duo-labs/webauthn/config"
+	"github.com/duo-labs/webauthn/models"
+	req "github.com/duo-labs/webauthn/request"
+	res "github.com/duo-labs/webauthn/response"
 )
 
 var store = sessions.NewCookieStore([]byte("duo-rox"))
