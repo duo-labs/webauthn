@@ -73,8 +73,8 @@ func Setup() error {
 			DisplayName: "Mr. Admin Face",
 		}
 		defaultUser := User{
-			Name:        "rcrumb@duo.com",
-			DisplayName: "R. Crumb",
+			Name:        "testuser@example.com",
+			DisplayName: "Test User",
 			Icon:        "https://kaiju.duo.com/rcrumb/avatar.png",
 		}
 		err = db.Save(&initUser).Error

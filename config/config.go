@@ -12,6 +12,8 @@ type Config struct {
 	DBPath         string `json:"db_path"`
 	MigrationsPath string `json:"migrations_prefix"`
 	HostAddress    string `json:"host_address"`
+	HostPort       string `json:"host_port"`
+	HasProxy       bool   `json:"has_proxy"`
 }
 
 // Conf contains the initialized configuration struct

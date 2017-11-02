@@ -16,8 +16,8 @@ import (
 	"log"
 	"math/big"
 	"net/http"
-	"strings"
 	"net/url"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -61,7 +61,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	if username == "" {
 		fmt.Println("Getting default user for dashboard")
-		username = "rcrumb@duo.com"
+		username = "testuser@example.com"
 	}
 
 	user, err := models.GetUserByUsername(username)
@@ -342,7 +342,14 @@ func verifyAssertionData(
 	}
 
 	// Step 5. Verify that the origin member of C matches the Relying Party's origin.
-	if sessionData.RelyingPartyID != strings.Trim(clientData.Origin, "https://") {
+	cdo, err := url.Parse(clientData.Origin)
+	if err != nil {
+		fmt.Println("Error Parsing Client Data Origin: ", string(clientData.Origin))
+		err := errors.New("Error Parsing the Client Data Origin")
+		return false, credential, err
+	}
+
+	if sessionData.RelyingPartyID != cdo.Hostname() {
 		fmt.Println("Stored Origin is: ", string(sessionData.RelyingPartyID))
 		fmt.Println("Client Origin is: ", string(clientData.Origin))
 		err := errors.New("Stored and Client Origin do not match")
@@ -501,8 +508,14 @@ func verifyRegistrationData(
 	}
 
 	// Step 3. Verify that to origin in C matches the relying party's origin
-	fmt.Println("Host addr: ", sessionData)
-	if sessionData.RelyingPartyID != strings.Trim(clientData.Origin, "https://") {
+	cdo, err := url.Parse(clientData.Origin)
+	if err != nil {
+		fmt.Println("Error Parsing Client Data Origin: ", string(clientData.Origin))
+		err := errors.New("Error Parsing the Client Data Origin")
+		return false, err
+	}
+
+	if sessionData.RelyingPartyID != cdo.Hostname() {
 		fmt.Println("Stored Origin is: ", string(sessionData.RelyingPartyID))
 		fmt.Println("Client Origin is: ", string(clientData.Origin))
 		err := errors.New("Stored and Client Origin do not match")
@@ -593,7 +606,7 @@ func verifyRegistrationData(
 
 	// From authenticatorData, extract the claimed RP ID hash, the
 	// claimed credential ID and the claimed credential public key.
-	RPIDHash, err := hex.DecodeString(authData.RPIDHash)
+	RPIDHash, err = hex.DecodeString(authData.RPIDHash)
 	if err != nil {
 		err := errors.New("Error decoding RPIDHash")
 		return false, err
@@ -889,5 +902,9 @@ func main() {
 		fmt.Println(err)
 	}
 	// Start Web Server
-	log.Fatal(http.ListenAndServe(":7001", CreateRouter()))
+	if config.Conf.HasProxy {
+		log.Fatal(http.ListenAndServe(config.Conf.HostPort, CreateRouter()))
+	} else {
+		log.Fatal(http.ListenAndServe(config.Conf.HostAddress+config.Conf.HostPort, CreateRouter()))
+	}
 }
