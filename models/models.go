@@ -41,6 +41,10 @@ func Setup() error {
 	}
 	// Open our database connection
 	db, err = gorm.Open(config.Conf.DBName, config.Conf.DBPath)
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return err
+	}
 	db.LogMode(false)
 	db.SetLogger(Logger)
 	db.DB().SetMaxOpenConns(1)

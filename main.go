@@ -17,6 +17,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"net/url"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -121,10 +122,14 @@ func requestNewCredential(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get Relying Party that is requesting Registration
-	rp, err := models.GetRelyingPartyByHost(r.Host)
+
+	u, err := url.Parse(r.Referer())
+
+	rp, err := models.GetRelyingPartyByHost(u.Hostname())
 
 	if err == gorm.ErrRecordNotFound {
-		fmt.Println("No RP found")
+		fmt.Println("No RP found for host ", u.Hostname())
+		fmt.Printf("Request: %+v\n", r)
 		JSONResponse(w, "No relying party defined", http.StatusInternalServerError)
 		return
 	}
@@ -335,7 +340,7 @@ func verifyAssertionData(
 	}
 
 	// Step 5. Verify that the origin member of C matches the Relying Party's origin.
-	if sessionData.RelyingPartyID != strings.Trim(clientData.Origin, "http://") {
+	if sessionData.RelyingPartyID != strings.Trim(clientData.Origin, "https://") {
 		fmt.Println("Stored Origin is: ", string(sessionData.RelyingPartyID))
 		fmt.Println("Client Origin is: ", string(clientData.Origin))
 		err := errors.New("Stored and Client Origin do not match")
@@ -494,7 +499,8 @@ func verifyRegistrationData(
 	}
 
 	// Step 3. Verify that to origin in C matches the relying party's origin
-	if sessionData.RelyingPartyID != strings.Trim(clientData.Origin, "http://") {
+	fmt.Println("Host addr: ", sessionData)
+	if sessionData.RelyingPartyID != strings.Trim(clientData.Origin, "https://") {
 		fmt.Println("Stored Origin is: ", string(sessionData.RelyingPartyID))
 		fmt.Println("Client Origin is: ", string(clientData.Origin))
 		err := errors.New("Stored and Client Origin do not match")
@@ -874,11 +880,12 @@ func CreateRouter() http.Handler {
 }
 
 func main() {
-	config.LoadConfig("./config.json")
+	config.LoadConfig("config.json")
+	fmt.Printf("Config: %+v\n", config.Conf)
 	err := models.Setup()
 	if err != nil {
 		fmt.Println(err)
 	}
 	// Start Web Server
-	http.ListenAndServe(config.Conf.HostAddress, CreateRouter())
+	log.Fatal(http.ListenAndServe(":7001", CreateRouter()))
 }
