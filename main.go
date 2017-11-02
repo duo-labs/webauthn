@@ -195,7 +195,9 @@ func getAssertion(w http.ResponseWriter, r *http.Request) {
 	username := vars["name"]
 	timeout := 60000
 
-	user, rp, err := getUserAndRelyingParty(username, r.Host)
+	u, err := url.Parse(r.Referer())
+
+	user, rp, err := getUserAndRelyingParty(username, u.Hostname())
 	if err != nil {
 		fmt.Println("Couldn't Find the User or RP, most likely the User:", err)
 		JSONResponse(w, "Couldn't Find User", http.StatusInternalServerError)
