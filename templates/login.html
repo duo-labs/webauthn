@@ -2,7 +2,7 @@
 <html lang="en">
 
     <head>
-        <title>WebAuthn Demo - W3C WD-05</title>
+        <title>WebAuthn.io</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -24,8 +24,7 @@
         <div class="container">
             <div class="login-wrapper">
                 <form class="form-signin">
-                    <h2 class="form-signin-heading text-center">WebAuthn Login</h2>
-                    <h3 class="form-signin-message text-center">Welcome!</h3>
+                    <h2 class="form-signin-heading text-center">WebAuthn.io</h2>                    
                     <p>Currently, WebAuthn is only available to test on <a href="https://www.mozilla.org/en-US/firefox/channel/desktop/">Firefox's Nightly Build</a></p>
                     <p>Once you've installed the Nightly Build:</p>
                     <ol>
@@ -49,11 +48,9 @@
                         <strong>Holy guacamole!</strong> You should check in on some of those fields below.
                     </div>
                 </div>
-                <div class="text-center">
-                    <div class="btn-group btn-group-lg login-buttons" role="group" aria-label="RegisterLoginButtonGroup">
-                        <button class="btn" type="button" onclick="makeCredential()">Register a User/Credential</button>
-                        <button class="btn" type="button" onclick="getAssertion()">Login with Credential</button>
-                    </div>
+                <div class="text-center buttons">                    
+                    <button class="btn btn-lg btn-primary" type="button" onclick="makeCredential()">Register a User/Credential</button>
+                    <button class="btn btn-lg btn-primary" type="button" onclick="getAssertion()">Login with Credential</button>
                 </div>  
             </div>
         </div>

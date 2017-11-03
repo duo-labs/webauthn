@@ -1,8 +1,0 @@
-{	
-	"db_name" : "sqlite3",
-	"db_path" : "webauthn.db",
-	"migrations_prefix" : "db/db_",
-	"has_proxy": false,
-	"host_address": "127.0.0.1",
-	"host_port": ":9005"
-}

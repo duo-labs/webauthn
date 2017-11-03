@@ -1,6 +1,14 @@
 {	
+	// Name of the DB
 	"db_name" : "sqlite3",
+	// Where should the db be found/created
 	"db_path" : "webauthn.db",
+	// if you want to migrate dbs, what are the dir prefixes?
 	"migrations_prefix" : "db/db_",
-	"host_address": "webauthn.io"	
+	// Are you running this through a reverse proxy?
+	"has_proxy": false,
+	// Host Address of the project
+	"host_address": "127.0.0.1",
+	// Host port
+	"host_port": ":9005"
 }

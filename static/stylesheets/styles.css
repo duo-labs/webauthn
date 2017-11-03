@@ -43,9 +43,10 @@ body {
   padding-top: 6em;
   padding-bottom: 2em;
   background-color: #dddddd;
+  font-size: 1.2em;
 }
 
-/* line 7, ../sass/_login.scss */
+/* line 8, ../sass/_login.scss */
 .login-wrapper {
   background-color: #eeeeee;
   padding: 15px;
@@ -53,12 +54,12 @@ body {
   border: 2px solid #cccccc;
 }
 
-/* line 14, ../sass/_login.scss */
-.login-buttons {
+/* line 15, ../sass/_login.scss */
+.buttons {
   padding: 15px;
 }
 
-/* line 18, ../sass/_login.scss */
+/* line 19, ../sass/_login.scss */
 .alert-wrapper {
   padding-top: 20px;
 }

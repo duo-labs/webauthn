@@ -64,7 +64,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		username = "testuser@example.com"
 	}
 
-	user, err := models.GetUserByUsername(username)
+	user, err := models.GetUserByUsername(username + "@example.com")
 
 	if err != nil {
 		fmt.Println("Error retreiving user for dashboard: ", err)

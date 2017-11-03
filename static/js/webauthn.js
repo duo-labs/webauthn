@@ -1,5 +1,3 @@
-// Globals
-
 function hexEncode(buf) {
     return Array.from(buf)
         .map(function (x) {
@@ -47,7 +45,7 @@ var state = {
     credential: null,
     user: {
         name: "testuser@example.com",
-        displayName: "Testy McUser",
+        displayName: "testuser",
     },
 }
 
@@ -72,8 +70,12 @@ function getCredentials() {
 }
 
 function makeCredential() {
-    hideMissingUserAlert();
+    hideErrorAlert();
     console.log("Fetching options for new credential");
+    if ($("#input-email").val() === "") {
+        showErrorAlert("Please enter a username");
+        return;
+    }
     setUser();
     var credential = null;
     swal({
@@ -136,7 +138,7 @@ function registerNewCredential(newCredential) {
         clientData: b64RawEnc(clientDataJSON),
      }).done(function(response){
         if (response.success) {
-            window.location.href = "/dashboard/" + state.user.name;
+            window.location.href = "/dashboard/" + state.user.displayName;
         } else {
             console.log("Error creating credential");
             console.log(response);
@@ -154,7 +156,11 @@ function addUserErrorMsg(msg) {
 }
 
 function getAssertion() {
-    hideMissingUserAlert();
+    hideErrorAlert();
+    if ($("#input-email").val() === "") {
+        showErrorAlert("Please enter a username");
+        return;
+    }
     setUser();
     $.get('/user/' + state.user.name, {}, null, 'json').done(function (response) {
         console.log(response);
@@ -218,7 +224,7 @@ function verifyAssertion(assertedCredential) {
      }).done(function(response){
         console.log(response)
         if (response.success) {
-            window.location.href = "/dashboard/" + state.user.name;
+            window.location.href = "/dashboard/" + state.user.displayName;
         } else {
             showErrorAlert("Error Doing Assertion");
             swal.closeModal();
@@ -236,6 +242,6 @@ function showErrorAlert(msg) {
     $("#user-alert").show();    
 }
 
-function hideMissingUserAlert() {
+function hideErrorAlert() {
     $("#user-alert").hide();    
 }
