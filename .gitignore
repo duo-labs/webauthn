@@ -1,4 +1,5 @@
 *.db
-web-authn
 config.json
+static/.sass-cache
+webauthn
 static/.sass-cache
