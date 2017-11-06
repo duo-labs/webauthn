@@ -63,3 +63,12 @@ body {
 .alert-wrapper {
   padding-top: 20px;
 }
+
+/* line 24, ../sass/_login.scss */
+.footer span {
+  font-size: 10px;
+}
+/* line 27, ../sass/_login.scss */
+.footer a {
+  color: #6BBF4E;
+}
