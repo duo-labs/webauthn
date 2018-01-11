@@ -36,8 +36,8 @@ type PublicKey struct {
 	_struct      bool   `codec:",int"`
 	KeyType      int8   `gorm:"not null" codec:"1"`
 	Type         int8   `gorm:"not null" codec:"3"`
-	XCoord       []byte `gorm:"not null" codec:"-3"`
-	YCoord       []byte `gorm:"not null" codec:"-2"`
+	XCoord       []byte `gorm:"not null" codec:"-2"`
+	YCoord       []byte `gorm:"not null" codec:"-3"`
 	Curve        int8   `gorm:"not null" codec:"-1"`
 	CredentialID uint   `gorm:"index,not null" codec:"-,omitempty"`
 }
