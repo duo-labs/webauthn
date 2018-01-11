@@ -407,6 +407,11 @@ func verifyAssertionData(
 	binCat := append(authData.RawAssertionData, clientDataHash...)
 
 	pubKey, err := models.GetPublicKeyForCredential(&credential)
+	if err != nil {
+		fmt.Println("Error retreiving Public Key for Credential")
+		err := errors.New("Error retrieving public key for credential")
+		return false, credential, err
+	}
 
 	var ecsdaSig struct {
 		R, S *big.Int
@@ -454,6 +459,13 @@ func makeNewCredential(w http.ResponseWriter, r *http.Request) {
 	sessionData, err := models.GetSessionData(sessionID)
 
 	verified, err := verifyRegistrationData(&clientData, &decodedAuthData, &sessionData)
+
+	if err != nil {
+		fmt.Println("Error verifying credential", err)
+		JSONResponse(w, "Error verifying credential", http.StatusBadRequest)
+		return
+	}
+
 	if verified {
 		newCredential := models.Credential{
 			Counter:        decodedAuthData.Counter,
@@ -537,7 +549,7 @@ func verifyRegistrationData(
 	// by C.hashAlgorithm.
 	// Let's also make sure that the Authenticator is using SHA-256 or SHA-512
 	var clientDataHash []byte
-	fmt.Println("Hash Alg: ", clientData.HashAlgorithm)
+	fmt.Println("Hash Alg:", clientData.HashAlgorithm)
 	if clientData.HashAlgorithm == "SHA-256" || clientData.HashAlgorithm == "SHA-512" {
 		switch clientData.HashAlgorithm {
 		case "SHA-256":
@@ -582,6 +594,7 @@ func verifyRegistrationData(
 
 	// For now we just use Fido U2F format
 	if authData.Format != "fido-u2f" {
+		fmt.Println("Auth Data Format is incorrect: ", authData.Format)
 		err := errors.New("Auth data is not in proper format (fido-u2f)")
 		return false, err
 	}
@@ -613,9 +626,12 @@ func verifyRegistrationData(
 	}
 
 	pubKey := authData.AttStatement.Certificate.PublicKey.(*ecdsa.PublicKey)
-	fmt.Printf("%+v\n", authData.AttStatement.Certificate.PublicKey)
+	fmt.Printf("Public Key from Certificate: %+v\n", authData.AttStatement.Certificate.PublicKey)
+	fmt.Printf("Public Key from Auth Data: %+v\n", authData.PubKey)
 	if err != nil {
-		err := errors.New("Error getting Pubkey")
+		msg := "Error getting Pubkey"
+		fmt.Println(msg)
+		err := errors.New(msg)
 		return false, err
 	}
 
@@ -624,6 +640,7 @@ func verifyRegistrationData(
 	assembledData, err := assembleSignedRegistrationData(RPIDHash, tbsHash, authData.CredID, authData.PubKey)
 	if err != nil {
 		fmt.Println(err)
+		return false, err
 	}
 
 	var ecsdaSig struct {

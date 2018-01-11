@@ -54,13 +54,18 @@ func Setup() error {
 	}
 	// Migrate up to the latest version
 	//If the database didn't exist, we need to create the admin user
-	db.AutoMigrate(
+	err := db.AutoMigrate(
+		&RelyingParty{},
 		&User{},
 		&Credential{},
-		&SessionData{},
-		&RelyingParty{},
 		&PublicKey{},
-	)
+		&SessionData{},
+	).Error
+
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return err
+	}
 
 	gorm.NowFunc = func() time.Time {
 		return time.Now().UTC()
@@ -72,30 +77,21 @@ func Setup() error {
 			Name:        "admin",
 			DisplayName: "Mr. Admin Face",
 		}
-		defaultUser := User{
-			Name:        "testuser@example.com",
-			DisplayName: "Test User",
-			Icon:        "https://kaiju.duo.com/rcrumb/avatar.png",
-		}
-		err = db.Save(&initUser).Error
-		if err != nil {
-			Logger.Println(err)
-			return err
-		}
-		err = db.Save(&defaultUser).Error
-		if err != nil {
-			Logger.Println(err)
-			return err
-		}
 
 		initRP := RelyingParty{
 			ID:          config.Conf.HostAddress,
 			DisplayName: "Acme, Inc",
 			Icon:        "lol.catpics.png",
-			Users:       []User{defaultUser},
+			Users:       []User{initUser},
 		}
 
 		err = db.Save(&initRP).Error
+		if err != nil {
+			Logger.Println(err)
+			return err
+		}
+
+		err = db.Save(&initUser).Error
 		if err != nil {
 			Logger.Println(err)
 			return err

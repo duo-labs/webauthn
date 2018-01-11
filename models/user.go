@@ -9,7 +9,7 @@ import (
 // User represents the user model.
 type User struct {
 	gorm.Model
-	Name           string         `json:"name" sql:"not null;unique"`
+	Name           string         `json:"name" sql:"not null;"`
 	DisplayName    string         `json:"display_name"`
 	Icon           string         `json:"icon,omitempty"`
 	Credentials    []Credential   `json:"credentials,omitempty"`

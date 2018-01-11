@@ -44,6 +44,11 @@ type MakeCredentialResponse struct {
 	ExcludeList []string               `json:"exclude_list,omitempty"`
 }
 
+type PasswordResponse struct {
+	Success  bool   `json:"success"`
+	Password string `json:"password"`
+}
+
 func FormatCredentials(creds []models.Credential) ([]FormattedCredential, error) {
 	fcs := make([]FormattedCredential, len(creds))
 	for x, cred := range creds {

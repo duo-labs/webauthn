@@ -34,7 +34,8 @@ func GetRelyingPartyByHost(hostname string) (RelyingParty, error) {
 	return rp, nil
 }
 
-func putRelyingParty(rp *RelyingParty) error {
+// Create or Update Relying Party
+func PutRelyingParty(rp *RelyingParty) error {
 	if db.NewRecord(&rp) {
 		fmt.Println("New Relying Party Added")
 	}

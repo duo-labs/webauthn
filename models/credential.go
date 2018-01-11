@@ -5,6 +5,7 @@ import (
 	"crypto/elliptic"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/jinzhu/gorm"
 )
@@ -24,7 +25,7 @@ type Credential struct {
 	Format string `json:"format, omitempty"`
 	Flags  []byte `json:"flags,omitempty" gorm:"type:byte[]"`
 
-	CredID string `json:"credential_id, omitempty"`
+	CredID string `json:"credential_id, omitempty" gorm:"not null"`
 
 	PublicKey PublicKey `json:"public_key,omitempty"`
 }
@@ -32,10 +33,13 @@ type Credential struct {
 // PublicKey is
 type PublicKey struct {
 	gorm.Model
-	CredentialID uint   `json:"credential_id" gorm:"index,not null" codec:"-"`
-	XCoord       []byte `json:"x" gorm:"not null" codec:"x"`
-	YCoord       []byte `json:"y" gorm:"not null" codec:"y"`
-	Type         string `json:"type" gorm:"not null" codec:"alg"`
+	_struct      bool   `codec:",int"`
+	KeyType      int8   `gorm:"not null" codec:"1"`
+	Type         int8   `gorm:"not null" codec:"3"`
+	XCoord       []byte `gorm:"not null" codec:"-3"`
+	YCoord       []byte `gorm:"not null" codec:"-2"`
+	Curve        int8   `gorm:"not null" codec:"-1"`
+	CredentialID uint   `gorm:"index,not null" codec:"-,omitempty"`
 }
 
 // CreateCredential creates a new credential object
@@ -126,4 +130,38 @@ func assembleUncompressedECPoint(xCoord []byte, yCoord []byte) ([]byte, error) {
 	copy(point[1:33], xCoord)
 	copy(point[33:], yCoord)
 	return point, nil
+}
+
+func (s *PublicKey) FillStruct(m map[string]interface{}) error {
+	for k, v := range m {
+		err := SetField(s, k, v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func SetField(obj interface{}, cose_key string, value interface{}) error {
+	structValue := reflect.ValueOf(obj).Elem()
+
+	structFieldValue := structValue.FieldByName(cose_key)
+
+	if !structFieldValue.IsValid() {
+		return fmt.Errorf("No such field: %s in obj", cose_key)
+	}
+
+	if !structFieldValue.CanSet() {
+		return fmt.Errorf("Cannot set %s field value", cose_key)
+	}
+
+	structFieldType := structFieldValue.Type()
+	val := reflect.ValueOf(value)
+	if structFieldType != val.Type() {
+		invalidTypeError := errors.New("Provided value type didn't match obj field type")
+		return invalidTypeError
+	}
+
+	structFieldValue.Set(val)
+	return nil
 }
