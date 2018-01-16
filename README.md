@@ -21,7 +21,6 @@ After installing:
 2. Search for "webauth"
 3. Enable `value=True` for:
 * `security.webauth.webauthn`
-* `security.webauth.webauthn_enable_softtoken`
 4. Reload the page and you're ready to go!
 
 
