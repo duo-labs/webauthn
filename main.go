@@ -25,6 +25,7 @@ import (
 	"github.com/ugorji/go/codec"
 
 	"github.com/duo-labs/webauthn/config"
+	"github.com/duo-labs/webauthn/hello"
 	"github.com/duo-labs/webauthn/models"
 	req "github.com/duo-labs/webauthn/request"
 	res "github.com/duo-labs/webauthn/response"
@@ -94,8 +95,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login.html", nil)
 }
 
-// requestNewCredential begins Credential Registration Request
-func requestNewCredential(w http.ResponseWriter, r *http.Request) {
+// LoginHello returns the static login page for Windows Hello Requests
+func LoginHello(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "winlogin.html", nil)
+}
+
+// RequestNewCredential begins Credential Registration Request when /MakeNewCredential gets hit
+func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["name"]
 	timeout := 60000
@@ -190,7 +196,7 @@ func getUserAndRelyingParty(username string, hostname string) (models.User, mode
 	return user, rp, nil
 }
 
-func getAssertion(w http.ResponseWriter, r *http.Request) {
+func GetAssertion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["name"]
 	timeout := 60000
@@ -257,7 +263,7 @@ func getAssertion(w http.ResponseWriter, r *http.Request) {
 	JSONResponse(w, assertionResponse, http.StatusOK)
 }
 
-func makeAssertion(w http.ResponseWriter, r *http.Request) {
+func MakeAssertion(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "assertion-session")
 	sessionID := session.Values["session_id"].(uint)
 	sessionData, err := models.GetSessionData(sessionID)
@@ -429,7 +435,7 @@ func verifyAssertionData(
 	return ecdsa.Verify(&pubKey, h.Sum(nil), ecsdaSig.R, ecsdaSig.S), credential, nil
 }
 
-func makeNewCredential(w http.ResponseWriter, r *http.Request) {
+func MakeNewCredential(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error creating JSON response", http.StatusInternalServerError)
@@ -819,7 +825,7 @@ func parseAttestationStatement(
 	return das, nil
 }
 
-func createNewUser(w http.ResponseWriter, r *http.Request) {
+func CreateNewUser(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	email := r.FormValue("email")
 	icon := "example.icon.duo.com/123/avatar.png"
@@ -854,7 +860,7 @@ func createNewUser(w http.ResponseWriter, r *http.Request) {
 	JSONResponse(w, u, http.StatusCreated)
 }
 
-func getUser(w http.ResponseWriter, r *http.Request) {
+func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["name"]
 	u, err := models.GetUserByUsername(username)
@@ -866,7 +872,7 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	JSONResponse(w, u, http.StatusOK)
 }
 
-func getCredentials(w http.ResponseWriter, r *http.Request) {
+func GetCredentials(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["name"]
 	u, _ := models.GetUserByUsername(username)
@@ -879,7 +885,7 @@ func getCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func deleteCredential(w http.ResponseWriter, r *http.Request) {
+func DeleteCredential(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	credID := vars["id"]
 	err := models.DeleteCredentialByID(credID)
@@ -897,16 +903,18 @@ func CreateRouter() http.Handler {
 	router := mux.NewRouter()
 	// New handlers should be added here
 	router.HandleFunc("/", Login)
+	router.HandleFunc("/hello", LoginHello)
+	router.HandleFunc("/hello/makeCredential/{name}", hello.MakeNewHelloCredential).Methods("GET")
 	router.HandleFunc("/dashboard/{name}", Index)
 	router.HandleFunc("/dashboard", Index)
-	router.HandleFunc("/makeCredential/{name}", requestNewCredential).Methods("GET")
-	router.HandleFunc("/makeCredential", makeNewCredential).Methods("POST")
-	router.HandleFunc("/assertion/{name}", getAssertion).Methods("GET")
-	router.HandleFunc("/assertion", makeAssertion).Methods("POST")
-	router.HandleFunc("/user", createNewUser).Methods("POST")
-	router.HandleFunc("/user/{name}", getUser).Methods("GET")
-	router.HandleFunc("/credential/{name}", getCredentials).Methods("GET")
-	router.HandleFunc("/credential/{id}", deleteCredential).Methods("DELETE")
+	router.HandleFunc("/makeCredential/{name}", RequestNewCredential).Methods("GET")
+	router.HandleFunc("/makeCredential", MakeNewCredential).Methods("POST")
+	router.HandleFunc("/assertion/{name}", GetAssertion).Methods("GET")
+	router.HandleFunc("/assertion", MakeAssertion).Methods("POST")
+	router.HandleFunc("/user", CreateNewUser).Methods("POST")
+	router.HandleFunc("/user/{name}", GetUser).Methods("GET")
+	router.HandleFunc("/credential/{name}", GetCredentials).Methods("GET")
+	router.HandleFunc("/credential/{id}", DeleteCredential).Methods("DELETE")
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 	return router
 }
