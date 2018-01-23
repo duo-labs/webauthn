@@ -35,13 +35,20 @@ type CredentialParameter struct {
 	Algorithm string `json:"alg,omitempty"`
 }
 
+type AuthenticatorSelection struct {
+	AuthenticatorAttachment string `json:"authenticatorAttachment"`
+	RequireResidentKey      bool   `json:"requireResidentKey"`
+	UserVerification        string `json:"userVerification"`
+}
+
 type MakeCredentialResponse struct {
-	Challenge   []byte                 `json:"challenge,omitempty"`
-	RP          MakeOptionRelyingParty `json:"rp,omitempty"`
-	User        MakeOptionUser         `json:"user,omitempty"`
-	Parameters  []CredentialParameter  `json:"pubKeyCredParams,omitempty"`
-	Timeout     int                    `json:"timeout,omitempty"`
-	ExcludeList []string               `json:"exclude_list,omitempty"`
+	Challenge              []byte                 `json:"challenge"`
+	RP                     MakeOptionRelyingParty `json:"rp"`
+	User                   MakeOptionUser         `json:"user"`
+	Parameters             []CredentialParameter  `json:"pubKeyCredParams,omitempty"`
+	AuthenticatorSelection AuthenticatorSelection `json:"authenticatorSelection,omitempty"`
+	Timeout                int                    `json:"timeout,omitempty"`
+	ExcludeList            []string               `json:"exclude_list,omitempty"`
 }
 
 type PasswordResponse struct {

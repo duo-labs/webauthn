@@ -127,10 +127,10 @@ func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// Get Relying Party that is requesting Registration
-
+	// Get the proper URL the request is coming from
 	u, err := url.Parse(r.Referer())
 
+	// Get Relying Party that is requesting Registration
 	rp, err := models.GetRelyingPartyByHost(u.Hostname())
 
 	if err == gorm.ErrRecordNotFound {
@@ -164,12 +164,19 @@ func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 		ID:          user.ID,
 	}
 
+	authSelector := res.AuthenticatorSelection{
+		AuthenticatorAttachment: "cross-platform",
+		RequireResidentKey:      false,
+		UserVerification:        "preferred",
+	}
+
 	makeResponse := res.MakeCredentialResponse{
-		Challenge:  sd.Challenge,
-		RP:         makeOptRP,
-		User:       makeOptUser,
-		Parameters: params,
-		Timeout:    timeout,
+		Challenge:              sd.Challenge,
+		RP:                     makeOptRP,
+		User:                   makeOptUser,
+		Parameters:             params,
+		Timeout:                timeout,
+		AuthenticatorSelection: authSelector,
 	}
 
 	JSONResponse(w, makeResponse, http.StatusOK)
