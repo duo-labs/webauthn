@@ -195,7 +195,7 @@ func (ms *ModelsSuite) TestAssembleUncompressedECPoint() {
 	x, y := generateTestCodePoint()
 
 	// Test the valid case of 32 bytes per coordinate
-	formattedCodePoint, err := assembleUncompressedECPoint(x, y)
+	formattedCodePoint, err := AssembleUncompressedECPoint(x, y)
 	if err != nil {
 		ms.T().Fatalf("Received unexpected error: %s", err)
 	}
@@ -210,7 +210,7 @@ func (ms *ModelsSuite) TestAssembleUncompressedECPoint() {
 
 	// Test invalid length case
 	x = append(x, 0x00)
-	_, err = assembleUncompressedECPoint(x, y)
+	_, err = AssembleUncompressedECPoint(x, y)
 	if err == nil {
 		ms.T().Fatalf("Received nil error. Expected coordinate length error")
 	}

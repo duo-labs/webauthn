@@ -77,7 +77,7 @@ func Setup() error {
 			Name:        "admin",
 			DisplayName: "Mr. Admin Face",
 		}
-
+		// Create the default relying party
 		initRP := RelyingParty{
 			ID:          config.Conf.HostAddress,
 			DisplayName: "Acme, Inc",

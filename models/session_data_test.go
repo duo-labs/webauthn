@@ -12,7 +12,7 @@ import (
 
 func (ms *ModelsSuite) TestCreateChallenge() {
 	expected := 32
-	got, err := createChallenge(expected)
+	got, err := CreateChallenge(expected)
 	if err != nil {
 		ms.T().Fatalf("Unexpected error when creating challenge %s", err)
 	}

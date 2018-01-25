@@ -182,7 +182,8 @@ func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 	JSONResponse(w, makeResponse, http.StatusOK)
 }
 
-func getUserAndRelyingParty(username string, hostname string) (models.User, models.RelyingParty, error) {
+// GetUserAndRelyingParty - Get the relevant user and rp for a given WebAuthn ceremony
+func GetUserAndRelyingParty(username string, hostname string) (models.User, models.RelyingParty, error) {
 	// Get Registering User
 	user, err := models.GetUserByUsername(username)
 
@@ -203,6 +204,8 @@ func getUserAndRelyingParty(username string, hostname string) (models.User, mode
 	return user, rp, nil
 }
 
+// GetAssertion - assemble the data we need to make an assertion against
+// a given user and authenticator
 func GetAssertion(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["name"]
@@ -210,7 +213,7 @@ func GetAssertion(w http.ResponseWriter, r *http.Request) {
 
 	u, err := url.Parse(r.Referer())
 
-	user, rp, err := getUserAndRelyingParty(username, u.Hostname())
+	user, rp, err := GetUserAndRelyingParty(username, u.Hostname())
 	if err != nil {
 		fmt.Println("Couldn't Find the User or RP, most likely the User:", err)
 		JSONResponse(w, "Couldn't Find User", http.StatusInternalServerError)
@@ -270,6 +273,8 @@ func GetAssertion(w http.ResponseWriter, r *http.Request) {
 	JSONResponse(w, assertionResponse, http.StatusOK)
 }
 
+// MakeAssertion - Validate the Assertion Data provided by the authenticator and
+// resond whether or not it was successful alongside the relevant credential.
 func MakeAssertion(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "assertion-session")
 	sessionID := session.Values["session_id"].(uint)
@@ -285,15 +290,15 @@ func MakeAssertion(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("b64 Decode Error: ", err)
 	}
 
-	authData, err := parseAssertionData(encAssertionData, r.PostFormValue("signature"))
+	authData, err := ParseAssertionData(encAssertionData, r.PostFormValue("signature"))
 
 	if err != nil {
 		fmt.Println("Parse Assertion Error: ", err)
 	}
 
-	clientData, err := unmarshallClientData(r.PostFormValue("clientData"))
+	clientData, err := UnmarshallClientData(r.PostFormValue("clientData"))
 
-	verified, credential, _ := verifyAssertionData(&clientData, &authData, &sessionData)
+	verified, credential, _ := VerifyAssertionData(&clientData, &authData, &sessionData)
 
 	JSONResponse(w, res.CredentialActionResponse{
 		Success:    verified,
@@ -301,12 +306,15 @@ func MakeAssertion(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusOK)
 }
 
-// We may want to check for replay attacks but we definitely want to update the counter
-func checkCredentialCounter(cred *models.Credential) error {
+// CheckCredentialCounter - We may want to check for replay attacks but
+// we definitely want to update the internal counter
+// Note: this currently doesn't do that, lol
+func CheckCredentialCounter(cred *models.Credential) error {
 	return models.UpdateCredential(cred)
 }
 
-func verifyAssertionData(
+// VerifyAssertionData - Verifies that the Assertion data provided is correct and valid
+func VerifyAssertionData(
 	clientData *req.DecodedClientData,
 	authData *req.DecodedAssertionData,
 	sessionData *models.SessionData) (bool, models.Credential, error) {
@@ -336,7 +344,7 @@ func verifyAssertionData(
 	fmt.Printf("Auth Data: %+v\n", authData)
 
 	credential.Counter = authData.Counter
-	err = checkCredentialCounter(&credential)
+	err = CheckCredentialCounter(&credential)
 	if err != nil {
 		fmt.Println("Error updating the the counter")
 		err := errors.New("Error updating the the counter")
@@ -442,20 +450,21 @@ func verifyAssertionData(
 	return ecdsa.Verify(&pubKey, h.Sum(nil), ecsdaSig.R, ecsdaSig.S), credential, nil
 }
 
+// MakeNewCredential - Attempt to make a new credential given an authenticator's response
 func MakeNewCredential(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error creating JSON response", http.StatusInternalServerError)
 	}
 
-	encodedAuthData, err := decodeAttestationObject(r.PostFormValue("attObj"))
-	decodedAuthData, err := parseAuthData(encodedAuthData)
+	encodedAuthData, err := DecodeAttestationObject(r.PostFormValue("attObj"))
+	decodedAuthData, err := ParseAuthData(encodedAuthData)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	clientData, err := unmarshallClientData(r.PostFormValue("clientData"))
+	clientData, err := UnmarshallClientData(r.PostFormValue("clientData"))
 	if err != nil {
 		JSONResponse(w, "Error getting client data", http.StatusNotFound)
 		return
@@ -471,7 +480,7 @@ func MakeNewCredential(w http.ResponseWriter, r *http.Request) {
 	sessionID := session.Values["session_id"].(uint)
 	sessionData, err := models.GetSessionData(sessionID)
 
-	verified, err := verifyRegistrationData(&clientData, &decodedAuthData, &sessionData)
+	verified, err := VerifyRegistrationData(&clientData, &decodedAuthData, &sessionData)
 
 	if err != nil {
 		fmt.Println("Error verifying credential", err)
@@ -509,7 +518,8 @@ func MakeNewCredential(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func verifyRegistrationData(
+// VerifyRegistrationData - Verify that the provided Authenticator and Client
+func VerifyRegistrationData(
 	clientData *req.DecodedClientData,
 	authData *req.DecodedAuthData,
 	sessionData *models.SessionData) (bool, error) {
@@ -650,7 +660,7 @@ func verifyRegistrationData(
 
 	// We already have the claimed credential ID and PubKey
 
-	assembledData, err := assembleSignedRegistrationData(RPIDHash, tbsHash, authData.CredID, authData.PubKey)
+	assembledData, err := AssembleSignedRegistrationData(RPIDHash, tbsHash, authData.CredID, authData.PubKey)
 	if err != nil {
 		fmt.Println(err)
 		return false, err
@@ -688,7 +698,9 @@ func verifyRegistrationData(
 	return isValid, err
 }
 
-func assembleSignedRegistrationData(
+// AssembleSignedRegistrationData - This takes data that was rendered during authenticatin and puts
+// it into a format to be hashed and verified by the authenticator signature
+func AssembleSignedRegistrationData(
 	rpIDHash,
 	tbsHash,
 	credID []byte,
@@ -704,7 +716,10 @@ func assembleSignedRegistrationData(
 	return buf.Bytes(), nil
 }
 
-func unmarshallClientData(clientData string) (req.DecodedClientData, error) {
+// UnmarshallClientData - Unmarshall the ClientDataJSON provided by the authenticator.
+// It is Base 64 encoded before being sent up to the server, so we b6 decode
+// it first.
+func UnmarshallClientData(clientData string) (req.DecodedClientData, error) {
 	b64Decoder := b64.StdEncoding.Strict()
 	clientDataBytes, _ := b64Decoder.DecodeString(clientData)
 	var handler codec.Handle = new(codec.JsonHandle)
@@ -715,7 +730,10 @@ func unmarshallClientData(clientData string) (req.DecodedClientData, error) {
 	return ucd, err
 }
 
-func decodeAttestationObject(rawAttObj string) (req.EncodedAuthData, error) {
+// DecodeAttestationObject - Decode the authenticator Attestation Data from CBOR.
+// It is Base 64 encoded before being sent up to the server, so we b6 decode
+// it first.
+func DecodeAttestationObject(rawAttObj string) (req.EncodedAuthData, error) {
 	b64Decoder := b64.URLEncoding.Strict()
 	attObjBytes, err := b64Decoder.DecodeString(rawAttObj)
 	if err != nil {
@@ -733,7 +751,8 @@ func decodeAttestationObject(rawAttObj string) (req.EncodedAuthData, error) {
 	return ead, err
 }
 
-func parseAssertionData(assertionData []byte, hexSig string) (req.DecodedAssertionData, error) {
+// ParseAssertionData - Parses assertion data from byte array to a struct
+func ParseAssertionData(assertionData []byte, hexSig string) (req.DecodedAssertionData, error) {
 	decodedAssertionData := req.DecodedAssertionData{}
 
 	rpID := assertionData[:32]
@@ -764,7 +783,8 @@ func parseAssertionData(assertionData []byte, hexSig string) (req.DecodedAsserti
 	return decodedAssertionData, err
 }
 
-func parseAuthData(ead req.EncodedAuthData) (req.DecodedAuthData, error) {
+// ParseAuthData - Parses the AuthData returned from the authenticator from a byte array
+func ParseAuthData(ead req.EncodedAuthData) (req.DecodedAuthData, error) {
 	decodedAuthData := req.DecodedAuthData{}
 
 	rpID := ead.AuthData[:32]
@@ -798,7 +818,7 @@ func parseAuthData(ead req.EncodedAuthData) (req.DecodedAuthData, error) {
 		return decodedAuthData, err
 	}
 
-	das, err := parseAttestationStatement(ead.AttStatement)
+	das, err := ParseAttestationStatement(ead.AttStatement)
 	if err != nil {
 		fmt.Println("Error parsing Attestation Statement from Authentication Data")
 		return decodedAuthData, err
@@ -818,7 +838,9 @@ func parseAuthData(ead req.EncodedAuthData) (req.DecodedAuthData, error) {
 	return decodedAuthData, err
 }
 
-func parseAttestationStatement(
+// ParseAttestationStatement - parse the Attestation Certificate returned by the
+// the authenticator
+func ParseAttestationStatement(
 	ead req.EncodedAttestationStatement) (req.DecodedAttestationStatement, error) {
 	das := req.DecodedAttestationStatement{}
 	cert, err := x509.ParseCertificate(ead.X509Cert[0])
@@ -832,6 +854,7 @@ func parseAttestationStatement(
 	return das, nil
 }
 
+// CreateNewUser - hitting this endpoint with a new user will add it to the db
 func CreateNewUser(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	email := r.FormValue("email")
@@ -867,6 +890,7 @@ func CreateNewUser(w http.ResponseWriter, r *http.Request) {
 	JSONResponse(w, u, http.StatusCreated)
 }
 
+// GetUser - get a user from the db
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["name"]
@@ -879,6 +903,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	JSONResponse(w, u, http.StatusOK)
 }
 
+// GetCredentials - get a user's credentials from the db
 func GetCredentials(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["name"]
@@ -892,6 +917,7 @@ func GetCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteCredential - Delete a credential from the db
 func DeleteCredential(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	credID := vars["id"]
@@ -910,8 +936,8 @@ func CreateRouter() http.Handler {
 	router := mux.NewRouter()
 	// New handlers should be added here
 	router.HandleFunc("/", Login)
-	router.HandleFunc("/hello", LoginHello)
-	router.HandleFunc("/hello/makeCredential/{name}", hello.MakeNewHelloCredential).Methods("GET")
+	router.HandleFunc("/hello", LoginHello)                                                        // Handle Windows Hello Page
+	router.HandleFunc("/hello/makeCredential/{name}", hello.MakeNewHelloCredential).Methods("GET") // Make Windows Hello Credential
 	router.HandleFunc("/dashboard/{name}", Index)
 	router.HandleFunc("/dashboard", Index)
 	router.HandleFunc("/makeCredential/{name}", RequestNewCredential).Methods("GET")

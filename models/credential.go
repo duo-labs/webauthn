@@ -5,7 +5,6 @@ import (
 	"crypto/elliptic"
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/jinzhu/gorm"
 )
@@ -30,7 +29,7 @@ type Credential struct {
 	PublicKey PublicKey `json:"public_key,omitempty"`
 }
 
-// PublicKey is
+// PublicKey is parsed from the credential creation response
 type PublicKey struct {
 	gorm.Model
 	_struct      bool   `codec:",int"`
@@ -106,7 +105,7 @@ func GetPublicKeyForCredential(c *Credential) (ecdsa.PublicKey, error) {
 
 // FormatPublicKey formats a `models.PublicKey` into an `ecdsa.PublicKey`
 func FormatPublicKey(pk PublicKey) (ecdsa.PublicKey, error) {
-	ecPoint, err := assembleUncompressedECPoint(pk.XCoord, pk.YCoord)
+	ecPoint, err := AssembleUncompressedECPoint(pk.XCoord, pk.YCoord)
 	if err != nil {
 		return ecdsa.PublicKey{}, err
 	}
@@ -118,7 +117,8 @@ func FormatPublicKey(pk PublicKey) (ecdsa.PublicKey, error) {
 	}, err
 }
 
-func assembleUncompressedECPoint(xCoord []byte, yCoord []byte) ([]byte, error) {
+// AssembleUncompressedECPoint will properly format the EC coordinates into
+func AssembleUncompressedECPoint(xCoord []byte, yCoord []byte) ([]byte, error) {
 	point := make([]byte, 65)
 	if len(xCoord) != 32 || len(yCoord) != 32 {
 		fmt.Println("X coord byte length : ", len(xCoord))
@@ -130,38 +130,4 @@ func assembleUncompressedECPoint(xCoord []byte, yCoord []byte) ([]byte, error) {
 	copy(point[1:33], xCoord)
 	copy(point[33:], yCoord)
 	return point, nil
-}
-
-func (s *PublicKey) FillStruct(m map[string]interface{}) error {
-	for k, v := range m {
-		err := SetField(s, k, v)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func SetField(obj interface{}, cose_key string, value interface{}) error {
-	structValue := reflect.ValueOf(obj).Elem()
-
-	structFieldValue := structValue.FieldByName(cose_key)
-
-	if !structFieldValue.IsValid() {
-		return fmt.Errorf("No such field: %s in obj", cose_key)
-	}
-
-	if !structFieldValue.CanSet() {
-		return fmt.Errorf("Cannot set %s field value", cose_key)
-	}
-
-	structFieldType := structFieldValue.Type()
-	val := reflect.ValueOf(value)
-	if structFieldType != val.Type() {
-		invalidTypeError := errors.New("Provided value type didn't match obj field type")
-		return invalidTypeError
-	}
-
-	structFieldValue.Set(val)
-	return nil
 }

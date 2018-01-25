@@ -29,7 +29,7 @@ var ErrInvalidSessionType = errors.New("SessionType needs to be 'reg' or 'att'")
 
 // CreateNewSession - Create new user/rp session
 func CreateNewSession(u *User, rp *RelyingParty, st string) (SessionData, error) {
-	ch, err := createChallenge(16)
+	ch, err := CreateChallenge(16)
 	if err != nil {
 		fmt.Println("Error Creating Challenge")
 		return SessionData{}, err
@@ -115,7 +115,8 @@ func PutSession(sd *SessionData) error {
 	return err
 }
 
-func createChallenge(len int) ([]byte, error) {
+// CreateChallenge - Create a new challenge to be sent to the authenticator
+func CreateChallenge(len int) ([]byte, error) {
 	challenge := make([]byte, len)
 	_, err := rand.Read(challenge)
 	if err != nil {
