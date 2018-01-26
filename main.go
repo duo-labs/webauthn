@@ -461,7 +461,8 @@ func MakeNewCredential(w http.ResponseWriter, r *http.Request) {
 	decodedAuthData, err := ParseAuthData(encodedAuthData)
 
 	if err != nil {
-		log.Fatal(err)
+		JSONResponse(w, "Error parsing the authentication data", http.StatusNotFound)
+		return
 	}
 
 	clientData, err := UnmarshallClientData(r.PostFormValue("clientData"))
