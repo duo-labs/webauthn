@@ -574,22 +574,24 @@ func VerifyRegistrationData(
 	// Let's also make sure that the Authenticator is using SHA-256 or SHA-512
 	var clientDataHash []byte
 	fmt.Println("Hash Alg:", clientData.HashAlgorithm)
-	if clientData.HashAlgorithm == "SHA-256" || clientData.HashAlgorithm == "SHA-512" {
-		switch clientData.HashAlgorithm {
-		case "SHA-256":
-			h := sha256.New()
-			h.Write([]byte(clientData.RawClientData))
-			clientDataHash = h.Sum(nil)
-			fmt.Printf("Client data hash is %x\n", clientDataHash)
-		case "SHA-512":
-			h := sha512.New()
-			h.Write([]byte(clientData.RawClientData))
-			clientDataHash = h.Sum(nil)
-			fmt.Printf("Client data hash is %x\n", clientDataHash)
-		}
-	} else {
-		fmt.Println("Error making Client Data Hash")
-		return false, nil
+	switch clientData.HashAlgorithm {
+	case "SHA-512":
+		h := sha512.New()
+		h.Write([]byte(clientData.RawClientData))
+		clientDataHash = h.Sum(nil)
+		fmt.Printf("Client data hash is %x\n", clientDataHash)
+	case "SHA-256":
+		h := sha256.New()
+		h.Write([]byte(clientData.RawClientData))
+		clientDataHash = h.Sum(nil)
+		fmt.Printf("Client data hash is %x\n", clientDataHash)
+	default:
+		// Currently, the Editor's Draft makes no mention of hashAlgorithm
+		// in the client data, but we can default to SHA256.
+		h := sha256.New()
+		h.Write([]byte(clientData.RawClientData))
+		clientDataHash = h.Sum(nil)
+		fmt.Printf("Client data hash is %x\n", clientDataHash)
 	}
 
 	// Step 7. Perform CBOR decoding on the attestationObject field of
