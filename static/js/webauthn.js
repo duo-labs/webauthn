@@ -93,7 +93,9 @@ function makeCredential() {
             type: 'success',
             timer: 2000
         })
-    })
+    }).catch(function(error) {
+        console.log("Modal Error: " + error);
+    });
     $.get('/makeCredential/' + state.user.name, {}, null, 'json')
         .done(function (makeCredentialOptions) {
             console.log("Credential Options Object");
@@ -172,7 +174,7 @@ function getAssertion() {
             showCancelButton: true,
             showConfirmButton: false,
             focusConfirm: false,
-            focusCancel: false,
+            focusCancel: false,        
         }).then(function () {
             swal({
                 title: 'Logged In!',
@@ -180,7 +182,9 @@ function getAssertion() {
                 type: 'success',
                 timer: 2000
             })
-        })
+        }).catch(function(error) {
+            console.log("Modal Error: " + error);
+        });
     }).catch(function(error) {    
         showErrorAlert(error.responseText);        
         return;

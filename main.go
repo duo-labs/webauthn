@@ -351,7 +351,14 @@ func VerifyAssertionData(
 		return false, credential, err
 	}
 
-	// Step 4. Verify that the challenge member of C matches the challenge that
+	// Step 4. Verify that the type in C is the string webauthn.create
+	if clientData.ActionType != "webauthn.get" {
+		fmt.Println("Client Request type is: ", string(clientData.ActionType))
+		err := errors.New("The webauthn action type is incorrect")
+		return false, credential, err
+	}
+
+	// Step 5. Verify that the challenge member of C matches the challenge that
 	// was sent to the authenticator in the PublicKeyCredentialRequestOptions
 	// passed to the get() call.
 	sessionDataChallenge := strings.Trim(b64.URLEncoding.EncodeToString(sessionData.Challenge), "=")
@@ -362,7 +369,7 @@ func VerifyAssertionData(
 		return false, credential, err
 	}
 
-	// Step 5. Verify that the origin member of C matches the Relying Party's origin.
+	// Step 6. Verify that the origin member of C matches the Relying Party's origin.
 	cdo, err := url.Parse(clientData.Origin)
 	if err != nil {
 		fmt.Println("Error Parsing Client Data Origin: ", string(clientData.Origin))
@@ -377,18 +384,18 @@ func VerifyAssertionData(
 		return false, credential, err
 	}
 
-	// Step 6. Verify that the tokenBindingId member of C (if present) matches the
+	// Step 7. Verify that the tokenBindingId member of C (if present) matches the
 	// Token Binding ID for the TLS connection over which the signature was obtained.
 
 	// No Token Binding ID exists in this example. Sorry bruv
 
-	// Step 7. Verify that the clientExtensions member of C is a subset of the extensions
+	// Step 8. Verify that the clientExtensions member of C is a subset of the extensions
 	// requested by the Relying Party and that the authenticatorExtensions in C is also a
 	// subset of the extensions requested by the Relying Party.
 
 	// We don't have any clientExtensions
 
-	// Step 8. Verify that the RP ID hash in aData is the SHA-256 hash of the RP ID expected
+	// Step 9. Verify that the RP ID hash in aData is the SHA-256 hash of the RP ID expected
 	// by the Relying Party.
 	hasher := sha256.New()
 	hasher.Write([]byte(config.Conf.HostAddress)) // We use our default RP ID - Host
@@ -401,7 +408,7 @@ func VerifyAssertionData(
 		return false, credential, err
 	}
 
-	// Step 9. Let hash be the result of computing a hash over the cData using the
+	// Step 10. Let hash be the result of computing a hash over the cData using the
 	// algorithm represented by the hashAlgorithm member of C.
 
 	var clientDataHash []byte
@@ -425,7 +432,7 @@ func VerifyAssertionData(
 		fmt.Printf("Client data hash is %x\n", clientDataHash)
 	}
 
-	// Step 10. Using the credential public key looked up in step 1, verify that sig
+	// Step 11. Using the credential public key looked up in step 1, verify that sig
 	// is a valid signature over the binary concatenation of aData and hash.
 	binCat := append(authData.RawAssertionData, clientDataHash...)
 
@@ -534,7 +541,14 @@ func VerifyRegistrationData(
 	// Auth Attestation Response and have extracted the client data (called C)
 	// So step 1 is done, we have C
 
-	// Step 2. Verify that the challenge in C matches the challenge
+	// Step 2. Verify that the type in C is the string webauthn.create
+	if clientData.ActionType != "webauthn.create" {
+		fmt.Println("Client Request type is: ", string(clientData.ActionType))
+		err := errors.New("The webauthn action type is incorrect")
+		return false, err
+	}
+
+	// Step 3. Verify that the challenge in C matches the challenge
 	// that was sent to the authenticator in the create() call.
 	// C.challenge is returned without padding, so we trim our padding
 	sessionDataChallenge := strings.Trim(b64.URLEncoding.EncodeToString(sessionData.Challenge), "=")
@@ -545,7 +559,7 @@ func VerifyRegistrationData(
 		return false, err
 	}
 
-	// Step 3. Verify that to origin in C matches the relying party's origin
+	// Step 4. Verify that to origin in C matches the relying party's origin
 	cdo, err := url.Parse(clientData.Origin)
 	if err != nil {
 		fmt.Println("Error Parsing Client Data Origin: ", string(clientData.Origin))
@@ -560,18 +574,18 @@ func VerifyRegistrationData(
 		return false, err
 	}
 
-	// Step 4. Verify that the tokenBindingID in C matches for the TLS connection
+	// Step 5. Verify that the tokenBindingID in C matches for the TLS connection
 	// over which we handled this ceremony
 
 	// we don't have this yet 'cus no TLS is necessary for local dev!
 
-	// Step 5. Verify that the clientExtensions in C is a subset of the extensions
+	// Step 6. Verify that the clientExtensions in C is a subset of the extensions
 	// requested by the RP and that the authenticatorExtensions in C is also a
 	// subset of the extensions requested by the RP.
 
 	// We have no extensions yet!
 
-	// Step 6. Compute the hash of clientDataJSON using the algorithm identified
+	// Step 7. Compute the hash of clientDataJSON using the algorithm identified
 	// by C.hashAlgorithm.
 	// Let's also make sure that the Authenticator is using SHA-256 or SHA-512
 	var clientDataHash []byte
@@ -596,14 +610,14 @@ func VerifyRegistrationData(
 		fmt.Printf("Client data hash is %x\n", clientDataHash)
 	}
 
-	// Step 7. Perform CBOR decoding on the attestationObject field of
+	// Step 8. Perform CBOR decoding on the attestationObject field of
 	// the AuthenticatorAttestationResponse structure to obtain the
 	// attestation statement format fmt, the authenticator data authData,
 	// and the attestation statement attStmt.
 
 	// We've already done this an put it in authData
 
-	// Step 8. Verify that the RP ID hash in authData is indeed the
+	// Step 9. Verify that the RP ID hash in authData is indeed the
 	// SHA-256 hash of the RP ID expected by the RP.
 	hasher := sha256.New()
 	hasher.Write([]byte(config.Conf.HostAddress)) // We use our default RP ID - Host
@@ -616,76 +630,76 @@ func VerifyRegistrationData(
 		return false, err
 	}
 
-	// Step 9. Determine the attestation statement format by performing
+	// Step 10. Determine the attestation statement format by performing
 	// an USASCII case-sensitive match on fmt against the set of supported
 	// WebAuthn Attestation Statement Format Identifier values.
 
-	// For now we just use Fido U2F format
-	if authData.Format != "fido-u2f" {
+	// For now we just use "none" format
+	if authData.Format != "none" {
 		fmt.Println("Auth Data Format is incorrect: ", authData.Format)
-		err := errors.New("Auth data is not in proper format (fido-u2f)")
+		err := errors.New("Auth data is not in proper format (none)")
 		return false, err
 	}
 
-	// Step 10. Verify that attStmt is a correct, validly-signed attestation
-	// statement, using the attestation statement format fmt’s verification
-	// procedure given authenticator data authData and the hash of the
-	// serialized client data computed in step 6.
+	isValid := false
 
-	// We start using FIDO U2F Specs here
+	if authData.Format == "fido-u2f" {
+		// Step 11. Verify that attStmt is a correct, validly-signed attestation
+		// statement, using the attestation statement format fmt’s verification
+		// procedure given authenticator data authData and the hash of the
+		// serialized client data computed in step 6.
 
-	// If clientDataHash is 256 bits long, set tbsHash to this value.
-	// Otherwise set tbsHash to the SHA-256 hash of clientDataHash.
-	var tbsHash []byte
-	if len(clientDataHash) == 32 {
-		tbsHash = clientDataHash
+		// We start using FIDO U2F Specs here
+
+		// If clientDataHash is 256 bits long, set tbsHash to this value.
+		// Otherwise set tbsHash to the SHA-256 hash of clientDataHash.
+		var tbsHash []byte
+		if len(clientDataHash) == 32 {
+			tbsHash = clientDataHash
+		} else {
+			hasher = sha256.New()
+			hasher.Write(clientDataHash)
+			tbsHash = hasher.Sum(nil)
+		}
+
+		// From authenticatorData, extract the claimed RP ID hash, the
+		// claimed credential ID and the claimed credential public key.
+		RPIDHash, err = hex.DecodeString(authData.RPIDHash)
+		if err != nil {
+			err := errors.New("Error decoding RPIDHash")
+			return false, err
+		}
+
+		pubKey := authData.AttStatement.Certificate.PublicKey.(*ecdsa.PublicKey)
+		fmt.Printf("Public Key from Certificate: %+v\n", authData.AttStatement.Certificate.PublicKey)
+		fmt.Printf("Public Key from Auth Data: %+v\n", authData.PubKey)
+
+		// We already have the claimed credential ID and PubKey
+
+		assembledData, err := AssembleSignedRegistrationData(RPIDHash, tbsHash, authData.CredID, authData.PubKey)
+		if err != nil {
+			fmt.Println(err)
+			return false, err
+		}
+
+		var ecsdaSig struct {
+			R, S *big.Int
+		}
+
+		sig := authData.AttStatement.Signature
+
+		_, err = asn1.Unmarshal(sig, &ecsdaSig)
+		fmt.Printf("ECDSA SIG: %+v\n", ecsdaSig)
+		if err != nil {
+			return false, errors.New("Error unmarshalling signature")
+		}
+
+		h := sha256.New()
+		h.Write(assembledData)
+		isValid = ecdsa.Verify(pubKey, h.Sum(nil), ecsdaSig.R, ecsdaSig.S)
 	} else {
-		hasher = sha256.New()
-		hasher.Write(clientDataHash)
-		tbsHash = hasher.Sum(nil)
+		isValid = true
 	}
-
-	// From authenticatorData, extract the claimed RP ID hash, the
-	// claimed credential ID and the claimed credential public key.
-	RPIDHash, err = hex.DecodeString(authData.RPIDHash)
-	if err != nil {
-		err := errors.New("Error decoding RPIDHash")
-		return false, err
-	}
-
-	pubKey := authData.AttStatement.Certificate.PublicKey.(*ecdsa.PublicKey)
-	fmt.Printf("Public Key from Certificate: %+v\n", authData.AttStatement.Certificate.PublicKey)
-	fmt.Printf("Public Key from Auth Data: %+v\n", authData.PubKey)
-	if err != nil {
-		msg := "Error getting Pubkey"
-		fmt.Println(msg)
-		err := errors.New(msg)
-		return false, err
-	}
-
-	// We already have the claimed credential ID and PubKey
-
-	assembledData, err := AssembleSignedRegistrationData(RPIDHash, tbsHash, authData.CredID, authData.PubKey)
-	if err != nil {
-		fmt.Println(err)
-		return false, err
-	}
-
-	var ecsdaSig struct {
-		R, S *big.Int
-	}
-
-	sig := authData.AttStatement.Signature
-
-	_, err = asn1.Unmarshal(sig, &ecsdaSig)
-	fmt.Printf("ECDSA SIG: %+v\n", ecsdaSig)
-	if err != nil {
-		return false, errors.New("Error unmarshalling signature")
-	}
-
-	h := sha256.New()
-	h.Write(assembledData)
-	isValid := ecdsa.Verify(pubKey, h.Sum(nil), ecsdaSig.R, ecsdaSig.S)
 
 	// Verification of attestation objects requires that the Relying Party has a trusted
 	// method of determining acceptable trust anchors in step 11 above. Also, if certificates
@@ -823,21 +837,32 @@ func ParseAuthData(ead req.EncodedAuthData) (req.DecodedAuthData, error) {
 		return decodedAuthData, err
 	}
 
-	das, err := ParseAttestationStatement(ead.AttStatement)
-	if err != nil {
-		fmt.Println("Error parsing Attestation Statement from Authentication Data")
-		return decodedAuthData, err
+	decodedAuthData = req.DecodedAuthData{
+		// Flags are used to determine user presence, user verification, and if attData is present
+		Flags: []byte(flags),
+		// Counter is used to prevent replay attacks
+		Counter: counter,
+		// RPIDHash is used to verify the Auth Request
+		RPIDHash: rpIDHash,
+		// AAGUID is the ID of the Authenticator device line
+		AAGUID: aaguid,
+		// CredID is the ID of the credential we are creating
+		CredID: credID,
+		// Public Key of the credential key pair
+		PubKey: pubKey,
+		// Format of the attestation statement (ex, "u2f", "safety-net"), currently defaults to "none"
+		Format: ead.Format,
 	}
 
-	decodedAuthData = req.DecodedAuthData{
-		Flags:        []byte(flags),
-		Counter:      counter,
-		RPIDHash:     rpIDHash,
-		AAGUID:       aaguid,
-		CredID:       credID,
-		PubKey:       pubKey,
-		Format:       ead.Format,
-		AttStatement: das,
+	// If the format is one that contains an authenticator attestation certificate then parse it
+	if ead.Format == "fido-u2f" {
+		das, err := ParseAttestationStatement(ead.AttStatement)
+		if err != nil {
+			fmt.Println("Error parsing Attestation Statement from Authentication Data")
+			return decodedAuthData, err
+		}
+		// The authenticator's attestation statement
+		decodedAuthData.AttStatement = das
 	}
 
 	return decodedAuthData, err
@@ -848,6 +873,8 @@ func ParseAuthData(ead req.EncodedAuthData) (req.DecodedAuthData, error) {
 func ParseAttestationStatement(
 	ead req.EncodedAttestationStatement) (req.DecodedAttestationStatement, error) {
 	das := req.DecodedAttestationStatement{}
+	// Currently, for fido-u2f formatted attStatements, we only support one x509 cert
+	// but it is returned to us as an array
 	cert, err := x509.ParseCertificate(ead.X509Cert[0])
 	if err != nil {
 		return das, err
