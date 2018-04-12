@@ -20,14 +20,14 @@ Channel](https://www.chromium.org/getting-involved/dev-channel) (U2F tokens only
 After installing:  
   
 Firefox:
-1. Open the Firefox advanced preferences at the URL (about:config)[about:config]. These are feature flags for FF.
+1. Open the Firefox advanced preferences at the URL [about:config](about:config). These are feature flags for FF.
 2. Search for "webauth"
 3. Enable `value=True` for:
 * `security.webauth.webauthn`
 4. Reload the page and you're ready to go!
   
 Chrome:
-1. Open the Chrome experimental features page at the URL(chrome://flags)[chrome://flags]. These are feature flags for Chrome.
+1. Open the Chrome experimental features page at the URL [chrome://flags](chrome://flags). These are feature flags for Chrome.
 2. Search for "Web Authentication"
 3. Change `Web Authentication API` to `Enabled`
 4. Restart Chrome and you're ready to go!
