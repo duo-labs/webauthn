@@ -15,7 +15,7 @@ Quickstart
 
 Important Notes
 ---------------
-Currently WebAuthn only works in [Firefox's Nightly Build](https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=osx&lang=en-US)
+Currently WebAuthn only works in [Firefox's Beta Build](https://download.mozilla.org/?product=firefox-beta-latest-ssl&os=osx&lang=en-US)
 After installing:
 1. Open the Firefox advanced preferences at the URL (about:config)[about:config]. These are feature flags for FF Nightly.
 2. Search for "webauth"
