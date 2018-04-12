@@ -25,13 +25,22 @@
             <div class="login-wrapper">
                 <form class="form-signin">
                     <h2 class="form-signin-heading text-center">WebAuthn.io</h2>                    
-                    <p>Currently, WebAuthn is only available to test on <a href="https://www.mozilla.org/en-US/firefox/channel/desktop/">Firefox's Nightly Build</a></p>
-                    <p>Once you've installed the Nightly Build:</p>
+                    <p>Currently, WebAuthn is only available to test on <a href="https://www.mozilla.org/en-US/firefox/channel/desktop/">Firefox's Beta Build</a> and <a href="https://www.chromium.org/getting-involved/dev-channel">Chrome's Dev Channel</a></p>
+                    <p>Once you've installed a compatible browser:</p>
+                    <p>Firefox Beta:</p>
                     <ol>
                         <li>Open the Firefox advanced preference panel at <a href="about:config">about:config</a></li>
                         <li>Search for "webauthn" to find the WebAuthn related feature flags</li>
                         <li>Set the value for <code>security.webauth.webauthn</code> to <code>true</code></li>
                         <li>Reload this page and register or login to an account.</li>
+                        <li>Get excited for WebAuthn!</li>
+                    </ol>
+                    <p>Chrome Dev:</p>
+                    <ol>
+                        <li>Open the Chrome experimental features page at <a href="chrome://flags">chrome://flags</a></li>
+                        <li>Search for "Web Auth" to find the WebAuthn related feature flags</li>
+                        <li>Change the value for <code>Web Authentication API</code> to <code>Enabled</code></li>
+                        <li>Restart Chrome and register or login to an account.</li>
                         <li>Get excited for WebAuthn!</li>
                     </ol>
                     <div class="row">
