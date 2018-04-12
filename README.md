@@ -20,7 +20,7 @@ Channel](https://www.chromium.org/getting-involved/dev-channel) (U2F tokens only
 After installing:  
   
 Firefox:
-1. Open the Firefox advanced preferences at the URL (about:config)[about:config]. These are feature flags for FF Nightly.
+1. Open the Firefox advanced preferences at the URL (about:config)[about:config]. These are feature flags for FF.
 2. Search for "webauth"
 3. Enable `value=True` for:
 * `security.webauth.webauthn`
