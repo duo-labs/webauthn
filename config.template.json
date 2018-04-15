@@ -8,7 +8,7 @@
 	// Are you running this through a reverse proxy?
 	"has_proxy": false,
 	// Host Address of the project
-	"host_address": "127.0.0.1",
+	"host_address": "localhost",
 	// Host port
 	"host_port": ":9005"
 }
