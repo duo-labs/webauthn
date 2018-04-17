@@ -17,16 +17,7 @@ Important Notes
 ---------------
 Currently WebAuthn only works in [Firefox's Beta Build](https://download.mozilla.org/?product=firefox-beta-latest-ssl&os=osx&lang=en-US) or [Chrome's Dev 
 Channel](https://www.chromium.org/getting-involved/dev-channel) (U2F tokens only in Chrome)  
-After installing:  
-  
-Firefox:
-1. Open the Firefox advanced preferences at the URL [about:config](about:config). These are feature flags for FF.
-2. Search for "webauth"
-3. Enable `value=True` for:
-* `security.webauth.webauthn`
-4. Reload the page and you're ready to go!
-  
-Chrome:
+Special instructions for Chrome:
 1. Open the Chrome experimental features page at the URL [chrome://flags](chrome://flags). These are feature flags for Chrome.
 2. Search for "Web Authentication"
 3. Change `Web Authentication API` to `Enabled`
