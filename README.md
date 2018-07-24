@@ -15,6 +15,7 @@ Quickstart
 
 Important Notes
 ---------------
+
 Currently WebAuthn works in [Firefox's Nightly Build](https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=osx&lang=en-US) and [Chrome Canary](https://www.google.com/chrome/browser/canary.html).
 
 If you're using Firefox, enable `webauthn`:
@@ -23,4 +24,3 @@ If you're using Firefox, enable `webauthn`:
 3. Enable `value=True` for:
 * `security.webauth.webauthn`
 4. Reload the page and you're ready to go!
-
