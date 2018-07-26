@@ -221,7 +221,7 @@ func GetAssertion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cred, err := models.GetCredentialForUserAndRelyingParty(&user, &rp)
+	creds, err := models.GetCredentialsForUserAndRelyingParty(&user, &rp)
 	if err != nil {
 		fmt.Println("No Credential Record Found:", err)
 		JSONResponse(w, "Session Data Creation Error", http.StatusNotFound)
@@ -251,16 +251,21 @@ func GetAssertion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ac := AllowedCredential{
-		CredID:     cred.CredID,
-		Type:       "public-key", // This should always be type 'public-key' for now
-		Transports: []string{"usb", "nfc", "ble"},
+	var acs []AllowedCredential
+
+	for _, cred := range creds {
+		ac := AllowedCredential{
+			CredID:     cred.CredID,
+			Type:       "public-key", // This should always be type 'public-key' for now
+			Transports: []string{"usb", "nfc", "ble"},
+		}
+		acs = append(acs, ac)
 	}
 
 	assertionResponse := PublicKeyCredentialOptions{
 		Challenge: sd.Challenge,
 		Timeout:   timeout,
-		AllowList: []AllowedCredential{ac},
+		AllowList: acs,
 		RPID:      rp.ID,
 	}
 
@@ -282,17 +287,29 @@ func MakeAssertion(w http.ResponseWriter, r *http.Request) {
 	encAssertionData, err := encoder.DecodeString(r.PostFormValue("authData"))
 	if err != nil {
 		fmt.Println("b64 Decode Error: ", err)
+		JSONResponse(w, "Error decoding assertion data", http.StatusBadRequest)
+		return
 	}
 
 	authData, err := ParseAssertionData(encAssertionData, r.PostFormValue("signature"))
 
 	if err != nil {
 		fmt.Println("Parse Assertion Error: ", err)
+		JSONResponse(w, "Error parsing assertion data", http.StatusBadRequest)
+		return
 	}
 
 	clientData, err := UnmarshallClientData(r.PostFormValue("clientData"))
 
-	verified, credential, _ := VerifyAssertionData(&clientData, &authData, &sessionData)
+	var credentialID string
+	credentialID = r.FormValue("id")
+
+	if credentialID == "" {
+		JSONResponse(w, "Missing Credential ID", http.StatusBadRequest)
+		return
+	}
+
+	verified, credential, _ := VerifyAssertionData(&clientData, &authData, &sessionData, credentialID)
 
 	JSONResponse(w, res.CredentialActionResponse{
 		Success:    verified,
@@ -311,16 +328,17 @@ func CheckCredentialCounter(cred *models.Credential) error {
 func VerifyAssertionData(
 	clientData *req.DecodedClientData,
 	authData *req.DecodedAssertionData,
-	sessionData *models.SessionData) (bool, models.Credential, error) {
+	sessionData *models.SessionData,
+	credentialID string) (bool, models.Credential, error) {
 	// Step 1. Using credential’s id attribute (or the corresponding rawId,
 	// if base64url encoding is inappropriate for your use case), look up the
 	// corresponding credential public key.
 
-	var credential models.Credential
-	credential, err := models.GetCredentialForUserAndRelyingParty(&sessionData.User, &sessionData.RelyingParty)
+	// var credential models.Credential
+	credential, err := models.GetCredentialForUser(&sessionData.User, credentialID)
 	if err != nil {
-		fmt.Println("Issue Getting credential during Assertion")
-		err := errors.New("Issue Getting credential during Assertion")
+		fmt.Println("Issue getting credential during Assertion")
+		err := errors.New("Issue getting credential during Assertion")
 		return false, credential, err
 	}
 

@@ -70,11 +70,29 @@ func GetCredentialForUserAndRelyingParty(user *User, rp *RelyingParty) (Credenti
 	return cred, err
 }
 
+// GetCredentialsForUserAndRelyinParty retrieves all credentials for a provided user for a relying party.
+func GetCredentialsForUserAndRelyingParty(user *User, rp *RelyingParty) ([]Credential, error) {
+	creds := []Credential{}
+	err := db.Where("user_id = ? AND relying_party_id = ?", user.ID, rp.ID).Preload("PublicKey").Find(&creds).Error
+	for _, cred := range creds {
+		cred.User = *user
+		cred.RelyingParty = *rp
+	}
+	return creds, err
+}
+
 // GetCredentialsForUser retrieves all credentials for a provided user regardless of relying party.
 func GetCredentialsForUser(user *User) ([]Credential, error) {
 	creds := []Credential{}
 	err := db.Where("user_id = ?", user.ID).Preload("PublicKey").Find(&creds).Error
 	return creds, err
+}
+
+// GetCredentialForUser retrieves a specific credential for a user.
+func GetCredentialForUser(user *User, credentialID string) (Credential, error) {
+	cred := Credential{}
+	err := db.Where("user_id = ? AND cred_id = ?", user.ID, credentialID).Preload("PublicKey").Find(&cred).Error
+	return cred, err
 }
 
 // DeleteCredentialByID gets a credential by its ID. In practice, this would be a bad function without

@@ -39,7 +39,7 @@ func (ms *ModelsSuite) TestPutRelyingParty() {
 		DisplayName: "Example",
 		Icon:        "example.jpg",
 	}
-	err := putRelyingParty(expected)
+	err := PutRelyingParty(expected)
 	if err != nil {
 		ms.T().Fatalf("Unexpected error when adding a relying party: %s", err)
 	}
