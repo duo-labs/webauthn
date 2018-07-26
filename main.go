@@ -25,7 +25,6 @@ import (
 	"github.com/ugorji/go/codec"
 
 	"github.com/duo-labs/webauthn/config"
-	"github.com/duo-labs/webauthn/hello"
 	"github.com/duo-labs/webauthn/models"
 	req "github.com/duo-labs/webauthn/request"
 	res "github.com/duo-labs/webauthn/response"
@@ -93,11 +92,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 // Login returns the static login page
 func Login(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login.html", nil)
-}
-
-// LoginHello returns the static login page for Windows Hello Requests
-func LoginHello(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "winlogin.html", nil)
 }
 
 // RequestNewCredential begins Credential Registration Request when /MakeNewCredential gets hit
@@ -968,8 +962,6 @@ func CreateRouter() http.Handler {
 	router := mux.NewRouter()
 	// New handlers should be added here
 	router.HandleFunc("/", Login)
-	router.HandleFunc("/hello", LoginHello)                                                        // Handle Windows Hello Page
-	router.HandleFunc("/hello/makeCredential/{name}", hello.MakeNewHelloCredential).Methods("GET") // Make Windows Hello Credential
 	router.HandleFunc("/dashboard/{name}", Index)
 	router.HandleFunc("/dashboard", Index)
 	router.HandleFunc("/makeCredential/{name}", RequestNewCredential).Methods("GET")
