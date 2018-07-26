@@ -10,8 +10,8 @@ import (
 type RelyingParty struct {
 	ID          string `json:"id" gorm:"not null;unique" gorm:"primary_key;size:255"`
 	DisplayName string `json:"display_name" sql:"not null"`
-	Icon        string `json:"icon, omitempty"`
-	Users       []User `json:"users, omitempty" gorm:"many2many:user_relying_parties"`
+	Icon        string `json:"icon,omitempty"`
+	Users       []User `json:"users,omitempty" gorm:"many2many:user_relying_parties"`
 }
 
 // GetDefaultRelyingParty gets the RP associated with the configured hostname
@@ -34,7 +34,7 @@ func GetRelyingPartyByHost(hostname string) (RelyingParty, error) {
 	return rp, nil
 }
 
-// Create or Update Relying Party
+// PutRelyingParty creates or updates a Relying Party
 func PutRelyingParty(rp *RelyingParty) error {
 	if db.NewRecord(&rp) {
 		fmt.Println("New Relying Party Added")

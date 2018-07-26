@@ -21,10 +21,10 @@ type Credential struct {
 	UserID uint `json:"user_id"`
 
 	Type   string `json:"type,omitempty"`
-	Format string `json:"format, omitempty"`
+	Format string `json:"format,omitempty"`
 	Flags  []byte `json:"flags,omitempty" gorm:"type:byte[]"`
 
-	CredID string `json:"credential_id, omitempty" gorm:"not null"`
+	CredID string `json:"credential_id,omitempty" gorm:"not null"`
 
 	PublicKey PublicKey `json:"public_key,omitempty"`
 }
@@ -70,7 +70,7 @@ func GetCredentialForUserAndRelyingParty(user *User, rp *RelyingParty) (Credenti
 	return cred, err
 }
 
-// GetCredentialsForUserAndRelyinParty retrieves all credentials for a provided user for a relying party.
+// GetCredentialsForUserAndRelyingParty retrieves all credentials for a provided user for a relying party.
 func GetCredentialsForUserAndRelyingParty(user *User, rp *RelyingParty) ([]Credential, error) {
 	creds := []Credential{}
 	err := db.Where("user_id = ? AND relying_party_id = ?", user.ID, rp.ID).Preload("PublicKey").Find(&creds).Error
@@ -101,6 +101,7 @@ func DeleteCredentialByID(credentialID string) error {
 	return db.Where("cred_id = ?", credentialID).Delete(&Credential{}).Error
 }
 
+// GetUnformattedPublicKeyForCredential gives you the raw PublicKey model for a credential
 func GetUnformattedPublicKeyForCredential(c *Credential) (PublicKey, error) {
 	publicKey := PublicKey{}
 	err := db.Model(&c).Related(&publicKey, "PublicKey").Error
