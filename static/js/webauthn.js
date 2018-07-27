@@ -96,7 +96,10 @@ function makeCredential() {
     }).catch(function(error) {
         console.log("Modal Error: " + error);
     });
-    $.get('/makeCredential/' + state.user.name, {}, null, 'json')
+
+    var attestation_type = $('#select-attestation').find(':selected').val();    
+
+    $.get('/makeCredential/' + state.user.name, {attType: attestation_type}, null, 'json')
         .done(function (makeCredentialOptions) {
             console.log("Credential Options Object");
             console.log(makeCredentialOptions);

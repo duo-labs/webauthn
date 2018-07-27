@@ -98,6 +98,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["name"]
+
+	attType := r.FormValue("attType")
 	timeout := 60000
 	// Get Registrant User
 
@@ -171,6 +173,8 @@ func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 		Parameters:             params,
 		Timeout:                timeout,
 		AuthenticatorSelection: authSelector,
+		AttestationType:        attType,
+		Extensions:             res.Extensions{true},
 	}
 
 	JSONResponse(w, makeResponse, http.StatusOK)
@@ -333,6 +337,8 @@ func VerifyAssertionData(
 	// Step 1. Using credential’s id attribute (or the corresponding rawId,
 	// if base64url encoding is inappropriate for your use case), look up the
 	// corresponding credential public key.
+
+	fmt.Printf("Auth data is %+v\n", authData)
 
 	// var credential models.Credential
 	credential, err := models.GetCredentialForUser(&sessionData.User, credentialID)
@@ -646,9 +652,8 @@ func VerifyRegistrationData(
 	// an USASCII case-sensitive match on fmt against the set of supported
 	// WebAuthn Attestation Statement Format Identifier values.
 
-	// For now we just use "none" format
-	if authData.Format != "none" {
-		fmt.Println("Auth Data Format is incorrect: ", authData.Format)
+	if authData.Format != "none" && authData.Format != "fido-u2f" {
+		fmt.Println("Auth Data Format is incorrect:", authData.Format)
 		err := errors.New("Auth data is not in proper format (none)")
 		return false, err
 	}

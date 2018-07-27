@@ -72,3 +72,9 @@ body {
 .footer a {
   color: #6BBF4E;
 }
+
+/* line 32, ../sass/_login.scss */
+#inputAttestation {
+  margin-bottom: 15px;
+  font-size: 15px;
+}

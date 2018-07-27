@@ -9,7 +9,7 @@ body {
     background-color: #eeeeee;
     padding: 15px;
     border-radius: 15px;
-    border: 2px solid #cccccc
+    border: 2px solid #cccccc;    
 }
 
 .buttons {
@@ -27,4 +27,9 @@ body {
     a { 
         color: #6BBF4E
     }
+}
+
+#inputAttestation {
+    margin-bottom: 15px;
+    font-size: 15px;
 }
