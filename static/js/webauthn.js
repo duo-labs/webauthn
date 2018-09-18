@@ -98,8 +98,9 @@ function makeCredential() {
     });
 
     var attestation_type = $('#select-attestation').find(':selected').val();    
+    var authenticator_attachment = $('#select-authenticator').find(':selected').val();    
 
-    $.get('/makeCredential/' + state.user.name, {attType: attestation_type}, null, 'json')
+    $.get('/makeCredential/' + state.user.name, {attType: attestation_type, authType: authenticator_attachment}, null, 'json')
         .done(function (makeCredentialOptions) {
             console.log("Credential Options Object");
             console.log(makeCredentialOptions);

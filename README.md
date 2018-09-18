@@ -13,14 +13,7 @@ Quickstart
 4. Copy or rename `config.template.json` to `config.json`, remove comments, and edit if need be.
 5. Build and run the application (`$ go build; ./webauthn`)
 
-Important Notes
+Implementation Notes
 ---------------
 
-Currently WebAuthn works in [Firefox's Nightly Build](https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=osx&lang=en-US) and [Chrome Canary](https://www.google.com/chrome/browser/canary.html).
-
-If you're using Firefox, enable `webauthn`:
-1. Open the Firefox advanced preferences at the URL (about:config)[about:config]. These are feature flags for FF Nightly.
-2. Search for "webauth"
-3. Enable `value=True` for:
-* `security.webauth.webauthn`
-4. Reload the page and you're ready to go!
+Currently WebAuthn works in Firefox, Chrome, and Edge. There are some flags currently available for Chrome Canary, such as native TouchID support and cloud assisted Bluetooth (caBLE) that could be fun to experiment with.
