@@ -100,6 +100,7 @@ func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 	username := vars["name"]
 
 	attType := r.FormValue("attType")
+	authType := r.FormValue("authType")
 	timeout := 60000
 	// Get Registrant User
 
@@ -161,7 +162,7 @@ func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authSelector := res.AuthenticatorSelection{
-		AuthenticatorAttachment: "cross-platform",
+		AuthenticatorAttachment: authType,
 		RequireResidentKey:      false,
 		UserVerification:        "preferred",
 	}
@@ -652,9 +653,9 @@ func VerifyRegistrationData(
 	// an USASCII case-sensitive match on fmt against the set of supported
 	// WebAuthn Attestation Statement Format Identifier values.
 
-	if authData.Format != "none" && authData.Format != "fido-u2f" {
+	if authData.Format != "none" && authData.Format != "fido2-u2f" && authData.Format != "packed" {
 		fmt.Println("Auth Data Format is incorrect:", authData.Format)
-		err := errors.New("Auth data is not in proper format (none)")
+		err := errors.New("Auth data is not in proper format")
 		return false, err
 	}
 
