@@ -16,4 +16,5 @@ Quickstart
 Implementation Notes
 ---------------
 
-Currently WebAuthn works in Firefox, Chrome, and Edge. There are some flags currently available for Chrome Canary, such as native TouchID support and cloud assisted Bluetooth (caBLE) that could be fun to experiment with.
+Currently WebAuthn works in [Firefox](https://www.mozilla.org/en-US/firefox/new/) and [Chrome](https://www.google.com/chrome/).  Watch the the [up-to-date list of supported browsers](https://caniuse.com/#search=webauthn) to find out when other browsers support the Webauthn standard.
+
