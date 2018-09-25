@@ -122,6 +122,10 @@ func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 			Type:      "public-key",
 			Algorithm: "-7",
 		},
+		res.CredentialParameter{
+			Type:      "public-key",
+			Algorithm: "-257", // RS256 for Windows Hello
+		},
 	}
 
 	// Get the proper URL the request is coming from
