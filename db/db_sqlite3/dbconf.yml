@@ -1,5 +1,0 @@
-production:
-    driver: sqlite3 
-    open: webauthn.db
-    dialect: sqlite3
-    import: github.com/mattn/go-sqlite3

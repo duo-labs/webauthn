@@ -1,5 +1,0 @@
-production:
-    driver: mysql 
-    open: root:@(:3307)/webauthn?charset=utf8&parseTime=True&loc=Local
-    dialect: mysql
-    import: github.com/go-sql-driver/mysql

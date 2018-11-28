@@ -13,11 +13,12 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"math/big"
 	"net/http"
 	"net/url"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -39,6 +40,7 @@ func renderTemplate(w http.ResponseWriter, f string, data interface{}) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+
 	t.Execute(w, data)
 }
 
@@ -120,7 +122,7 @@ func RequestNewCredential(w http.ResponseWriter, r *http.Request) {
 	params := []res.CredentialParameter{
 		res.CredentialParameter{
 			Type:      "public-key",
-			Algorithm: "-7",
+			Algorithm: "-7", // ECDSA with SHA-256
 		},
 		res.CredentialParameter{
 			Type:      "public-key",
