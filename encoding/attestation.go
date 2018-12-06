@@ -1,0 +1,3 @@
+package encoding
+
+func ParseCredentialCreationResponse()
