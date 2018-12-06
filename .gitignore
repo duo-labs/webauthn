@@ -1,5 +1,4 @@
 *.db
 config.json
 static/.sass-cache
-webauthn
 Dockerfile
