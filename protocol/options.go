@@ -21,7 +21,10 @@ type PublicKeyCredentialCreationOptions struct {
 }
 
 type PublicKeyCredentialRequestOptions struct {
-	Challenge Challenge
+	Challenge          Challenge
+	Timeout            int
+	RelyingPartyID     string
+	AllowedCredentials []CredentialDescriptor
 }
 
 type CredentialDescriptor struct {

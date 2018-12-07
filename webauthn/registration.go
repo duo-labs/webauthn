@@ -2,6 +2,9 @@ package webauthn
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
 
 	p "github.com/duo-labs/webauthn/protocol"
 )
@@ -89,9 +92,25 @@ func WithConveyancePreference(preference p.ConveyancePreference) RegistrationOpt
 	}
 }
 
-func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response p.CredentialCreationResponse) (Credential, error) {
+func parseRegistrationResponse(response *http.Request) (*p.ParsedCredentialCreationData, error) {
+	var credentialResponse p.CredentialCreationResponse
+	err := json.NewDecoder(response.Body).Decode(&credentialResponse)
+	if err != nil {
+		return nil, p.ErrBadRequest.WithDetails("fuck")
+	}
+	return p.ParseCredentialCreationResponse(credentialResponse)
+}
+
+func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
 		p.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
+
+	parsedResponse, err := parseRegistrationResponse(response)
+	if err != nil {
+		fmt.Println(err)
+		return nil, p.ErrBadRequest.WithDetails("fuddck")
+	}
+	fmt.Printf("got the following:\n %+v\n\n", parsedResponse)
 	return nil, nil
 }

@@ -4,12 +4,6 @@ type AuthenticatorResponse struct {
 	ClientDataJSON []byte `json:"clientDataJSON"`
 }
 
-type ParsedAttestationObject struct {
-}
-
-type AttestationStatement struct {
-}
-
 type AuthenticationExtensionsClientOutputs map[interface{}]interface{}
 
 // CollectedClientData represents the contextual bindings of both the WebAuthn Relying Party

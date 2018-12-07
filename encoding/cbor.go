@@ -1,1 +1,3 @@
 package encoding
+
+func DecodeCBOR()

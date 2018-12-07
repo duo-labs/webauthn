@@ -1,15 +1,11 @@
 package protocol
 
-type CredentialCreationResponse struct {
-	PublicKeyCredential
-	Response AuthenticatorAttestationResponse `json:"response"`
-}
+import (
+	"encoding/json"
+	"fmt"
 
-type ParsedCredentialCreationData struct {
-	ParsedPublicKeyCredential
-	Response ParsedAttestationResponse
-	Raw      CredentialCreationResponse
-}
+	"github.com/ugorji/go/codec"
+)
 
 type AuthenticatorAttestationResponse struct {
 	AuthenticatorResponse
@@ -17,13 +13,14 @@ type AuthenticatorAttestationResponse struct {
 }
 
 type ParsedAttestationResponse struct {
-	ClientData CollectedClientData
+	CollectedClientData CollectedClientData
+	AuthenticatorData   AttestationObject
 }
 
 type AttestationObject struct {
-	AuthData     []byte                      `codec:"authData"`
-	Format       string                      `codec:"fmt"`
-	AttStatement EncodedAttestationStatement `codec:"attStmt, omitempty"`
+	AuthData     []byte                      `codec:"authData" json:"fmt"`
+	Format       string                      `codec:"fmt" json:"authData"`
+	AttStatement EncodedAttestationStatement `codec:"attStmt, omitempty" json:"attStmt"`
 }
 
 //EncodedAttestationStatement is the authenticator's attestation certificate
@@ -43,10 +40,22 @@ const (
 	PreferDirectAttestation   ConveyancePreference = "direct"
 )
 
-func ParseAttestationResponse(ccr CredentialCreationResponse) (*ParsedCredentialCreationData, error) {
-	pcc := ParsedCredentialCreationData{}
-	pcc.ID, pcc.RawID, pcc.Type = ccr.ID, ccr.RawID, ccr.Type
-	pcc.Raw = ccr
+func ParseAttestationResponse(a AuthenticatorAttestationResponse) (*ParsedAttestationResponse, error) {
+	var p ParsedAttestationResponse
 
-	return nil, nil
+	err := json.Unmarshal(a.ClientDataJSON, &p.CollectedClientData)
+	if err != nil {
+		fmt.Println("parsing error")
+		return nil, err
+	}
+	fmt.Printf("Got Collected Client Data: %+v\n", p.CollectedClientData)
+
+	cborHandler := codec.CborHandle{}
+	err = codec.NewDecoderBytes(a.AttestationObject, &cborHandler).Decode(&p.AuthenticatorData)
+	if err != nil {
+		fmt.Println("parsing error")
+		return nil, err
+	}
+
+	return &p, nil
 }
