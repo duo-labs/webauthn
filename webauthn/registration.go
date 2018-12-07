@@ -6,66 +6,66 @@ import (
 	"fmt"
 	"net/http"
 
-	p "github.com/duo-labs/webauthn/protocol"
+	"github.com/duo-labs/webauthn/protocol"
 )
 
 // BEGIN REGISTRATION
 // These objects help us creat the CredentialCreationOptions
 // that will be passed to the authenticator via the user client
 
-type RegistrationOption func(*p.PublicKeyCredentialCreationOptions)
+type RegistrationOption func(*protocol.PublicKeyCredentialCreationOptions)
 
-func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOption) (*p.CredentialCreation, SessionData, error) {
-	challenge, err := p.CreateChallenge()
+func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOption) (*protocol.CredentialCreation, SessionData, error) {
+	challenge, err := protocol.CreateChallenge()
 	if err != nil {
 		return nil, SessionData{}, err
 	}
 
-	webAuthnUser := p.UserEntity{
+	webAuthnUser := protocol.UserEntity{
 		ID:          user.WebAuthnID(),
 		DisplayName: user.WebAuthnDisplayName(),
-		CredentialEntity: p.CredentialEntity{
+		CredentialEntity: protocol.CredentialEntity{
 			Name: user.WebAuthnName(),
 			Icon: user.WebAuthnIcon(),
 		},
 	}
 
-	relyingParty := p.RelyingPartyEntity{
+	relyingParty := protocol.RelyingPartyEntity{
 		ID: webauthn.Config.RelyingPartyID,
-		CredentialEntity: p.CredentialEntity{
+		CredentialEntity: protocol.CredentialEntity{
 			Name: webauthn.Config.RelyingPartyDisplayName,
 			Icon: webauthn.Config.RelyingPartyIcon,
 		},
 	}
 
-	credentialParams := []p.CredentialParameter{
-		p.CredentialParameter{
-			Type:      p.PublicKeyCredentialType,
-			Algorithm: p.AlgES256,
+	credentialParams := []protocol.CredentialParameter{
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgES256,
 		},
 	}
 
-	authSelection := p.AuthenticatorSelection{
-		AuthenticatorAttachment: p.CrossPlatform,
+	authSelection := protocol.AuthenticatorSelection{
+		AuthenticatorAttachment: protocol.CrossPlatform,
 		RequireResidentKey:      false,
-		UserVerification:        p.VerificationPreferred,
+		UserVerification:        protocol.VerificationPreferred,
 	}
 
-	creationOptions := p.PublicKeyCredentialCreationOptions{
+	creationOptions := protocol.PublicKeyCredentialCreationOptions{
 		Challenge:              challenge,
 		RelyingParty:           relyingParty,
 		User:                   webAuthnUser,
 		Parameters:             credentialParams,
 		AuthenticatorSelection: authSelection,
 		Timeout:                webauthn.Config.Timeout,
-		Attestation:            p.PreferNoAttestation, // default is "none"
+		Attestation:            protocol.PreferDirectAttestation, // default is "none"
 	}
 
 	for _, setter := range opts {
 		setter(&creationOptions)
 	}
 
-	response := p.CredentialCreation{Response: creationOptions}
+	response := protocol.CredentialCreation{Response: creationOptions}
 	sessionData := SessionData{
 		Challenge: challenge,
 		UserID:    user.WebAuthnID(),
@@ -74,43 +74,52 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 	return &response, sessionData, nil
 }
 
-func WithAuthenticatorSelection(authenticatorSelection p.AuthenticatorSelection) RegistrationOption {
-	return func(cco *p.PublicKeyCredentialCreationOptions) {
+func WithAuthenticatorSelection(authenticatorSelection protocol.AuthenticatorSelection) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.AuthenticatorSelection = authenticatorSelection
 	}
 }
 
-func WithExclusions(excludeList []p.CredentialDescriptor) RegistrationOption {
-	return func(cco *p.PublicKeyCredentialCreationOptions) {
+func WithExclusions(excludeList []protocol.CredentialDescriptor) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.CredentialExcludeList = excludeList
 	}
 }
 
-func WithConveyancePreference(preference p.ConveyancePreference) RegistrationOption {
-	return func(cco *p.PublicKeyCredentialCreationOptions) {
+func WithConveyancePreference(preference protocol.ConveyancePreference) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.Attestation = preference
 	}
 }
 
-func parseRegistrationResponse(response *http.Request) (*p.ParsedCredentialCreationData, error) {
-	var credentialResponse p.CredentialCreationResponse
+func parseRegistrationResponse(response *http.Request) (*protocol.ParsedCredentialCreationData, error) {
+	var credentialResponse protocol.CredentialCreationResponse
 	err := json.NewDecoder(response.Body).Decode(&credentialResponse)
 	if err != nil {
-		return nil, p.ErrBadRequest.WithDetails("fuck")
+		return nil, protocol.ErrBadRequest.WithDetails("fuck")
 	}
-	return p.ParseCredentialCreationResponse(credentialResponse)
+	return protocol.ParseCredentialCreationResponse(credentialResponse)
 }
 
-func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
+func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *httprotocol.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
-		p.ErrBadRequest.WithDetails("ID mismatch for User and Session")
+		protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
 
 	parsedResponse, err := parseRegistrationResponse(response)
 	if err != nil {
 		fmt.Println(err)
-		return nil, p.ErrBadRequest.WithDetails("fuddck")
+		return nil, protocol.ErrBadRequest.WithDetails("fuddck")
 	}
+
 	fmt.Printf("got the following:\n %+v\n\n", parsedResponse)
+
+	// newCredential := &Credential{
+	// 	id: parsedResponse.RawID,
+	// 	publicKey: pem.EncodeToMemory(&pem.Block{
+	// 		Type: "PUBLIC KEY",
+	// 		Bytes:
+	// 	})
+	// }
 	return nil, nil
 }

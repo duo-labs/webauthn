@@ -4,7 +4,7 @@ type CredentialCreation struct {
 	Response PublicKeyCredentialCreationOptions `json:"publicKey"`
 }
 
-type CredentialAssertionResponse struct {
+type CredentialAssertion struct {
 	Options PublicKeyCredentialRequestOptions `json:"publicKey"`
 }
 

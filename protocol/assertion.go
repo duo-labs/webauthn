@@ -6,3 +6,10 @@ type AuthenticatorAssertionResponse struct {
 	Signature  []byte `json:"signature"`
 	UserHandle []byte `json:"userHandle,omitempty"`
 }
+
+type ParsedCredentialAssertionResponse struct {
+	CollectedClientData CollectedClientData
+	AuthenticatorData   AuthenticatorData
+	Signature           []byte
+	UserHandle          []byte
+}
