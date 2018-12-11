@@ -93,6 +93,7 @@ func WithConveyancePreference(preference protocol.ConveyancePreference) Registra
 }
 
 func parseRegistrationResponse(response *http.Request) (*protocol.ParsedCredentialCreationData, error) {
+	fmt.Println("do decode")
 	var credentialResponse protocol.CredentialCreationResponse
 	err := json.NewDecoder(response.Body).Decode(&credentialResponse)
 	if err != nil {

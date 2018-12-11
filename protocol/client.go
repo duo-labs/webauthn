@@ -50,7 +50,7 @@ const (
 // new credential and steps 7 through 10 of verifying an authentication assertion
 // See https://www.w3.org/TR/webauthn/#registering-a-new-credential
 // and https://www.w3.org/TR/webauthn/#verifying-assertion
-func (c *CollectedClientData) Verify(storedChallenge Challenge, ceremony CeremonyType, relyingPartyOrigin string) error {
+func (c *CollectedClientData) Verify(storedChallenge []byte, ceremony CeremonyType, relyingPartyOrigin string) error {
 
 	// Registration Step 3. Verify that the value of C.type is webauthn.create.
 
@@ -69,7 +69,7 @@ func (c *CollectedClientData) Verify(storedChallenge Challenge, ceremony Ceremon
 	// that was sent to the authenticator in the PublicKeyCredentialRequestOptions
 	// passed to the get() call.
 	byteChallenge, err := webAuthnEncoding.B64Decode(c.Challenge)
-	stringStore := base64.RawURLEncoding.EncodeToString(storedChallenge)
+	stringStore := base64.StdEncoding.EncodeToString(storedChallenge)
 	fmt.Printf("Expected Value: %s\nReceived: %s\n", stringStore, byteChallenge)
 	if err != nil {
 		fmt.Println("r u fkn srs m8", err)
@@ -78,7 +78,8 @@ func (c *CollectedClientData) Verify(storedChallenge Challenge, ceremony Ceremon
 
 	if !bytes.Equal(storedChallenge, byteChallenge) {
 		fmt.Println("r u fkn srs rn")
-		fmt.Printf("Expected Value: %+v\nReceived: %+v\n", storedChallenge, byteChallenge)
+		fmt.Printf("Expected Value: %#v\nReceived: %#v\n", storedChallenge, byteChallenge)
+		fmt.Printf("Expected Str Value: %s\nReceived Str: %s\n", storedChallenge, byteChallenge)
 		err := ErrVerification.WithDetails("Error validating challenge")
 		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", storedChallenge, byteChallenge))
 	}
