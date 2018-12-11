@@ -1,11 +1,24 @@
 package protocol
 
+import (
+	"encoding/binary"
+	"fmt"
+)
+
+var minAuthDataLength = 37
+
+type AuthenticatorResponse struct {
+	ClientDataJSON []byte `json:"clientDataJSON"`
+}
+
 type AuthenticatorData struct {
-	Flags            AuthenticatorFlags
-	Counter          uint32
-	RawAssertionData []byte
-	RPIDHash         []byte
-	Signature        []byte
+	Flags        AuthenticatorFlags `json:"flags"`
+	Counter      uint32             `json:"sign_count"`
+	RPIDHash     []byte             `json:"rpid"`
+	AAGUID       []byte             `json:"aaguid"`
+	CredentialID []byte             `json:"credential_id"`
+	PublicKey    COSEPublicKey      `json:"public_key"`
+	RawAuthData  []byte             `json:"raw"`
 }
 
 // AuthenticatorAttachment - https://www.w3.org/TR/webauthn/#platform-attachment
@@ -63,4 +76,40 @@ func (flag AuthenticatorFlags) HasAttestedCredentialData() bool {
 
 func (flag AuthenticatorFlags) HasExtension() bool {
 	return (flag & FlagUserPresent) == FlagUserPresent
+}
+
+func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
+	if minAuthDataLength > len(rawAuthData) {
+		err := ErrBadRequest.WithDetails("Authenticator data length too short")
+		info := fmt.Sprintf("Expected data greater than %s bytes. Got %s bytes\n", minAuthDataLength, len(rawAuthData))
+		return err.WithInfo(info)
+	}
+
+	a.RawAuthData = rawAuthData
+
+	a.RPIDHash = rawAuthData[:32]
+
+	a.Flags = AuthenticatorFlags(rawAuthData[32])
+
+	a.Counter = binary.BigEndian.Uint32(rawAuthData[33:37])
+
+	if a.Flags.HasAttestedCredentialData() {
+		if len(rawAuthData) > minAuthDataLength {
+			return a.unmarshalAttestedData()
+		} else {
+			return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
+		}
+	}
+
+	return nil
+}
+
+func (a *AuthenticatorData) unmarshalAttestedData() error {
+	a.AAGUID = a.RawAuthData[37:53]
+
+	idLength := binary.BigEndian.Uint16(a.RawAuthData[53:55])
+
+	a.CredentialID = a.RawAuthData[55 : 55+idLength]
+
+	return nil
 }

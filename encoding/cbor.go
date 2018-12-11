@@ -1,3 +1,1 @@
 package encoding
-
-func DecodeCBOR()

@@ -14,7 +14,7 @@ type AuthenticatorAttestationResponse struct {
 
 type ParsedAttestationResponse struct {
 	CollectedClientData CollectedClientData
-	AuthenticatorData   AttestationObject
+	AttestationObject   AttestationObject
 }
 
 type AttestationObject struct {
@@ -31,13 +31,18 @@ type EncodedAttestationStatement struct {
 	Signature []byte   `codec:"sig"`
 }
 
-// ConveyancePreference AttestationConveyancePreference
-type ConveyancePreference string
+type DecodedAttestationObject struct {
+	AuthData     AuthenticatorData
+	Format       string
+	AttStatement map[string]interface{} `json:"attStmt,omitempty"`
+}
+
+type AttestationFormat string
 
 const (
-	PreferNoAttestation       ConveyancePreference = "none"
-	PreferIndirectAttestation ConveyancePreference = "indirect"
-	PreferDirectAttestation   ConveyancePreference = "direct"
+	PackedAttestation  AttestationFormat = "packed"
+	NoneAttestation    AttestationFormat = "none"
+	FidoU2FAttestation AttestationFormat = "fido-u2f"
 )
 
 func ParseAttestationResponse(a AuthenticatorAttestationResponse) (*ParsedAttestationResponse, error) {
@@ -51,7 +56,7 @@ func ParseAttestationResponse(a AuthenticatorAttestationResponse) (*ParsedAttest
 	fmt.Printf("Got Collected Client Data: %+v\n", p.CollectedClientData)
 
 	cborHandler := codec.CborHandle{}
-	err = codec.NewDecoderBytes(a.AttestationObject, &cborHandler).Decode(&p.AuthenticatorData)
+	err = codec.NewDecoderBytes(a.AttestationObject, &cborHandler).Decode(&p.AttestationObject)
 	if err != nil {
 		fmt.Println("parsing error")
 		return nil, err
@@ -59,3 +64,27 @@ func ParseAttestationResponse(a AuthenticatorAttestationResponse) (*ParsedAttest
 
 	return &p, nil
 }
+
+// Decode - Perform CBOR decoding on the attestationObject field of the AuthenticatorAttestationResponse
+// structure to obtain the attestation statement format fmt, the authenticator data authData,
+// and the attestation statement attStmt.
+func (attestationObject *AttestationObject) VerifyAuthData() error {
+	var decodedObject DecodedAttestationObject
+
+	decodedObject.Format = attestationObject.Format
+	decodedObject.AuthData.Unmarshal(attestationObject.AuthData)
+
+	fmt.Println("got auth data")
+	fmt.Print("GOT: \n %+v \n", decodedObject.AuthData)
+
+	return nil
+}
+
+// func (attestationObject *AttestationObject) Decode() (*DecodedAttestationObject, error) {
+// 	var decodedObject DecodedAttestationObject
+
+// 	decodedObject.Format = attestationObject.Format
+// 	rawAuthData := attestationObject.AuthData.Decode()
+
+// 	return nil, nil
+// }

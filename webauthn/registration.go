@@ -96,12 +96,13 @@ func parseRegistrationResponse(response *http.Request) (*protocol.ParsedCredenti
 	var credentialResponse protocol.CredentialCreationResponse
 	err := json.NewDecoder(response.Body).Decode(&credentialResponse)
 	if err != nil {
-		return nil, protocol.ErrBadRequest.WithDetails("fuck")
+		fmt.Println(err)
+		return nil, protocol.ErrBadRequest.WithDetails("Parse error for Registration")
 	}
 	return protocol.ParseCredentialCreationResponse(credentialResponse)
 }
 
-func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *httprotocol.Request) (*Credential, error) {
+func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
 		protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
@@ -109,11 +110,13 @@ func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, res
 	parsedResponse, err := parseRegistrationResponse(response)
 	if err != nil {
 		fmt.Println(err)
-		return nil, protocol.ErrBadRequest.WithDetails("fuddck")
+		return nil, err
 	}
 
-	fmt.Printf("got the following:\n %+v\n\n", parsedResponse)
-
+	invalidErr := parsedResponse.Verify(session.Challenge, webauthn.Config.RelyingPartyID, webauthn.Config.RelyingPartyID)
+	if invalidErr != nil {
+		fmt.Printf("u beefed it, %s\n ", invalidErr)
+	}
 	// newCredential := &Credential{
 	// 	id: parsedResponse.RawID,
 	// 	publicKey: pem.EncodeToMemory(&pem.Block{

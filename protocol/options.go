@@ -71,3 +71,12 @@ type AuthenticatorSelection struct {
 	RequireResidentKey      bool                        `json:"requireResidentKey,omitempty"`
 	UserVerification        UserVerificationRequirement `json:"userVerification,omitempty"`
 }
+
+// ConveyancePreference AttestationConveyancePreference
+type ConveyancePreference string
+
+const (
+	PreferNoAttestation       ConveyancePreference = "none"
+	PreferIndirectAttestation ConveyancePreference = "indirect"
+	PreferDirectAttestation   ConveyancePreference = "direct"
+)
