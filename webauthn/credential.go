@@ -1,27 +1,39 @@
 package webauthn
 
-type Credential interface {
-	ID() []byte
-	PublicKey() []byte
-	Authenticator() Authenticator
+import (
+	"crypto/x509"
+	"encoding/pem"
+
+	"github.com/duo-labs/webauthn/protocol"
+)
+
+type Credential struct {
+	ID            []byte
+	PublicKey     []byte
+	Authenticator Authenticator
 }
 
-type defaultCredential struct {
-	id            []byte
-	publicKey     []byte
-	authenticator Authenticator
-}
+func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*Credential, error) {
+	keyMaterial := c.Response.AttestationObject.AuthData.PublicKey.KeyMaterial
+	newPublicKeyDER, err := x509.MarshalPKIXPublicKey(keyMaterial)
 
-var _ Credential = (*defaultCredential)(nil)
+	if err != nil {
+		return nil, err
+	}
 
-func (a *defaultCredential) ID() []byte {
-	return a.id
-}
+	publicKeyPEM := &pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: newPublicKeyDER,
+	}
 
-func (a *defaultCredential) PublicKey() []byte {
-	return a.publicKey
-}
+	newCredential := &Credential{
+		ID:        c.Response.AttestationObject.AuthData.CredentialID,
+		PublicKey: pem.EncodeToMemory(publicKeyPEM),
+		Authenticator: Authenticator{
+			AAGUID:    c.Response.AttestationObject.AuthData.AAGUID,
+			SignCount: c.Response.AttestationObject.AuthData.Counter,
+		},
+	}
 
-func (a *defaultCredential) Authenticator() Authenticator {
-	return a.authenticator
+	return newCredential, nil
 }

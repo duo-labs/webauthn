@@ -2,7 +2,6 @@ package webauthn
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -58,7 +57,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 		Parameters:             credentialParams,
 		AuthenticatorSelection: authSelection,
 		Timeout:                webauthn.Config.Timeout,
-		Attestation:            protocol.PreferDirectAttestation, // default is "none"
+		Attestation:            protocol.PreferNoAttestation, // default is "none"
 	}
 
 	for _, setter := range opts {
@@ -92,38 +91,28 @@ func WithConveyancePreference(preference protocol.ConveyancePreference) Registra
 	}
 }
 
-func parseRegistrationResponse(response *http.Request) (*protocol.ParsedCredentialCreationData, error) {
-	fmt.Println("do decode")
-	var credentialResponse protocol.CredentialCreationResponse
-	err := json.NewDecoder(response.Body).Decode(&credentialResponse)
-	if err != nil {
-		fmt.Println(err)
-		return nil, protocol.ErrBadRequest.WithDetails("Parse error for Registration")
-	}
-	return protocol.ParseCredentialCreationResponse(credentialResponse)
-}
-
 func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
 		protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
 
-	parsedResponse, err := parseRegistrationResponse(response)
+	parsedResponse, err := protocol.ParseCredentialCreationResponse(response)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	invalidErr := parsedResponse.Verify(session.Challenge, webauthn.Config.RelyingPartyID, webauthn.Config.RelyingPartyID)
+	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
+
+	fmt.Printf("Origin %+v\n", webauthn.Config.RelyingPartyOrigin)
+	fmt.Printf("Parsed Credential Data %+v\n", parsedResponse)
+	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RelyingPartyID, webauthn.Config.RelyingPartyOrigin)
 	if invalidErr != nil {
 		fmt.Printf("u beefed it, %s\n ", invalidErr)
 	}
-	// newCredential := &Credential{
-	// 	id: parsedResponse.RawID,
-	// 	publicKey: pem.EncodeToMemory(&pem.Block{
-	// 		Type: "PUBLIC KEY",
-	// 		Bytes:
-	// 	})
-	// }
-	return nil, nil
+
+	newCredential, err := MakeNewCredential(parsedResponse)
+	if err != nil {
+		fmt.Printf("u beefed it, %s\n ", err)
+	}
 }

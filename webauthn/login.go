@@ -2,7 +2,6 @@ package webauthn
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -38,21 +37,12 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*p.PublicK
 	return &requestOptions, sessionData, nil
 }
 
-func parseAssertionResponse(response *http.Request) (*p.ParsedCredentialCreationData, error) {
-	var credentialResponse p.CredentialCreationResponse
-	err := json.NewDecoder(response.Body).Decode(&credentialResponse)
-	if err != nil {
-		return nil, p.ErrBadRequest.WithDetails("fuck")
-	}
-	return p.ParseCredentialCreationResponse(credentialResponse)
-}
-
 func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *http.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
 		p.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
 
-	parsedResponse, err := parseRegistrationResponse(response)
+	parsedResponse, err := p.ParseCredentialCreationResponse(response)
 	if err != nil {
 		fmt.Println(err)
 		return nil, p.ErrBadRequest.WithDetails("fuddck")

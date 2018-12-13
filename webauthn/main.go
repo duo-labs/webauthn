@@ -17,6 +17,7 @@ type WebAuthn struct {
 type Config struct {
 	RelyingPartyDisplayName string
 	RelyingPartyID          string
+	RelyingPartyOrigin      string
 	RelyingPartyIcon        string
 	// Defaults for generating options
 	AttestationPreference  protocol.ConveyancePreference
@@ -42,6 +43,16 @@ func (config *Config) validate() error {
 
 	if config.Timeout == 0 {
 		config.Timeout = defaultTimeout
+	}
+
+	if config.RelyingPartyOrigin == "" {
+		config.RelyingPartyOrigin = config.RelyingPartyID
+	} else {
+		url, err := url.Parse(config.RelyingPartyOrigin)
+		if err != nil {
+			return fmt.Errorf("RelyingPartyOrigin not valid URL: %+v", err)
+		}
+		config.RelyingPartyOrigin = url.Hostname()
 	}
 
 	return nil

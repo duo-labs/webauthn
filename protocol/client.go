@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-
-	webAuthnEncoding "github.com/duo-labs/webauthn/encoding"
+	"net/url"
 )
 
 // CollectedClientData represents the contextual bindings of both the WebAuthn Relying Party
@@ -56,7 +55,6 @@ func (c *CollectedClientData) Verify(storedChallenge []byte, ceremony CeremonyTy
 
 	// Assertion Step 7. Verify that the value of C.type is the string webauthn.get.
 	if c.Type != ceremony {
-		fmt.Printf("Expected Value: %s\n Received: %s\n", ceremony, c.Type)
 		err := ErrVerification.WithDetails("Error validating ceremony type")
 		err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", ceremony, c.Type))
 		return err
@@ -68,34 +66,31 @@ func (c *CollectedClientData) Verify(storedChallenge []byte, ceremony CeremonyTy
 	// Assertion Step 8. Verify that the value of C.challenge matches the challenge
 	// that was sent to the authenticator in the PublicKeyCredentialRequestOptions
 	// passed to the get() call.
-	byteChallenge, err := webAuthnEncoding.B64Decode(c.Challenge)
-	stringStore := base64.StdEncoding.EncodeToString(storedChallenge)
-	fmt.Printf("Expected Value: %s\nReceived: %s\n", stringStore, byteChallenge)
+
+	clientChallengeBytes, err := base64.RawStdEncoding.DecodeString(c.Challenge)
+	encodedStoredChallenge := make([]byte, len(clientChallengeBytes))
+	base64.StdEncoding.Encode(encodedStoredChallenge, storedChallenge)
 	if err != nil {
-		fmt.Println("r u fkn srs m8", err)
-		return ErrParsingData.WithDetails("Error encoding the authenticator challenge")
+		return ErrParsingData.WithDetails("Error parsing the authenticator challenge")
 	}
 
-	if !bytes.Equal(storedChallenge, byteChallenge) {
-		fmt.Println("r u fkn srs rn")
-		fmt.Printf("Expected Value: %#v\nReceived: %#v\n", storedChallenge, byteChallenge)
-		fmt.Printf("Expected Str Value: %s\nReceived Str: %s\n", storedChallenge, byteChallenge)
+	if !bytes.Equal(encodedStoredChallenge, clientChallengeBytes) {
 		err := ErrVerification.WithDetails("Error validating challenge")
-		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", storedChallenge, byteChallenge))
+		fmt.Printf("Expected b Value: %s\nReceived b: %s\n", encodedStoredChallenge, clientChallengeBytes)
+		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", encodedStoredChallenge, clientChallengeBytes))
 	}
 
 	// Registration Step 5 & Assertion Step 9. Verify that the value of C.origin matches
 	// the Relying Party's origin.
-	clientDataOrigin, err := webAuthnEncoding.URLEncode(c.Origin)
+	clientDataOrigin, err := url.Parse(c.Origin)
 	if err != nil {
 		return ErrParsingData.WithDetails("Error decoding clientData origin as URL")
-		fmt.Println("r u fkn srs")
 	}
 
 	if clientDataOrigin.Hostname() != relyingPartyOrigin {
-		fmt.Printf("Expected Value: %s\n Received: %s as Hostname %s\n", relyingPartyOrigin, c.Origin, clientDataOrigin)
-		err := ErrVerification.WithDetails("Error validating challenge")
-		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s as Hostname %s\n", relyingPartyOrigin, c.Origin, clientDataOrigin))
+		fmt.Printf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, c.Origin)
+		err := ErrVerification.WithDetails("Error validating origin")
+		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, c.Origin))
 	}
 
 	// Registration Step 6 and Assertion Step 10. Verify that the value of C.tokenBinding.status
@@ -104,5 +99,6 @@ func (c *CollectedClientData) Verify(storedChallenge []byte, ceremony CeremonyTy
 	// matches the base64url encoding of the Token Binding ID for the connection.
 
 	// Not yet fully implemented by the spec, browsers, and me.
+
 	return nil
 }
