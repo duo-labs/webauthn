@@ -85,15 +85,15 @@ func (flag AuthenticatorFlags) UserPresent() bool {
 }
 
 func (flag AuthenticatorFlags) UserVerified() bool {
-	return (flag & FlagUserPresent) == FlagUserPresent
+	return (flag & FlagUserVerified) == FlagUserVerified
 }
 
 func (flag AuthenticatorFlags) HasAttestedCredentialData() bool {
-	return (flag & FlagUserPresent) == FlagUserPresent
+	return (flag & FlagAttestedCredentialData) == FlagAttestedCredentialData
 }
 
 func (flag AuthenticatorFlags) HasExtension() bool {
-	return (flag & FlagUserPresent) == FlagUserPresent
+	return (flag & FlagHasExtension) == FlagHasExtension
 }
 
 func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {

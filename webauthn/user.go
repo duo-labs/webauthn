@@ -9,6 +9,8 @@ type User interface {
 	WebAuthnDisplayName() string
 	// User's icon url
 	WebAuthnIcon() string
+	// Credentials owned by the user
+	WebAuthnCredentials() []Credential
 }
 
 type defaultUser struct {
@@ -22,13 +24,17 @@ func (user *defaultUser) WebAuthnID() []byte {
 }
 
 func (user *defaultUser) WebAuthnName() string {
-	return "user@default.com"
+	return "newUser"
 }
 
 func (user *defaultUser) WebAuthnDisplayName() string {
-	return "Jane Doe"
+	return "New User"
 }
 
 func (user *defaultUser) WebAuthnIcon() string {
 	return "https://pics.com/avatar.png"
+}
+
+func (user *defaultUser) WebAuthnCredentials() []Credential {
+	return []Credential{}
 }

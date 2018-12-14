@@ -3,7 +3,6 @@ package protocol
 import (
 	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -57,7 +56,6 @@ func ParseCredentialCreationResponse(response *http.Request) (*ParsedCredentialC
 	var ccr CredentialCreationResponse
 	err := json.NewDecoder(response.Body).Decode(&ccr)
 	if err != nil {
-		fmt.Println(err)
 		return nil, ErrBadRequest.WithDetails("Parse error for Registration")
 	}
 

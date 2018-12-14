@@ -2,7 +2,6 @@ package webauthn
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 
 	"github.com/duo-labs/webauthn/protocol"
@@ -14,10 +13,10 @@ import (
 
 type RegistrationOption func(*protocol.PublicKeyCredentialCreationOptions)
 
-func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOption) (*protocol.CredentialCreation, SessionData, error) {
+func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOption) (*protocol.CredentialCreation, *SessionData, error) {
 	challenge, err := protocol.CreateChallenge()
 	if err != nil {
-		return nil, SessionData{}, err
+		return nil, nil, err
 	}
 
 	webAuthnUser := protocol.UserEntity{
@@ -65,12 +64,16 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 	}
 
 	response := protocol.CredentialCreation{Response: creationOptions}
-	sessionData := SessionData{
+	newSessionData := SessionData{
 		Challenge: challenge,
 		UserID:    user.WebAuthnID(),
 	}
 
-	return &response, sessionData, nil
+	if err != nil {
+		return nil, nil, protocol.ErrParsingData.WithDetails("Error packing session data")
+	}
+
+	return &response, &newSessionData, nil
 }
 
 func WithAuthenticatorSelection(authenticatorSelection protocol.AuthenticatorSelection) RegistrationOption {
@@ -98,21 +101,16 @@ func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, res
 
 	parsedResponse, err := protocol.ParseCredentialCreationResponse(response)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
 	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
 
-	fmt.Printf("Origin %+v\n", webauthn.Config.RelyingPartyOrigin)
-	fmt.Printf("Parsed Credential Data %+v\n", parsedResponse)
 	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RelyingPartyID, webauthn.Config.RelyingPartyOrigin)
+
 	if invalidErr != nil {
-		fmt.Printf("u beefed it, %s\n ", invalidErr)
+		return nil, invalidErr
 	}
 
-	newCredential, err := MakeNewCredential(parsedResponse)
-	if err != nil {
-		fmt.Printf("u beefed it, %s\n ", err)
-	}
+	return MakeNewCredential(parsedResponse)
 }

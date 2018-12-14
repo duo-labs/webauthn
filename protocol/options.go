@@ -5,7 +5,7 @@ type CredentialCreation struct {
 }
 
 type CredentialAssertion struct {
-	Options PublicKeyCredentialRequestOptions `json:"publicKey"`
+	Response PublicKeyCredentialRequestOptions `json:"publicKey"`
 }
 
 type PublicKeyCredentialCreationOptions struct {
@@ -21,16 +21,19 @@ type PublicKeyCredentialCreationOptions struct {
 }
 
 type PublicKeyCredentialRequestOptions struct {
-	Challenge          Challenge
-	Timeout            int
-	RelyingPartyID     string
-	AllowedCredentials []CredentialDescriptor
+	Challenge          Challenge                   `json:"challenge"`
+	Timeout            int                         `json:"timeout,omitempty"`
+	RelyingPartyID     string                      `json:"rpId,omitempty"`
+	AllowedCredentials []CredentialDescriptor      `json:"allowCredentials,omitempty"`
+	UserVerification   UserVerificationRequirement `json:"userVerification,omitempty"` // Default is "preferred"
+	Extensions         AuthenticationExtensions    `json:"extenstions,omitempty"`
 }
 
 type CredentialDescriptor struct {
-	Type      CredentialType           `json:"type"`
-	ID        []byte                   `json:"id"`
-	Transport []AuthenticatorTransport `json:"transports,omitempty"`
+	Type CredentialType `json:"type"`
+	// CredentialID The ID of a credential to allow/disallow
+	CredentialID []byte                   `json:"id"`
+	Transport    []AuthenticatorTransport `json:"transports,omitempty"`
 }
 
 // CredentialParameter is the credential type and algorithm
@@ -80,3 +83,11 @@ const (
 	PreferIndirectAttestation ConveyancePreference = "indirect"
 	PreferDirectAttestation   ConveyancePreference = "direct"
 )
+
+func (a *PublicKeyCredentialRequestOptions) GetAllowedCredentialIDs() [][]byte {
+	var allowedCredentialIDs = make([][]byte, len(a.AllowedCredentials))
+	for i, credential := range a.AllowedCredentials {
+		allowedCredentialIDs[i] = credential.CredentialID
+	}
+	return allowedCredentialIDs
+}

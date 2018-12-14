@@ -66,7 +66,7 @@ func RegisterAttestationFormat(format string, handler AttestationFormatValidatio
 	attestationRegistry[format] = handler
 }
 
-// Parse - Perform Step 8  CBOR decoding on the attestationObject field of the AuthenticatorAttestationResponse
+// Parse - Perform Step 8. CBOR decoding on the attestationObject field of the AuthenticatorAttestationResponse
 // structure to obtain the attestation statement format fmt, the authenticator data authData,
 // and the attestation statement attStmt.
 func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse, error) {
@@ -79,7 +79,8 @@ func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse
 	}
 
 	cborHandler := codec.CborHandle{}
-	// Decode the
+
+	// Decode the attestation data with unmarshalled auth data
 	err = codec.NewDecoderBytes(ccr.AttestationObject, &cborHandler).Decode(&p.AttestationObject)
 	if err != nil {
 		fmt.Println("parsing error")
