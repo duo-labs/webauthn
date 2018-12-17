@@ -69,17 +69,11 @@ func (c *CollectedClientData) Verify(storedChallenge []byte, ceremony CeremonyTy
 	// that was sent to the authenticator in the PublicKeyCredentialRequestOptions
 	// passed to the get() call.
 
-	clientChallengeBytes, err := base64.RawStdEncoding.DecodeString(c.Challenge)
-	encodedStoredChallenge := make([]byte, len(clientChallengeBytes))
-	base64.StdEncoding.Encode(encodedStoredChallenge, storedChallenge)
-	if err != nil {
-		return ErrParsingData.WithDetails("Error parsing the authenticator challenge")
-	}
-
-	if !bytes.Equal(encodedStoredChallenge, clientChallengeBytes) {
+	clientChallengeBytes, err := base64.RawURLEncoding.DecodeString(c.Challenge)
+	if !bytes.Equal(storedChallenge, clientChallengeBytes) {
 		err := ErrVerification.WithDetails("Error validating challenge")
-		fmt.Printf("Expected b Value: %s\nReceived b: %s\n", encodedStoredChallenge, clientChallengeBytes)
-		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", encodedStoredChallenge, clientChallengeBytes))
+		fmt.Printf("\nExpected b Value: %s\nReceived b: %s\n", storedChallenge, clientChallengeBytes)
+		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, clientChallengeBytes))
 	}
 
 	// Registration Step 5 & Assertion Step 9. Verify that the value of C.origin matches

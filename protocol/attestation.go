@@ -107,9 +107,9 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 
 	// Begin Step 9. Verify that the rpIdHash in authData is
 	// the SHA-256 hash of the RP ID expected by the RP.
-	rpIdHash := sha256.Sum256([]byte(relyingPartyID))
+	rpIDHash := sha256.Sum256([]byte(relyingPartyID))
 	// Handle Steps 9 through 12
-	authDataVerificationError := attestationObject.AuthData.Verify(rpIdHash, verificationRequired)
+	authDataVerificationError := attestationObject.AuthData.Verify(rpIDHash[:], verificationRequired)
 	if authDataVerificationError != nil {
 		return authDataVerificationError
 	}

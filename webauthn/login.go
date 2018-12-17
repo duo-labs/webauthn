@@ -46,7 +46,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	}
 
 	newSessionData := SessionData{
-		Challenge:            challenge,
+		Challenge:            []byte(challenge),
 		UserID:               user.WebAuthnID(),
 		AllowedCredentialIDs: requestOptions.GetAllowedCredentialIDs(),
 	}
@@ -75,13 +75,15 @@ func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *
 		return nil, err
 	}
 
+	fmt.Printf("\nParsed Response:\n %+v\n\n", parsedResponse)
+
 	// Step 1. If the allowCredentials option was given when this authentication ceremony was initiated,
 	// verify that credential.id identifies one of the public key credentials that were listed in
 	// allowCredentials.
 
 	// NON-NORMATIVE Prior Step: Verify that the allowCredentials for the sesssion are owned by the user provided
 	userCredentials := user.WebAuthnCredentials()
-	fmt.Printf("got credentials %+v", userCredentials)
+	var credentialFound bool
 	if len(session.AllowedCredentialIDs) > 0 {
 		var credentialsOwned bool
 		for _, userCredential := range userCredentials {
@@ -96,7 +98,6 @@ func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *
 		if !credentialsOwned {
 			return nil, protocol.ErrBadRequest.WithDetails("User does not own all credentials from the allowedCredentialList")
 		}
-		var credentialFound bool
 		for _, allowedCredentialID := range session.AllowedCredentialIDs {
 			if bytes.Equal(parsedResponse.RawID, allowedCredentialID) {
 				credentialFound = true
@@ -121,14 +122,35 @@ func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *
 		}
 	}
 
-	// allowedUserCredentialIDs := session.AllowedCredentialIDs
+	// Step 3. Using credential’s id attribute (or the corresponding rawId, if base64url encoding is inappropriate
+	// for your use case), look up the corresponding credential public key.
+	var loginCredential Credential
+	for _, cred := range userCredentials {
+		if bytes.Equal(cred.ID, parsedResponse.RawID) {
+			loginCredential = cred
+			credentialFound = true
+			break
+		}
+		credentialFound = false
+	}
 
-	// invalidErr := parsedResponse.Verify()
+	if !credentialFound {
+		return nil, protocol.ErrBadRequest.WithDetails("Unable to find the credential for the returned credential ID")
+	}
 
-	// if invalidErr != nil {
-	// 	return nil, invalidErr
-	// }
+	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
 
-	fmt.Printf("got the following:\n %+v\n\n", parsedResponse)
-	return nil, nil
+	rpID := webauthn.Config.RelyingPartyID
+	rpOrigin := webauthn.Config.RelyingPartyOrigin
+
+	// Handle steps 4 through 16
+	validError := parsedResponse.Verify(session.Challenge, rpID, rpOrigin, shouldVerifyUser, loginCredential.PublicKey)
+	if validError != nil {
+		return nil, validError
+	}
+
+	// Handle step 17
+	loginCredential.Authenticator.UpdateCounter(parsedResponse.Response.AuthenticatorData.Counter)
+
+	return &loginCredential, nil
 }

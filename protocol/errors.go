@@ -17,10 +17,18 @@ var (
 		Details:    "Error reading the requst data",
 		StatusCode: http.StatusBadRequest,
 	}
-	ErrChallengeMismatch = &Error{}
-	ErrParsingData       = &Error{
+	ErrChallengeMismatch = &Error{
+		Type:    "challenge_mismatch",
+		Details: "Stored challenge and received challenge do not match",
+	}
+	ErrParsingData = &Error{
 		Type:       "parse_error",
 		Details:    "Error parsing the authenticator response",
+		StatusCode: http.StatusBadRequest,
+	}
+	ErrAuthData = &Error{
+		Type:       "auth_data",
+		Details:    "Error verifying the authenticator data",
 		StatusCode: http.StatusBadRequest,
 	}
 	ErrVerification = &Error{
@@ -30,6 +38,10 @@ var (
 	ErrAttestationFormat = &Error{
 		Type:    "invalid_attestation",
 		Details: "Invalid Attestation Format",
+	}
+	ErrAssertionSignature = &Error{
+		Type:    "invalid_signature",
+		Details: "Assertion Signature against auth data and client hash is not valid",
 	}
 	ErrUnsupportedKey = &Error{
 		Type:    "invalid_key_type",

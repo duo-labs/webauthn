@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/base64"
+	"net/url"
 	"testing"
 )
 
@@ -11,9 +12,7 @@ func setupCollectedClientData(challenge []byte) *CollectedClientData {
 		Origin: "example.com",
 	}
 
-	newChallenge := make([]byte, base64.StdEncoding.EncodedLen(len(challenge)))
-	base64.StdEncoding.Encode(newChallenge, challenge)
-	ccd.Challenge = base64.RawURLEncoding.EncodeToString(newChallenge)
+	ccd.Challenge = base64.RawURLEncoding.EncodeToString(challenge)
 	return ccd
 }
 
@@ -26,10 +25,8 @@ func TestVerifyCollectedClientData(t *testing.T) {
 	ccd := setupCollectedClientData(newChallenge)
 	storedChallenge := newChallenge
 
-	t.Logf("storedLen: %+s\n", storedChallenge)
-	t.Logf("cLen: %+v\n", ccd.Challenge)
-
-	err = ccd.Verify(storedChallenge, ccd.Type, ccd.Origin)
+	originURL, _ := url.Parse(ccd.Origin)
+	err = ccd.Verify(storedChallenge, ccd.Type, originURL.Hostname())
 	if err != nil {
 		t.Fatalf("error verifying challenge: expected %#v got %#v", Challenge(ccd.Challenge), storedChallenge)
 	}

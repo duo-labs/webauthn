@@ -179,12 +179,12 @@ func (newKey *PublicKeyData) parseRSA() error {
 
 // Verify on AuthenticatorData handles Steps 9 through 12 for Registration
 // and Steps 11 through 14 for Assertion.
-func (a *AuthenticatorData) Verify(rpIdHash [32]byte, userVerificationRequired bool) error {
+func (a *AuthenticatorData) Verify(rpIdHash []byte, userVerificationRequired bool) error {
 
 	// Registration Step 9 & Assertion Step 11
 	// Verify that the RP ID hash in authData is indeed the SHA-256
 	// hash of the RP ID expected by the RP.
-	if !bytes.Equal(a.RPIDHash[:], rpIdHash[:]) {
+	if !bytes.Equal(a.RPIDHash[:], rpIdHash) {
 		return ErrVerification.WithInfo(fmt.Sprintf("RP Hash mismatch. Expected %+s and Received %+s\n", a.RPIDHash, rpIdHash))
 	}
 
