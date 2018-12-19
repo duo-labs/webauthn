@@ -52,13 +52,11 @@ func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAs
 	// We don't call it cData but this is Step 5 in the spec.
 	err = json.Unmarshal(car.AssertionResponse.ClientDataJSON, &par.Response.CollectedClientData)
 	if err != nil {
-		fmt.Println("ass response parsing error")
 		return nil, err
 	}
 
 	err = par.Response.AuthenticatorData.Unmarshal(car.AssertionResponse.AuthenticatorData)
 	if err != nil {
-		fmt.Println(err)
 		return nil, ErrParsingData.WithDetails("Error unmarshalling auth data")
 	}
 	return &par, nil
@@ -86,7 +84,6 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge []byte, relyingPa
 	// Handle steps 11 through 14, verifying the authenticator data.
 	validError = p.Response.AuthenticatorData.Verify(rpIDHash[:], verifyUser)
 	if validError != nil {
-		fmt.Println("got error, ", validError)
 		return ErrAuthData.WithInfo(validError.Error())
 	}
 
@@ -115,7 +112,6 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge []byte, relyingPa
 
 	// For COSE Key signature validation, we currently use ECDSA w/ SHA-256 primarily
 	invalidSigError := credentialCertificate.CheckSignature(x509.ECDSAWithSHA256, sigData, p.Response.Signature)
-	fmt.Printf("Got PK: %+v\n Got signature: %+v\n Got data: %+v\n", credentialCertificate, p.Response.Signature, sigData)
 	if invalidSigError != nil {
 		fmt.Println("returned error:", invalidSigError.Error())
 		return ErrAssertionSignature.WithInfo(invalidSigError.Error())

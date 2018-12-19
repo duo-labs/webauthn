@@ -35,9 +35,13 @@ var (
 		Type:    "verification_error",
 		Details: "Error validating the authenticator response",
 	}
+	ErrAttestation = &Error{
+		Type:    "attesation_error",
+		Details: "Error validating the attestation data provided",
+	}
 	ErrAttestationFormat = &Error{
 		Type:    "invalid_attestation",
-		Details: "Invalid Attestation Format",
+		Details: "Invalid attestation format",
 	}
 	ErrAssertionSignature = &Error{
 		Type:    "invalid_signature",

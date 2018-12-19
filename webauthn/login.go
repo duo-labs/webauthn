@@ -36,7 +36,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	requestOptions := protocol.PublicKeyCredentialRequestOptions{
 		Challenge:          challenge,
 		Timeout:            webauthn.Config.Timeout,
-		RelyingPartyID:     webauthn.Config.RelyingPartyID,
+		RPID:               webauthn.Config.RelyingPartyID,
 		UserVerification:   webauthn.Config.AuthenticatorSelection.UserVerification,
 		AllowedCredentials: allowedCredentials,
 	}
@@ -140,8 +140,8 @@ func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *
 
 	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
 
-	rpID := webauthn.Config.RelyingPartyID
-	rpOrigin := webauthn.Config.RelyingPartyOrigin
+	rpID := webauthn.Config.RPID
+	rpOrigin := webauthn.Config.RPOrigin
 
 	// Handle steps 4 through 16
 	validError := parsedResponse.Verify(session.Challenge, rpID, rpOrigin, shouldVerifyUser, loginCredential.PublicKey)

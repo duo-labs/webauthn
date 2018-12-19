@@ -50,14 +50,6 @@ type AttestationObject struct {
 	AttStatement map[string]interface{} `codec:"attStmt, omitempty" json:"attStmt"`
 }
 
-type AttestationFormat string
-
-const (
-	PackedAttestation  AttestationFormat = "packed"
-	NoneAttestation    AttestationFormat = "none"
-	FidoU2FAttestation AttestationFormat = "fido-u2f"
-)
-
 type AttestationFormatValidationHandler func(AttestationObject, []byte) error
 
 var attestationRegistry = make(map[string]AttestationFormatValidationHandler)

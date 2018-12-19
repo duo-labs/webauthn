@@ -15,10 +15,10 @@ type WebAuthn struct {
 }
 
 type Config struct {
-	RelyingPartyDisplayName string
-	RelyingPartyID          string
-	RelyingPartyOrigin      string
-	RelyingPartyIcon        string
+	RPDisplayName string
+	RPID          string
+	RPOrigin      string
+	RPIcon        string
 	// Defaults for generating options
 	AttestationPreference  protocol.ConveyancePreference
 	AuthenticatorSelection protocol.AuthenticatorSelection
@@ -28,31 +28,31 @@ type Config struct {
 }
 
 func (config *Config) validate() error {
-	if len(config.RelyingPartyDisplayName) == 0 {
-		return fmt.Errorf("Missing RelyingPartyDisplayName")
+	if len(config.RPDisplayName) == 0 {
+		return fmt.Errorf("Missing RPDisplayName")
 	}
 
-	if len(config.RelyingPartyID) == 0 {
-		return fmt.Errorf("Missing RelyingPartyID")
+	if len(config.RPID) == 0 {
+		return fmt.Errorf("Missing RPID")
 	}
 
-	_, err := url.Parse(config.RelyingPartyID)
+	_, err := url.Parse(config.RPID)
 	if err != nil {
-		return fmt.Errorf("RelyingPartyID not valid URI: %+v", err)
+		return fmt.Errorf("RPID not valid URI: %+v", err)
 	}
 
 	if config.Timeout == 0 {
 		config.Timeout = defaultTimeout
 	}
 
-	if config.RelyingPartyOrigin == "" {
-		config.RelyingPartyOrigin = config.RelyingPartyID
+	if config.RPOrigin == "" {
+		config.RPOrigin = config.RPID
 	} else {
-		url, err := url.Parse(config.RelyingPartyOrigin)
+		url, err := url.Parse(config.RPOrigin)
 		if err != nil {
-			return fmt.Errorf("RelyingPartyOrigin not valid URL: %+v", err)
+			return fmt.Errorf("RPOrigin not valid URL: %+v", err)
 		}
-		config.RelyingPartyOrigin = url.Hostname()
+		config.RPOrigin = url.Hostname()
 	}
 
 	return nil

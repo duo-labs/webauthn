@@ -20,6 +20,18 @@ type AuthenticatorResponse struct {
 	ClientDataJSON []byte `json:"clientDataJSON"`
 }
 
+// From §6.1 of the spec.
+// The authenticator data structure encodes contextual bindings made by the authenticator. These bindings
+// are controlled by the authenticator itself, and derive their trust from the WebAuthn Relying Party's
+// assessment of the security properties of the authenticator. In one extreme case, the authenticator
+// may be embedded in the client, and its bindings may be no more trustworthy than the client data.
+// At the other extreme, the authenticator may be a discrete entity with high-security hardware and
+// software, connected to the client over a secure channel. In both cases, the Relying Party receives
+// the authenticator data in the same format, and uses its knowledge of the authenticator to make
+// trust decisions.
+//
+// The authenticator data, at least during attestation, contains the Public Key that the RP stores
+// and will associate with the user attempting to register.
 type AuthenticatorData struct {
 	Flags        AuthenticatorFlags `json:"flags"`
 	Counter      uint32             `json:"sign_count"`
@@ -39,6 +51,19 @@ type PublicKeyData struct {
 	KeyMaterial interface{} `codec:"-" json:"material"`
 }
 
+// COSEAlgorithmIdentifier - A number identifying a cryptographic algorithm. The algorithm identifiers
+// SHOULD be values registered in the IANA COSE Algorithms registry
+// [https://www.w3.org/TR/webauthn/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256"
+//  and -257 for "RS256".
+type COSEAlgorithmIdentifier int
+
+const (
+	// AlgES256 Elliptic Curve with SHA-256
+	AlgES256 COSEAlgorithmIdentifier = -7
+	// AlgRS256 RSA with SHA-256
+	AlgRS256 COSEAlgorithmIdentifier = -257
+)
+
 // AuthenticatorAttachment - https://www.w3.org/TR/webauthn/#platform-attachment
 type AuthenticatorAttachment string
 
@@ -54,48 +79,82 @@ const (
 	CrossPlatform AuthenticatorAttachment = "cross-platform"
 )
 
+// Authenticators may implement various transports for communicating with clients. This enumeration defines
+// hints as to how clients might communicate with a particular authenticator in order to obtain an assertion
+// for a specific credential. Note that these hints represent the WebAuthn Relying Party's best belief as to
+// how an authenticator may be reached. A Relying Party may obtain a list of transports hints from some
+// attestation statement formats or via some out-of-band mechanism; it is outside the scope of this
+// specification to define that mechanism.
+// See §5.10.4. Authenticator Transport https://www.w3.org/TR/webauthn/#transport)
 type AuthenticatorTransport string
 
 const (
-	USB      AuthenticatorTransport = "usb"
-	NFC      AuthenticatorTransport = "nfc"
-	BLE      AuthenticatorTransport = "ble"
+	// USB The authenticator should transport information over USB
+	USB AuthenticatorTransport = "usb"
+	// NFC The authenticator should transport information over Near Field Communication Protocol
+	NFC AuthenticatorTransport = "nfc"
+	// BLE The authenticator should transport information over Bluetooth
+	BLE AuthenticatorTransport = "ble"
+	// Internal the client should use an internal source like a TPM or SE
 	Internal AuthenticatorTransport = "internal"
 )
 
 type UserVerificationRequirement string
 
 const (
-	VerificationRequired    UserVerificationRequirement = "required"
-	VerificationPreferred   UserVerificationRequirement = "preferred"
+	// VerificationRequired User verification is required to create/release a credential
+	VerificationRequired UserVerificationRequirement = "required"
+	// VerificationPreferred User verification is preferred to create/release a credential
+	VerificationPreferred UserVerificationRequirement = "preferred"
+	// VerificationDiscouraged The authenticator should not verify the user for the credential
 	VerificationDiscouraged UserVerificationRequirement = "discouraged"
 )
 
+// AuthenticatorFlags A byte of information returned during during ceremonies in the
+// authenticatorData that contains bits that give us information about the
+// whether the user was present and/or verified during authentication, and whether
+// there is attestation or extension data present. Bit 0 is the least significant bit.
 type AuthenticatorFlags byte
 
+// The bits that do not have flags are reserved for future use.
 const (
-	FlagUserPresent            = 0x001 // UP
-	FlagUserVerified           = 0x003 // UV
-	FlagAttestedCredentialData = 0x040 // AT
-	FlagHasExtension           = 0x080 // ED
+	// FlagUserPresent Bit 00000001 in the byte sequence. Tells us if user is present
+	FlagUserPresent = 0x001 // Referred to as UP
+	// FlagUserVerified Bit 00000100 in the byte sequence. Tells us if user is verified
+	// by the authenticator using a biometric or PIN
+	FlagUserVerified = 0x003 // Referred to as UV
+	// FlagAttestedCredentialData Bit 01000000 in the byte sequence. Indicates whether
+	// the authenticator added attested credential data.
+	FlagAttestedCredentialData = 0x040 // Referred to as AT
+	// FlagHasExtension Bite 10000000 in the byte sequence. Indicates if the authenticator data has extensions.
+	FlagHasExtension = 0x080 //  Referred to as ED
 )
 
+// UserPresent returns if the UP flag was set
 func (flag AuthenticatorFlags) UserPresent() bool {
 	return (flag & FlagUserPresent) == FlagUserPresent
 }
 
+// UserVerified returns if the UV flag was set
 func (flag AuthenticatorFlags) UserVerified() bool {
 	return (flag & FlagUserVerified) == FlagUserVerified
 }
 
+// HasAttestedCredentialData returns if the AT flag was set
 func (flag AuthenticatorFlags) HasAttestedCredentialData() bool {
 	return (flag & FlagAttestedCredentialData) == FlagAttestedCredentialData
 }
 
+// HasExtension returns if the ED flag was set
 func (flag AuthenticatorFlags) HasExtension() bool {
 	return (flag & FlagHasExtension) == FlagHasExtension
 }
 
+// Unmarshal will take the raw Authenticator Data and marshalls it into AuthenticatorData for further validation.
+// The authenticator data has a compact but extensible encoding. This is desired since authenticators can be
+// devices with limited capabilities and low power requirements, with much simpler software stacks than the client platform.
+// The authenticator data structure is a byte array of 37 bytes or more, and is laid out in this table:
+// https://www.w3.org/TR/webauthn/#table-authData
 func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 	if minAuthDataLength > len(rawAuthData) {
 		err := ErrBadRequest.WithDetails("Authenticator data length too short")

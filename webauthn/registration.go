@@ -29,10 +29,10 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 	}
 
 	relyingParty := protocol.RelyingPartyEntity{
-		ID: webauthn.Config.RelyingPartyID,
+		ID: webauthn.Config.RPID,
 		CredentialEntity: protocol.CredentialEntity{
-			Name: webauthn.Config.RelyingPartyDisplayName,
-			Icon: webauthn.Config.RelyingPartyIcon,
+			Name: webauthn.Config.RPDisplayName,
+			Icon: webauthn.Config.RPIcon,
 		},
 	}
 
@@ -106,7 +106,7 @@ func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, res
 
 	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
 
-	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RelyingPartyID, webauthn.Config.RelyingPartyOrigin)
+	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigin)
 
 	if invalidErr != nil {
 		return nil, invalidErr

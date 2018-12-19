@@ -39,8 +39,8 @@ type CredentialDescriptor struct {
 // CredentialParameter is the credential type and algorithm
 // that the relying party wants the authenticator to create
 type CredentialParameter struct {
-	Type      CredentialType      `json:"type"`
-	Algorithm AlgorithmIdentifier `json:"alg"`
+	Type      CredentialType          `json:"type"`
+	Algorithm COSEAlgorithmIdentifier `json:"alg"`
 }
 
 // CredentialType This enumeration defines the valid credential types.
@@ -53,13 +53,6 @@ type CredentialType string
 const (
 	// PublicKeyCredentialType - Currently one credential type is defined, namely "public-key".
 	PublicKeyCredentialType CredentialType = "public-key"
-)
-
-type AlgorithmIdentifier int
-
-const (
-	AlgES256 AlgorithmIdentifier = -7
-	AlgRS256 AlgorithmIdentifier = -257
 )
 
 // AuthenticationExtensions - referred to as AuthenticationExtensionsClientInputs in the

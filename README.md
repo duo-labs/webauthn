@@ -1,19 +1,28 @@
-WebAuthn Demo
+WebAuthn Library
 =============
 
-This Go application is meant to be a demonstration of how the [Web Authentication](https://w3c.github.io/webauthn) specification works.
+This Go application is meant to handle [Web Authentication](https://w3c.github.io/webauthn) for Go web applications that want to implement a passwordless solution for users. While the specification is currently in Candidate Recommendation, this library conforms as much as possible to 
+the guidelines and implementation procedures outlined by the document.
 
 
 Quickstart
 ----------
+Import `github.com/duo-labs/webauthn` into your golang web application and initialize it with basic configuration values. 
+```
+import "github.com/duo-labs/webauthn"
 
-1. Clone the repo into your working directory
-2. [Install Go](https://golang.org/doc/install) and set it up if you haven't already
-3. Retrieve all go dependencies (`$ go get .`)
-4. Copy or rename `config.template.json` to `config.json`, remove comments, and edit if need be.
-5. Build and run the application (`$ go build; ./webauthn`)
+var webauthn webauthn.webauthn
 
-Implementation Notes
----------------
+func main() {
+    webauthn = webauthn.New(&webauthn.Config{
+        RPDisplayName: "Duo Labs", // Display Name for your site
+        RPID: "duo.com", // Generally the FQDN for your site
+        RPOrigin: "https://login.duo.com", // The origin URL for WebAuthn requests
+        RPID: "https://duo.com/logo.png", // Optional icon URL for your site
+    })
+}
 
-Currently WebAuthn works in Firefox, Chrome, and Edge. There are some flags currently available for Chrome Canary, such as native TouchID support and cloud assisted Bluetooth (caBLE) that could be fun to experiment with.
+func handleRegistration(w http.ResponseWriter, r *http.Request)
+```
+Acknowledgements
+----------------

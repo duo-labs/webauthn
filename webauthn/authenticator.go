@@ -19,7 +19,7 @@ type Authenticator struct {
 	CloneWarning bool
 }
 
-func SelectAuthenticator(att p.AuthenticatorAttachment, rrk bool, uv p.UserVerificationRequirement) p.AuthenticatorSelection {
+func SelectAuthenticator(att string, rrk bool, uv string) p.AuthenticatorSelection {
 	return p.AuthenticatorSelection{
 		AuthenticatorAttachment: att,
 		RequireResidentKey:      rrk,
