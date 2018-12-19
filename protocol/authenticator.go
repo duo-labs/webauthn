@@ -20,7 +20,7 @@ type AuthenticatorResponse struct {
 	ClientDataJSON []byte `json:"clientDataJSON"`
 }
 
-// From §6.1 of the spec.
+// AuthenticatorData From §6.1 of the spec.
 // The authenticator data structure encodes contextual bindings made by the authenticator. These bindings
 // are controlled by the authenticator itself, and derive their trust from the WebAuthn Relying Party's
 // assessment of the security properties of the authenticator. In one extreme case, the authenticator
@@ -41,18 +41,33 @@ type AuthenticatorData struct {
 	PublicKey    PublicKeyData      `json:"public_key"`
 }
 
+// PublicKeyData The public key portion of a Relying Party-specific credential key pair, generated
+// by an authenticator and returned to a Relying Party at registration time. We unpack this object
+// using ugorji's codec library (github.com/ugorji/go/codec) which is why there are codec tags
+// included. The tag field values correspond to the IANA COSE keys that give their respective
+// values.
+// See §6.4.1.1 https://www.w3.org/TR/webauthn/#sctn-encoded-credPubKey-examples for examples of this
+// COSE data.
 type PublicKeyData struct {
-	_struct     bool        `codec:",int" json:"public_key"`
-	KeyType     int64       `codec:"1" json:"kty"`
-	Algorithm   int64       `codec:"3" json:"alg"`
-	Curve       int64       `codec:"-1,omitempty" json:"crv"`
-	XCoord      []byte      `codec:"-2,omitempty" json:"x-coordinate"`
-	YCoord      []byte      `codec:"-3,omitempty" json:"y-coordinate"`
+	// Decode the results to int by default
+	_struct bool `codec:",int" json:"public_key"`
+	// The type of key created. Should be RSA or EC2
+	KeyType int64 `codec:"1" json:"kty"`
+	// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature
+	Algorithm int64 `codec:"3" json:"alg"`
+	// If the key type is EC2, the curve on which we derive the signature from
+	Curve int64 `codec:"-1,omitempty" json:"crv"`
+	// A byte string 32 bytes in length that holds the x coordinate of the key
+	XCoord []byte `codec:"-2,omitempty" json:"x-coordinate"`
+	// A byte string 32 bytes in length that holds the y coordinate of the key
+	YCoord []byte `codec:"-3,omitempty" json:"y-coordinate"`
+	// The library uses this to hold the constructed key material.
+	// Should be either a rsa.PublicKey or ecdsa.PublicKey
 	KeyMaterial interface{} `codec:"-" json:"material"`
 }
 
-// COSEAlgorithmIdentifier - A number identifying a cryptographic algorithm. The algorithm identifiers
-// SHOULD be values registered in the IANA COSE Algorithms registry
+// COSEAlgorithmIdentifier From §5.10.5. A number identifying a cryptographic algorithm. The algorithm
+// identifiers SHOULD be values registered in the IANA COSE Algorithms registry
 // [https://www.w3.org/TR/webauthn/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256"
 //  and -257 for "RS256".
 type COSEAlgorithmIdentifier int
@@ -64,7 +79,7 @@ const (
 	AlgRS256 COSEAlgorithmIdentifier = -257
 )
 
-// AuthenticatorAttachment - https://www.w3.org/TR/webauthn/#platform-attachment
+// AuthenticatorAttachment https://www.w3.org/TR/webauthn/#platform-attachment
 type AuthenticatorAttachment string
 
 const (
@@ -184,6 +199,7 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 	return nil
 }
 
+// If Attestation Data is present, unmarshall that into the appropriate public key structure
 func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 	a.AAGUID = rawAuthData[37:53]
 
@@ -198,6 +214,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 	return err
 }
 
+// Figure out what kind of COSE material was provided and create the data for the new key
 func (newKey *PublicKeyData) parseNewKey(keyBytes []byte) error {
 	var cborHandler codec.Handle = new(codec.CborHandle)
 	codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&newKey)
@@ -210,6 +227,7 @@ func (newKey *PublicKeyData) parseNewKey(keyBytes []byte) error {
 	return nil
 }
 
+// Parse the Elliptic Curve key material into a the KeyMaterial field
 func (newKey *PublicKeyData) parseECDSA() error {
 	var curve elliptic.Curve
 	switch newKey.Algorithm {
@@ -232,6 +250,7 @@ func (newKey *PublicKeyData) parseECDSA() error {
 	return nil
 }
 
+// Parse the RSA key material into a the KeyMaterial field
 func (newKey *PublicKeyData) parseRSA() error {
 	return ErrNotImplemented
 }

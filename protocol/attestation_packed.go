@@ -86,7 +86,13 @@ func handleBasicAttestation(signature, clientDataHash, authData []byte, alg int6
 		return ErrAttestationFormat.WithDetails("alg format is invalid COSE format").WithInfo("Packed Attestation")
 	}
 
-	attCert.CheckSignature()
+	err = attCert.CheckSignature(certAlgorithm, verificationData, signature)
+	if err != nil {
+		if attCert.Subject.Organization == "Yubico" {
+
+		}
+
+	}
 }
 
 func handleECDAAAttesation(signature, clientDataHash, ecdaaKeyId []byte) error {

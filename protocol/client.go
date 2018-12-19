@@ -39,15 +39,15 @@ type TokenBinding struct {
 type TokenBindingStatus string
 
 const (
-	// Present - Indicates token binding was used when communicating with the
+	// Indicates token binding was used when communicating with the
 	// Relying Party. In this case, the id member MUST be present.
 	Present TokenBindingStatus = "present"
-	// Supported -  Indicates token binding was used when communicating with the
+	// Indicates token binding was used when communicating with the
 	// negotiated when communicating with the Relying Party.
 	Supported TokenBindingStatus = "supported"
 )
 
-// Verify handles steps 3 through 6 of verfying the registering client data of a
+// Handles steps 3 through 6 of verfying the registering client data of a
 // new credential and steps 7 through 10 of verifying an authentication assertion
 // See https://www.w3.org/TR/webauthn/#registering-a-new-credential
 // and https://www.w3.org/TR/webauthn/#verifying-assertion

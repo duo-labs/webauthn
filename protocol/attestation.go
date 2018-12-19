@@ -43,24 +43,39 @@ type ParsedAttestationResponse struct {
 	AttestationObject   AttestationObject
 }
 
+// From §6.4. Authenticators MUST also provide some form of attestation. The basic requirement is that the
+// authenticator can produce, for each credential public key, an attestation statement verifiable by the
+// WebAuthn Relying Party. Typically, this attestation statement contains a signature by an attestation
+// private key over the attested credential public key and a challenge, as well as a certificate or similar
+// data providing provenance information for the attestation public key, enabling the Relying Party to make
+// a trust decision. However, if an attestation key pair is not available, then the authenticator MUST
+// perform self attestation of the credential public key with the corresponding credential private key.
+// All this information is returned by authenticators any time a new public key credential is generated, in
+// the overall form of an attestation object. (https://www.w3.org/TR/webauthn/#attestation-object)
+//
 type AttestationObject struct {
-	AuthData     AuthenticatorData
-	RawAuthData  []byte                 `codec:"authData" json:"authData"`
+	// The authenticator data, including the newly created public key. See AuthenticatorData for more info
+	AuthData AuthenticatorData
+	// The byteform version of the authenticator data, used in part for signature validation
+	RawAuthData []byte `codec:"authData" json:"authData"`
+	// The format of the Attestation data.
 	Format       string                 `codec:"fmt" json:"fmt"`
 	AttStatement map[string]interface{} `codec:"attStmt, omitempty" json:"attStmt"`
 }
 
-type AttestationFormatValidationHandler func(AttestationObject, []byte) error
+type attestationFormatValidationHandler func(AttestationObject, []byte) error
 
-var attestationRegistry = make(map[string]AttestationFormatValidationHandler)
+var attestationRegistry = make(map[string]attestationFormatValidationHandler)
 
-func RegisterAttestationFormat(format string, handler AttestationFormatValidationHandler) {
+// Using one of the locally registered attestation formats, handle validating the attestation
+// data provided by the authenticator (and in some cases its manufacturer)
+func RegisterAttestationFormat(format string, handler attestationFormatValidationHandler) {
 	attestationRegistry[format] = handler
 }
 
-// Parse - Perform Step 8. CBOR decoding on the attestationObject field of the AuthenticatorAttestationResponse
-// structure to obtain the attestation statement format fmt, the authenticator data authData,
-// and the attestation statement attStmt.
+// Parse the values returned in the authenticator response and perform attestation verification
+// Step 8. This returns a fully decoded struct with the data put into a format that can be
+// used to verify the user and credential that was created
 func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse, error) {
 	var p ParsedAttestationResponse
 

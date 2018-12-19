@@ -9,11 +9,15 @@ import (
 	"net/http"
 )
 
+// The raw response returned to us from an authenticator when we request a
+// credential for login/assertion.
 type CredentialAssertionResponse struct {
 	PublicKeyCredential
 	AssertionResponse AuthenticatorAssertionResponse `json:"response"`
 }
 
+// The parsed CredentialAssertionResponse that has been marshalled into a format
+// that allows us to verify the client and authenticator data inside the response
 type ParsedCredentialAssertionData struct {
 	ParsedPublicKeyCredential
 	Response ParsedAssertionResponse
