@@ -56,7 +56,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 		Parameters:             credentialParams,
 		AuthenticatorSelection: authSelection,
 		Timeout:                webauthn.Config.Timeout,
-		Attestation:            protocol.PreferNoAttestation, // default is "none"
+		Attestation:            protocol.PreferDirectAttestation, // default is "none"
 	}
 
 	for _, setter := range opts {

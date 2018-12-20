@@ -12,15 +12,22 @@ import (
 // These objects help us creat the CredentialCreationOptions
 // that will be passed to the authenticator via the user client
 
+// Used to provide parameters that modify the default Credential Assertion Payload that is sent to the user.
 type LoginOption func(*protocol.PublicKeyCredentialRequestOptions)
 
+// Creates the CredentialAssertion data payload that should be sent to the user agent for beginning the
+// login/assertion process. The format of this data can be seen in §5.5 of the WebAuthn specification
+// (https://www.w3.org/TR/webauthn/#assertion-options). These default values can be amended by providing
+// additional LoginOption parameters. This function also returns sessionData, that must be stored by the
+// RP in a secure manner and then provided to the FinishLogin function. This data helps us verify the
+// ownership of the credential being retreived.
 func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.CredentialAssertion, *SessionData, error) {
 	challenge, err := protocol.CreateChallenge()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if len(user.WebAuthnCredentials()) == 0 {
+	if len(user.WebAuthnCredentials()) == 0 { // If the user does not have any credentials, we cannot do login
 		return nil, nil, protocol.ErrBadRequest.WithDetails("Found no credentials for user")
 	}
 
@@ -36,7 +43,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	requestOptions := protocol.PublicKeyCredentialRequestOptions{
 		Challenge:          challenge,
 		Timeout:            webauthn.Config.Timeout,
-		RPID:               webauthn.Config.RelyingPartyID,
+		RelyingPartyID:     webauthn.Config.RPID,
 		UserVerification:   webauthn.Config.AuthenticatorSelection.UserVerification,
 		AllowedCredentials: allowedCredentials,
 	}
@@ -58,12 +65,15 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	return &creationResponse, &newSessionData, nil
 }
 
+// Updates the allowed credential list with Credential Descripiptors, discussed in §5.10.3
+// (https://www.w3.org/TR/webauthn/#dictdef-publickeycredentialdescriptor) with user-supplied values
 func WithAllowedCredentials(allowList []protocol.CredentialDescriptor) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
 		cco.AllowedCredentials = allowList
 	}
 }
 
+// Take the response
 func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *http.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
 		protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
@@ -74,8 +84,6 @@ func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *
 		fmt.Println(err)
 		return nil, err
 	}
-
-	fmt.Printf("\nParsed Response:\n %+v\n\n", parsedResponse)
 
 	// Step 1. If the allowCredentials option was given when this authentication ceremony was initiated,
 	// verify that credential.id identifies one of the public key credentials that were listed in
@@ -105,7 +113,6 @@ func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *
 			}
 		}
 		if !credentialFound {
-			fmt.Println("steele is bad at loops2")
 			return nil, protocol.ErrBadRequest.WithDetails("User does not own the credential returned")
 		}
 	}

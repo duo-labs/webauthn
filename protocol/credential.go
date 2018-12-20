@@ -73,7 +73,7 @@ func ParseCredentialCreationResponse(response *http.Request) (*ParsedCredentialC
 	return &pcc, nil
 }
 
-// Verify - verifies the Client and Attestation data as laid out by Section 7.1. Registering a new credential
+// Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
 // https://www.w3.org/TR/webauthn/#registering-a-new-credential
 func (pcc *ParsedCredentialCreationData) Verify(storedChallenge Challenge, verifyUser bool, relyingPartyID, relyingPartyOrigin string) error {
 

@@ -5,7 +5,8 @@ import (
 )
 
 type Authenticator struct {
-	// The AAGUID of the authenticator.
+	// The AAGUID of the authenticator. An AAGUID is defined as an array containing the globally unique
+	// identifier of the authenticator model being sought.
 	AAGUID []byte
 	// SignCount -Upon a new login operation, the Relying Party compares the stored signature counter value
 	// with the new signCount value returned in the assertion’s authenticator data. If this new
@@ -19,17 +20,19 @@ type Authenticator struct {
 	CloneWarning bool
 }
 
+// Allow for easy marhsalling of authenticator options that are provided to the user
 func SelectAuthenticator(att string, rrk bool, uv string) p.AuthenticatorSelection {
 	return p.AuthenticatorSelection{
-		AuthenticatorAttachment: att,
+		AuthenticatorAttachment: p.AuthenticatorAttachment(att),
 		RequireResidentKey:      rrk,
-		UserVerification:        uv,
+		UserVerification:        p.UserVerificationRequirement(uv),
 	}
 }
 
 // VerifyCounter
-// Step 17. If the signature counter value authData.signCount is nonzero or the value stored in conjunction with
-// credential’s id attribute is nonzero, then run the following sub-step:
+// Step 17 of §7.2. about verifying attestation. If the signature counter value authData.signCount
+// is nonzero or the value stored in conjunction with credential’s id attribute is nonzero, then
+// run the following sub-step:
 //
 //  If the signature counter value authData.signCount is
 //

@@ -1,10 +1,11 @@
 package protocol
 
+var androidAttestationKey = "android-key"
+
 func init() {
-	RegisterAttestationFormat("android-key", verifyPackedFormat)
+	RegisterAttestationFormat(androidAttestationKey, verifyPackedFormat)
 }
 
-func verifyAndroidKeystoreFormat(att AttestationObject, clientDataHash []byte) error {
-
-	return nil
+func verifyAndroidKeystoreFormat(att AttestationObject, clientDataHash []byte) (string, []interface{}, error) {
+	return androidAttestationKey, nil, ErrNotImplemented
 }

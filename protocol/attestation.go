@@ -8,7 +8,7 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-// From the spec (https://www.w3.org/TR/webauthn/#authenticatorattestationresponse)
+// From §5.2.1 (https://www.w3.org/TR/webauthn/#authenticatorattestationresponse)
 // "The authenticator's response to a client’s request for the creation
 // of a new public key credential. It contains information about the new credential
 // that can be used to identify it for later use, and metadata that can be used by
@@ -63,7 +63,7 @@ type AttestationObject struct {
 	AttStatement map[string]interface{} `codec:"attStmt, omitempty" json:"attStmt"`
 }
 
-type attestationFormatValidationHandler func(AttestationObject, []byte) error
+type attestationFormatValidationHandler func(AttestationObject, []byte) (string, []interface{}, error)
 
 var attestationRegistry = make(map[string]attestationFormatValidationHandler)
 
@@ -142,10 +142,14 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 		return ErrAttestationFormat.WithInfo(fmt.Sprintf("Attestation format %s is unsupported", attestationObject.Format))
 	}
 
-	// Step 14. Verify that attStmt is a correct attestation statement, conveying a valid attestation signature, by using the attestation statement format fmt’s verification procedure given attStmt, authData and the hash of the serialized client data computed in step 7.
-	err := formatHandler(*attestationObject, clientDataHash)
+	fmt.Printf("AttObject: %+v", attestationObject)
+
+	// Step 14. Verify that attStmt is a correct attestation statement, conveying a valid attestation signature, by using
+	// the attestation statement format fmt’s verification procedure given attStmt, authData and the hash of the serialized
+	// client data computed in step 7.
+	attestationType, _, err := formatHandler(*attestationObject, clientDataHash)
 	if err != nil {
-		return err
+		return err.(*Error).WithInfo(attestationType)
 	}
 
 	return nil

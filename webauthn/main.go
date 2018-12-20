@@ -1,3 +1,4 @@
+// woop woop
 package webauthn
 
 import (
@@ -14,6 +15,7 @@ type WebAuthn struct {
 	Config *Config
 }
 
+// The config values required for proper
 type Config struct {
 	RPDisplayName string
 	RPID          string
@@ -27,6 +29,7 @@ type Config struct {
 	Debug   bool
 }
 
+// Validate that the config flags in Config are properly set
 func (config *Config) validate() error {
 	if len(config.RPDisplayName) == 0 {
 		return fmt.Errorf("Missing RPDisplayName")
@@ -58,6 +61,7 @@ func (config *Config) validate() error {
 	return nil
 }
 
+// Create a new WebAuthn object given the proper config flags
 func New(config *Config) (*WebAuthn, error) {
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("Configuration error: %+v", err)

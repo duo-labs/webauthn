@@ -38,6 +38,10 @@ type ParsedAssertionResponse struct {
 	UserHandle          []byte
 }
 
+// Parse the credential request response into a format that is either required by the specification
+// or makes the assertion verification steps easier to complete. This takes an http.Request that contains
+// the attestation response data in a raw, mostly base64 encoded format, and parses the data into
+// manageable structures
 func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAssertionData, error) {
 	var car CredentialAssertionResponse
 	err := json.NewDecoder(response.Body).Decode(&car)
@@ -66,7 +70,9 @@ func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAs
 	return &par, nil
 }
 
-// Verify - Verify steps
+// Follow the remaining steps outlined in §7.2 Verifying an authentication assertion
+// (https://www.w3.org/TR/webauthn/#verifying-assertion) and return an error if there
+// is a failure during each step.
 func (p *ParsedCredentialAssertionData) Verify(storedChallenge []byte, relyingPartyID, relyingPartyOrigin string, verifyUser bool, credentialBytes []byte) error {
 
 	// Steps 4 through 6 in verifying the assertion data (https://www.w3.org/TR/webauthn/#verifying-assertion) are
@@ -81,8 +87,7 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge []byte, relyingPa
 		return validError
 	}
 
-	// Begin Step 11. Verify that the rpIdHash in authData is
-	// the SHA-256 hash of the RP ID expected by the RP.
+	// Begin Step 11. Verify that the rpIdHash in authData is the SHA-256 hash of the RP ID expected by the RP.
 	rpIDHash := sha256.Sum256([]byte(relyingPartyID))
 
 	// Handle steps 11 through 14, verifying the authenticator data.

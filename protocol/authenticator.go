@@ -49,21 +49,22 @@ type AuthenticatorData struct {
 // See §6.4.1.1 https://www.w3.org/TR/webauthn/#sctn-encoded-credPubKey-examples for examples of this
 // COSE data.
 type PublicKeyData struct {
-	// Decode the results to int by default
+	// Decode the results to int by default.
 	_struct bool `codec:",int" json:"public_key"`
-	// The type of key created. Should be RSA or EC2
+	// The type of key created. Should be RSA or EC2.
 	KeyType int64 `codec:"1" json:"kty"`
-	// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature
+	// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.
 	Algorithm int64 `codec:"3" json:"alg"`
-	// If the key type is EC2, the curve on which we derive the signature from
+	// If the key type is EC2, the curve on which we derive the signature from.
 	Curve int64 `codec:"-1,omitempty" json:"crv"`
-	// A byte string 32 bytes in length that holds the x coordinate of the key
+	// A byte string 32 bytes in length that holds the x coordinate of the key.
 	XCoord []byte `codec:"-2,omitempty" json:"x-coordinate"`
-	// A byte string 32 bytes in length that holds the y coordinate of the key
+	// A byte string 32 bytes in length that holds the y coordinate of the key.
 	YCoord []byte `codec:"-3,omitempty" json:"y-coordinate"`
-	// The library uses this to hold the constructed key material.
-	// Should be either a rsa.PublicKey or ecdsa.PublicKey
-	KeyMaterial interface{} `codec:"-" json:"material"`
+	// We use this to hold the constructed key material. Should be either a rsa.PublicKey or ecdsa.PublicKey.
+	KeyMaterial interface{} `codec:"-" json:"key_material"`
+	// The raw bytes retreived to create this data structure.
+	Raw []byte `codec:"-" json:"raw"`
 }
 
 // COSEAlgorithmIdentifier From §5.10.5. A number identifying a cryptographic algorithm. The algorithm
@@ -77,6 +78,16 @@ const (
 	AlgES256 COSEAlgorithmIdentifier = -7
 	// AlgRS256 RSA with SHA-256
 	AlgRS256 COSEAlgorithmIdentifier = -257
+)
+
+// The Key Type derived from the IANA COSE AuthData
+type COSEKeyType int
+
+const (
+	// An Elliptic Curve Public Key
+	EllipticKey COSEKeyType = 2
+	// An RSA Public Key
+	RSAKey COSEKeyType = 3
 )
 
 // AuthenticatorAttachment https://www.w3.org/TR/webauthn/#platform-attachment
@@ -218,9 +229,12 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 func (newKey *PublicKeyData) parseNewKey(keyBytes []byte) error {
 	var cborHandler codec.Handle = new(codec.CborHandle)
 	codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&newKey)
-	switch newKey.KeyType {
-	case 2:
-		return newKey.parseECDSA()
+	newKey.Raw = keyBytes
+	switch COSEKeyType(newKey.KeyType) {
+	case EllipticKey:
+		return newKey.parseEllipticCurve()
+	case RSAKey:
+		return newKey.parseRSA()
 	default:
 		return ErrUnsupportedKey
 	}
@@ -228,7 +242,7 @@ func (newKey *PublicKeyData) parseNewKey(keyBytes []byte) error {
 }
 
 // Parse the Elliptic Curve key material into a the KeyMaterial field
-func (newKey *PublicKeyData) parseECDSA() error {
+func (newKey *PublicKeyData) parseEllipticCurve() error {
 	var curve elliptic.Curve
 	switch newKey.Algorithm {
 	case -36: // IANA COSE code for ECDSA w/ SHA-512

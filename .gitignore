@@ -1,4 +1,34 @@
-*.db
-config.json
-static/.sass-cache
-Dockerfile
+
+# Created by https://www.gitignore.io/api/go,visualstudiocode
+# Edit at https://www.gitignore.io/?templates=go,visualstudiocode
+
+### Go ###
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+### Go Patch ###
+/vendor/
+/Godeps/
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+
+# End of https://www.gitignore.io/api/go,visualstudiocode
