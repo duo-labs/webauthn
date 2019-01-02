@@ -57,10 +57,10 @@ type AttestationObject struct {
 	// The authenticator data, including the newly created public key. See AuthenticatorData for more info
 	AuthData AuthenticatorData
 	// The byteform version of the authenticator data, used in part for signature validation
-	RawAuthData []byte `codec:"authData" json:"authData"`
+	RawAuthData []byte `json:"authData"`
 	// The format of the Attestation data.
-	Format       string                 `codec:"fmt" json:"fmt"`
-	AttStatement map[string]interface{} `codec:"attStmt, omitempty" json:"attStmt"`
+	Format       string                 `json:"fmt"`
+	AttStatement map[string]interface{} `json:"attStmt,omitempty"`
 }
 
 type attestationFormatValidationHandler func(AttestationObject, []byte) (string, []interface{}, error)
@@ -141,8 +141,6 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 	if !valid {
 		return ErrAttestationFormat.WithInfo(fmt.Sprintf("Attestation format %s is unsupported", attestationObject.Format))
 	}
-
-	fmt.Printf("AttObject: %+v", attestationObject)
 
 	// Step 14. Verify that attStmt is a correct attestation statement, conveying a valid attestation signature, by using
 	// the attestation statement format fmt’s verification procedure given attStmt, authData and the hash of the serialized

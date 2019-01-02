@@ -107,7 +107,7 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	publicKeyU2F.Write(credentialPublicKey.YCoord)
 
 	// Step 5. Let verificationData be the concatenation of (0x00 || rpIdHash || clientDataHash || credentialId || publicKeyU2F)
-	// (see Section 4.3 of FIDO-U2F-Message-Formats [https://www.w3.org/TR/webauthn/#biblio-fido-u2f-message-formats]).
+	// (see §4.3 of FIDO-U2F-Message-Formats [https://www.w3.org/TR/webauthn/#biblio-fido-u2f-message-formats]).
 
 	verificationData := bytes.NewBuffer([]byte{0x00})
 	verificationData.Write(rpIdHash)

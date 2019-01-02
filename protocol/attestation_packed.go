@@ -53,7 +53,7 @@ func verifyPackedFormat(att AttestationObject, clientDataHash []byte) (string, [
 	x5c, x509present := att.AttStatement["x5c"].([]interface{})
 	if x509present {
 		// Handle Basic Attestation steps for the x509 Certificate
-		return handleBasicAttestation(sig, att.RawAuthData, clientDataHash, att.AuthData.AAGUID, alg, x5c)
+		return handleBasicAttestation(sig, clientDataHash, att.RawAuthData, att.AuthData.AAGUID, alg, x5c)
 	}
 
 	// Step 3. If ecdaaKeyId is present, then the attestation type is ECDAA.
@@ -79,17 +79,22 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 		return attestationType, x5c, ErrAttestation.WithDetails("Error getting certificate from x5c cert chain")
 	}
 
-	verificationData := append(authData, clientDataHash...)
+	signatureData := append(authData, clientDataHash...)
 
 	attCert, err := x509.ParseCertificate(attCertBytes)
 	if err != nil {
 		return attestationType, x5c, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing certificate from ASN.1 data: %+v", err))
 	}
 
-	err = attCert.CheckSignature(x509.SignatureAlgorithm(alg), verificationData, signature)
-	// YUBIKEYS on Chrome get an incorrect packed response, so if we see a yubico cert attempt to fix it.
+	// YUBIKEYS on Chrome give an incorrect packed attestation, so if we see a yubico cert attempt to fix it.
 	// yubikeys on firefox fall back to u2f format
-	if err != nil && !strings.Contains(attCert.Subject.CommonName, "Yubico") {
+	if strings.Contains(attCert.Subject.CommonName, "Yubico") {
+		err = attCert.CheckSignature(x509.ECDSAWithSHA256, signatureData, signature)
+	} else {
+		err = attCert.CheckSignature(x509.SignatureAlgorithm(alg), signatureData, signature)
+	}
+
+	if err != nil {
 		return attestationType, x5c, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Signature validation error: %+v\n", err))
 	}
 
