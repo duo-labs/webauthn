@@ -101,37 +101,45 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	// Step 2.2 Verify that attestnCert meets the requirements in §8.2.1 Packed attestation statement certificate requirements.
 	// §8.2.1 can be found here https://www.w3.org/TR/webauthn/#packed-attestation-cert-requirements
 
-	// Step 2.2.1 Version MUST be set to 3 (which is indicated by an ASN.1 INTEGER with value 2).
+	// Step 2.2.1 (from §8.2.1) Version MUST be set to 3 (which is indicated by an ASN.1 INTEGER with value 2).
 	if attCert.Version != 3 {
-		return attestationType, x5c, ErrInvalidAttestation.WithDetails("Attestation Certificate is incorrect version")
+		return attestationType, x5c, ErrAttestationCertificate.WithDetails("Attestation Certificate is incorrect version")
 	}
 
-	// Step 2.2.2 Subject field MUST be set to:
+	// Step 2.2.2 (from §8.2.1) Subject field MUST be set to:
 
 	// 	Subject-C
 	// 	ISO 3166 code specifying the country where the Authenticator vendor is incorporated (PrintableString)
 
-	//  TODO: Find a good, useable country code library
+	//  TODO: Find a good, useable, country code library. For now, check stringy-ness
+	subjectString := strings.Join(attCert.Subject.Country, "")
+	if subjectString == "" {
+		return attestationType, x5c, ErrAttestationCertificate.WithDetails("Attestation Certificate Country Code is invalid")
+	}
 
 	// 	Subject-O
 	// 	Legal name of the Authenticator vendor (UTF8String)
-
-	// TODO: What do we then do with this?
+	subjectString = strings.Join(attCert.Subject.Organization, "")
+	if subjectString == "" {
+		return attestationType, x5c, ErrAttestationCertificate.WithDetails("Attestation Certificate Organization is invalid")
+	}
 
 	// 	Subject-OU
 	// 	Literal string “Authenticator Attestation” (UTF8String)
-
-	orgUnit := strings.Join(attCert.Subject.OrganizationalUnit, " ")
-	if orgUnit != "Authenticator Attestation" {
+	subjectString = strings.Join(attCert.Subject.OrganizationalUnit, " ")
+	if subjectString != "Authenticator Attestation" {
 		// TODO: Implement a return error when I'm more certain this is general practice
 	}
 
 	// 	Subject-CN
-	// 	A UTF8String of the vendor’s choosing
-
+	//  A UTF8String of the vendor’s choosing
+	subjectString = attCert.Subject.CommonName
+	if subjectString == "" {
+		return attestationType, x5c, ErrAttestationCertificate.WithDetails("Attestation Certificate Common Name not set")
+	}
 	// TODO: And then what
 
-	// Step 2.2.3 If the related attestation root certificate is used for multiple authenticator models,
+	// Step 2.2.3 (from §8.2.1) If the related attestation root certificate is used for multiple authenticator models,
 	// the Extension OID 1.3.6.1.4.1.45724.1.1.4 (id-fido-gen-ce-aaguid) MUST be present, containing the
 	// AAGUID as a 16-byte OCTET STRING. The extension MUST NOT be marked as critical.
 

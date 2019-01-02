@@ -42,6 +42,10 @@ var (
 		Type:    "invalid_attestation",
 		Details: "Invalid attestation format",
 	}
+	ErrAttestationCertificate = &Error{
+		Type:    "invalid_certificate",
+		Details: "Invalid attestation certificate",
+	}
 	ErrAssertionSignature = &Error{
 		Type:    "invalid_signature",
 		Details: "Assertion Signature against auth data and client hash is not valid",
