@@ -78,7 +78,7 @@ function makeCredential() {
     }
     setUser();
     var credential = null;
-    swal({
+    Swal.fire({
         title: 'Registering...',
         text: 'Tap your security key to finish registration.',
         imageUrl: "/images/securitykey.min.svg",
@@ -87,7 +87,7 @@ function makeCredential() {
         focusConfirm: false,
         focusCancel: false,
     }).then(function () {
-        swal({
+        Swal.fire({
             title: 'Registration Successful!',
             text: 'You\'ve registered successfully.',
             type: 'success',
@@ -121,10 +121,10 @@ function makeCredential() {
                     console.log(newCredential);
                     state.createResponse = newCredential;
                     registerNewCredential(newCredential);
-                    swal.clickConfirm()
+                    Swal.clickConfirm()
             }).catch(function (err) {
                 console.log(err);
-                swal.closeModal();
+                Swal.closeModal();
             });
         });
 }
@@ -171,7 +171,7 @@ function getAssertion() {
     $.get('/user/' + state.user.name, {}, null, 'json').done(function (response) {
         console.log(response);
     }).then(function() {        
-        swal({
+        Swal.fire({
             title: 'Logging In...',
             text: 'Tap your security key to login.',
             imageUrl: "/images/securitykey.min.svg",
@@ -180,7 +180,7 @@ function getAssertion() {
             focusConfirm: false,
             focusCancel: false,        
         }).then(function () {
-            swal({
+            Swal.fire({
                 title: 'Logged In!',
                 text: 'You\'re logged in successfully.',
                 type: 'success',
@@ -207,11 +207,11 @@ function getAssertion() {
                 .then(function (credential) {
                     console.log(credential);
                     verifyAssertion(credential);
-                    swal.clickConfirm();
+                    Swal.clickConfirm();
                 }).catch(function (err) {
                     console.log(err);
                     showErrorAlert(err.message);
-                    swal.closeModal();
+                    Swal.closeModal();
                 });
         });
 }
@@ -235,7 +235,7 @@ function verifyAssertion(assertedCredential) {
             window.location.href = "/dashboard/" + state.user.displayName;
         } else {
             showErrorAlert("Error Doing Assertion");
-            swal.closeModal();
+            Swal.closeModal();
         }
     });
 }
