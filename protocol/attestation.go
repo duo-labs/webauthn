@@ -34,7 +34,7 @@ type AuthenticatorAttestationResponse struct {
 	// It also contains any additional information that the Relying Party's server
 	// requires to validate the attestation statement, as well as to decode and
 	// validate the authenticator data along with the JSON-serialized client data.
-	AttestationObject []byte `json:"attestationObject"`
+	AttestationObject URLEncodedBase64 `json:"attestationObject"`
 }
 
 // The parsed out version of AuthenticatorAttestationResponse.

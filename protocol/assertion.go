@@ -26,9 +26,9 @@ type ParsedCredentialAssertionData struct {
 
 type AuthenticatorAssertionResponse struct {
 	AuthenticatorResponse
-	AuthenticatorData []byte `json:"authenticatorData"`
-	Signature         []byte `json:"signature"`
-	UserHandle        []byte `json:"userHandle,omitempty"`
+	AuthenticatorData URLEncodedBase64 `json:"authenticatorData"`
+	Signature         URLEncodedBase64 `json:"signature"`
+	UserHandle        URLEncodedBase64 `json:"userHandle,omitempty"`
 }
 
 type ParsedAssertionResponse struct {
