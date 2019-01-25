@@ -14,11 +14,11 @@ Make sure your `user` model is able to handle the interface functions laid out i
 ```
 import "github.com/duo-labs/webauthn"
 
-var webauthn webauthn.WebAuthn
+var web webauthn.WebAuthn
 
 // Your initialization function
 func main() {
-    webauthn = webauthn.New(&webauthn.Config{
+    web = webauthn.New(&webauthn.Config{
         RPDisplayName: "Duo Labs", // Display Name for your site
         RPID: "duo.com", // Generally the FQDN for your site
         RPOrigin: "https://login.duo.com", // The origin URL for WebAuthn requests
@@ -30,7 +30,7 @@ func main() {
 
 func BeginRegistration(w http.ResponseWriter, r *http.Request) {
     user := datastore.GetUser() // Find or create the new user  
-    options, sessionData, err := webauthn.BeginRegistration(&user)
+    options, sessionData, err := web.BeginRegistration(&user)
     // handle errors if present
     // store the sessionData values 
     JSONResponse(w, options, http.StatusOK) // return the options generated
@@ -42,7 +42,7 @@ func FinishRegistration(w http.ResponseWriter, r *http.Request) {
     // Get the session data stored from the function above
     // using gorilla/sessions it could look like this
     sessionData := store.Get(r, "registration-session")
-    credential, err := webauthn.FinishRegistration(&user, sessionData, r)
+    credential, err := web.FinishRegistration(&user, sessionData, r)
     // Handle validation or input errors
     // If creation was successful, store the credential object
     JSONResponse(w, "Registration Success", http.StatusOK) // Handle next steps
@@ -83,7 +83,7 @@ You can modify the registration options in the following ways:
 import "github.com/duo-labs/webauthn/protocol"
 import "github.com/duo-labs/webauthn"
 
-var webauthn webauthn.WebAuthn
+var webAuthnHandler webauthn.WebAuthn // init this in your init function
 
 func beginRegistration() {
     // Updating the AuthenticatorSelection options. 
@@ -93,10 +93,46 @@ func beginRegistration() {
 		RequireResidentKey: false,
         UserVerification: protocol.VerificationRequired
     }
+
+    // Updating the ConveyencePreference options. 
+    // See the struct declarations for values
+    conveyencePref := protocol.ConveyancePreference(protocol.PreferNoAttestation)
+
+    user := datastore.GetUser() // Get the user  
+    opts, sessionData, err webAuthnHandler.BeginRegistration(&user, webauthn.WithAuthenticatorSelection(authSelect), webauthn.WithConveyancePreference(conveyancePref))
+
+    // Handle next steps
+}
+
+```
+
+### Login modifiers
+You can modify the login options to allow only certain credentials:
+```
+// Wherever you handle your WebAuthn requests
+import "github.com/duo-labs/webauthn/protocol"
+import "github.com/duo-labs/webauthn"
+
+var webAuthnHandler webauthn.WebAuthn // init this in your init function
+
+func beginLogin() {
+    // Updating the AuthenticatorSelection options. 
+    // See the struct declarations for values
+    allowList := make([]protocol.CredentialDescriptor, 1)
+    allowList[0] = protocol.CredentialDescriptor{
+        CredentialID: credentialToAllowID,
+        Type: protocol.CredentialType("public-key"),
+    }
+
+    user := datastore.GetUser() // Get the user  
+
+    opts, sessionData, err := webAuthnHandler.BeginLogin(&user, webauthn.wat.WithAllowedCredentials(allowList))
+
+    // Handle next steps
 }
 
 ```
 
 Acknowledgements
 ----------------
-I could not have made this library without the work of [Jordan Wright](https://twitter.com/jw_sec) and the designs done for our demo site by [Emily Rosen](http://www.emiroze.design/). When I began refactoring this library in December 2018, [Koen Vlaswinkel's](https://github.com/koesie10) golang webauthn library really helped set me in the right direction. Thanks to everyone who submitted issues and pull requests to help make this library what it is today!
+I could not have made this library without the work of [Jordan Wright](https://twitter.com/jw_sec) and the designs done for our demo site by [Emily Rosen](http://www.emiroze.design/). When I began refactoring this library in December 2018, [Koen Vlaswinkel's](https://github.com/koesie10) Golang WebAuthn library really helped set me in the right direction. Thanks to everyone who submitted issues and pull requests to help make this library what it is today!
