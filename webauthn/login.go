@@ -27,13 +27,15 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 		return nil, nil, err
 	}
 
-	if len(user.WebAuthnCredentials()) == 0 { // If the user does not have any credentials, we cannot do login
+	credentials := user.WebAuthnCredentials()
+
+	if len(credentials) == 0 { // If the user does not have any credentials, we cannot do login
 		return nil, nil, protocol.ErrBadRequest.WithDetails("Found no credentials for user")
 	}
 
-	var allowedCredentials = make([]protocol.CredentialDescriptor, len(user.WebAuthnCredentials()))
+	var allowedCredentials = make([]protocol.CredentialDescriptor, len(credentials))
 
-	for i, credential := range user.WebAuthnCredentials() {
+	for i, credential := range credentials {
 		var credentialDescriptor protocol.CredentialDescriptor
 		credentialDescriptor.CredentialID = credential.ID
 		credentialDescriptor.Type = protocol.PublicKeyCredentialType
