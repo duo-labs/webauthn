@@ -63,9 +63,17 @@ type AuthenticationExtensions map[string]interface{}
 
 //AuthenticatorSelection https://www.w3.org/TR/webauthn/#authenticatorSelection
 type AuthenticatorSelection struct {
-	AuthenticatorAttachment AuthenticatorAttachment     `json:"authenticatorAttachment,omitempty"`
-	RequireResidentKey      bool                        `json:"requireResidentKey,omitempty"`
-	UserVerification        UserVerificationRequirement `json:"userVerification,omitempty"`
+	// AuthenticatorAttachment If this member is present, eligible authenticators are filtered to only
+	// authenticators attached with the specified AuthenticatorAttachment enum
+	AuthenticatorAttachment AuthenticatorAttachment `json:"authenticatorAttachment,omitempty"`
+	// RequireResidentKey this member describes the Relying Party's requirements regarding resident
+	// credentials. If the parameter is set to true, the authenticator MUST create a client-side-resident
+	// public key credential source when creating a public key credential.
+	RequireResidentKey bool `json:"requireResidentKey,omitempty"`
+	// UserVerification This member describes the Relying Party's requirements regarding user verification for
+	// the create() operation. Eligible authenticators are filtered to only those capable of satisfying this
+	// requirement.
+	UserVerification UserVerificationRequirement `json:"userVerification,omitempty"`
 }
 
 // ConveyancePreference AttestationConveyancePreference

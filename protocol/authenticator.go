@@ -13,8 +13,11 @@ import (
 
 var minAuthDataLength = 37
 
+// Authenticators respond to Relying Party requests by returning an object derived from the
+// AuthenticatorResponse interface. See §5.2. Authenticator Responses
+// https://www.w3.org/TR/webauthn/#iface-authenticatorresponse
 type AuthenticatorResponse struct {
-	// From the spec (https://www.w3.org/TR/webauthn/#dom-authenticatorresponse-clientdatajson)
+	// From the spec https://www.w3.org/TR/webauthn/#dom-authenticatorresponse-clientdatajson
 	// This attribute contains a JSON serialization of the client data passed to the authenticator
 	// by the client in its call to either create() or get().
 	ClientDataJSON URLEncodedBase64 `json:"clientDataJSON"`
@@ -111,7 +114,7 @@ const (
 // how an authenticator may be reached. A Relying Party may obtain a list of transports hints from some
 // attestation statement formats or via some out-of-band mechanism; it is outside the scope of this
 // specification to define that mechanism.
-// See §5.10.4. Authenticator Transport https://www.w3.org/TR/webauthn/#transport)
+// See §5.10.4. Authenticator Transport https://www.w3.org/TR/webauthn/#transport
 type AuthenticatorTransport string
 
 const (
@@ -125,6 +128,9 @@ const (
 	Internal AuthenticatorTransport = "internal"
 )
 
+// A WebAuthn Relying Party may require user verification for some of its operations but not for others,
+// and may use this type to express its needs.
+// See §5.10.6. User Verification Requirement Enumeration https://www.w3.org/TR/webauthn/#userVerificationRequirement
 type UserVerificationRequirement string
 
 const (
