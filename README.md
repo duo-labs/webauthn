@@ -14,7 +14,7 @@ Make sure your `user` model is able to handle the interface functions laid out i
 ```
 import "github.com/duo-labs/webauthn"
 
-var webauthn webauthn.webauthn
+var webauthn webauthn.WebAuthn
 
 // Your initialization function
 func main() {
@@ -77,5 +77,26 @@ Modifying Credential Options
 You can modify the default credential creation options for registration and login by providing optional structs to the `BeginRegistration` and `BeginLogin` functions. 
 
 ### Registration modifiers
-You can modify the 
+You can modify the registration options in the following ways:
+```
+// Wherever you handle your WebAuthn requests
+import "github.com/duo-labs/webauthn/protocol"
+import "github.com/duo-labs/webauthn"
 
+var webauthn webauthn.WebAuthn
+
+func beginRegistration() {
+    // Updating the AuthenticatorSelection options. 
+    // See the struct declarations for values
+    authSelect := protocol.AuthenticatorSelection{        
+		AuthenticatorAttachment: protocol.AuthenticatorAttachment("platform"),
+		RequireResidentKey: false,
+        UserVerification: protocol.VerificationRequired
+    }
+}
+
+```
+
+Acknowledgements
+----------------
+I could not have made this library without the work of [Jordan Wright](https://twitter.com/jw_sec) and the designs done for our demo site by [Emily Rosen](http://www.emiroze.design/). When I began refactoring this library in December 2018, [Koen Vlaswinkel's](https://github.com/koesie10) golang webauthn library really helped set me in the right direction. Thanks to everyone who submitted issues and pull requests to help make this library what it is today!
