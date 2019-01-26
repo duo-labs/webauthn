@@ -11,6 +11,7 @@ Import `github.com/duo-labs/webauthn` into your golang web application and initi
 
 Make sure your `user` model is able to handle the interface functions laid out in `webauthn/user.go`. This means also supporting the storage and retrieval of the credential and authenticator structs in `webauthn/credential.go` and `webauthn/authenticator.go`, respectively.
 
+### Initialize the request handler
 ```
 import "github.com/duo-labs/webauthn"
 
@@ -26,8 +27,11 @@ func main() {
     })
 }
 
-// Registering an account
+```
 
+### Registering an account
+
+```
 func BeginRegistration(w http.ResponseWriter, r *http.Request) {
     user := datastore.GetUser() // Find or create the new user  
     options, sessionData, err := web.BeginRegistration(&user)
@@ -47,10 +51,10 @@ func FinishRegistration(w http.ResponseWriter, r *http.Request) {
     // If creation was successful, store the credential object
     JSONResponse(w, "Registration Success", http.StatusOK) // Handle next steps
 }
+```
 
-
-// Logging into an account
-
+### Logging into an account
+```
 func BeginLogin(w http.ResponseWriter, r *http.Request) {
     user := datastore.GetUser() // Find the user
     options, sessionData, err := webauthn.BeginLogin(&user)
