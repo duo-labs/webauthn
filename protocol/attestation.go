@@ -54,13 +54,14 @@ type ParsedAttestationResponse struct {
 // the overall form of an attestation object. (https://www.w3.org/TR/webauthn/#attestation-object)
 //
 type AttestationObject struct {
+	_struct bool `codec:",uint"`
 	// The authenticator data, including the newly created public key. See AuthenticatorData for more info
-	AuthData AuthenticatorData
+	AuthData AuthenticatorData `codec:"-"`
 	// The byteform version of the authenticator data, used in part for signature validation
-	RawAuthData []byte `json:"authData"`
+	RawAuthData []byte `json:"authData" codec:"2"`
 	// The format of the Attestation data.
-	Format       string                 `json:"fmt"`
-	AttStatement map[string]interface{} `json:"attStmt,omitempty"`
+	Format       string                 `json:"fmt" codec:"1"`
+	AttStatement map[string]interface{} `json:"attStmt,omitempty" codec:"3,omitempty"`
 }
 
 type attestationFormatValidationHandler func(AttestationObject, []byte) (string, []interface{}, error)
