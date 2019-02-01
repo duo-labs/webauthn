@@ -26,7 +26,7 @@ func main() {
         RPDisplayName: "Duo Labs", // Display Name for your site
         RPID: "duo.com", // Generally the FQDN for your site
         RPOrigin: "https://login.duo.com", // The origin URL for WebAuthn requests
-        RPID: "https://duo.com/logo.png", // Optional icon URL for your site
+        RPIcon: "https://duo.com/logo.png", // Optional icon URL for your site
     })
 }
 
