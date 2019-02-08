@@ -1,5 +1,6 @@
 WebAuthn Library
 =============
+[![GoDoc](https://godoc.org/github.com/duo-labs/webauthn?status.svg)](https://godoc.org/github.com/duo-labs/webauthn)
 
 This library is meant to handle [Web Authentication](https://w3c.github.io/webauthn) for Go apps that wish to implement a passwordless solution for users. While the specification is currently in Candidate Recommendation, this library conforms as much as possible to 
 the guidelines and implementation procedures outlined by the document.
@@ -10,7 +11,7 @@ An implementation of this library can be used at [webauthn.io](https://webauthn.
 
 Quickstart
 ----------
-Import `github.com/duo-labs/webauthn` into your golang web application and initialize it with basic configuration values. 
+`go get github.com/duo-labs/webauthn` and initialize it in your application with basic configuration values. 
 
 Make sure your `user` model is able to handle the interface functions laid out in `webauthn/user.go`. This means also supporting the storage and retrieval of the credential and authenticator structs in `webauthn/credential.go` and `webauthn/authenticator.go`, respectively.
 
