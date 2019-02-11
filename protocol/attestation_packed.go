@@ -3,6 +3,7 @@ package protocol
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
@@ -187,14 +188,15 @@ func handleECDAAAttesation(signature, clientDataHash, ecdaaKeyID []byte) (string
 	return "Packed (ECDAA)", nil, ErrNotSpecImplemented
 }
 
-func handleSelfAttestation(alg int64, pubKey PublicKeyData, clientDataHash, authData, signature []byte) (string, []interface{}, error) {
+func handleSelfAttestation(alg int64, pubKey PublicKeyData, authData, clientDataHash, signature []byte) (string, []interface{}, error) {
+	fmt.Println("doing self packed")
 	attestationType := "Packed (Self)"
-	// Step 4.1 Validate that alg matches the algorithm of the credentialPublicKey in authenticatorData.
+	// §4.1 Validate that alg matches the algorithm of the credentialPublicKey in authenticatorData.
 	if alg != pubKey.Algorithm {
 		return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm").WithInfo("Packed (Self)")
 	}
 
-	// Step 4.2 Verify that sig is a valid signature over the concatenation of authenticatorData and
+	// §4.2 Verify that sig is a valid signature over the concatenation of authenticatorData and
 	// clientDataHash using the credential public key with alg.
 	verificationData := append(authData, clientDataHash...)
 
@@ -207,7 +209,15 @@ func handleSelfAttestation(alg int64, pubKey PublicKeyData, clientDataHash, auth
 		if err != nil {
 			return attestationType, nil, ErrAttestation.WithDetails("Error unmarshalling signature for self attestation")
 		}
-		ecdsa.Verify(ecdsaKey, verificationData, asnSig.R, asnSig.S)
+		checkSum := sha256.Sum256(verificationData)
+		if ecdsa.Verify(ecdsaKey, checkSum[:], asnSig.R, asnSig.S) {
+			// §4.3 If successful, return implementation-specific values representing attestation type Self
+			// and an empty attestation trust path.
+			// we have nothing specific to return and don't need the empty trust path
+			return attestationType, nil, nil
+		} else {
+			return attestationType, nil, ErrAttestation.WithDetails("Error verifying the self-attested signature")
+		}
 	}
 
 	if COSEKeyType(pubKey.KeyType) == RSAKey {

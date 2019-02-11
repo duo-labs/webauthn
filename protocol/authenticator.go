@@ -217,6 +217,7 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 }
 
 // If Attestation Data is present, unmarshall that into the appropriate public key structure
+// Attested data is outlined in Section 6.4.1 https://w3c.github.io/webauthn/#sec-attested-credential-data
 func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 	a.AAGUID = rawAuthData[37:53]
 
