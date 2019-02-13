@@ -75,7 +75,7 @@ func WithAllowedCredentials(allowList []protocol.CredentialDescriptor) LoginOpti
 	}
 }
 
-// Take the response
+// Take the response from the client and validate it against the user credentials and stored session data
 func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *http.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
 		protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")

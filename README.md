@@ -16,7 +16,7 @@ Quickstart
 Make sure your `user` model is able to handle the interface functions laid out in `webauthn/user.go`. This means also supporting the storage and retrieval of the credential and authenticator structs in `webauthn/credential.go` and `webauthn/authenticator.go`, respectively.
 
 ### Initialize the request handler
-```
+```golang
 import "github.com/duo-labs/webauthn"
 
 var web webauthn.WebAuthn
@@ -35,7 +35,7 @@ func main() {
 
 ### Registering an account
 
-```
+```golang
 func BeginRegistration(w http.ResponseWriter, r *http.Request) {
     user := datastore.GetUser() // Find or create the new user  
     options, sessionData, err := web.BeginRegistration(&user)
@@ -58,7 +58,7 @@ func FinishRegistration(w http.ResponseWriter, r *http.Request) {
 ```
 
 ### Logging into an account
-```
+```golang
 func BeginLogin(w http.ResponseWriter, r *http.Request) {
     user := datastore.GetUser() // Find the user
     options, sessionData, err := webauthn.BeginLogin(&user)
@@ -86,7 +86,7 @@ You can modify the default credential creation options for registration and logi
 
 ### Registration modifiers
 You can modify the registration options in the following ways:
-```
+```golang
 // Wherever you handle your WebAuthn requests
 import "github.com/duo-labs/webauthn/protocol"
 import "github.com/duo-labs/webauthn"
@@ -116,7 +116,7 @@ func beginRegistration() {
 
 ### Login modifiers
 You can modify the login options to allow only certain credentials:
-```
+```golang
 // Wherever you handle your WebAuthn requests
 import "github.com/duo-labs/webauthn/protocol"
 import "github.com/duo-labs/webauthn"

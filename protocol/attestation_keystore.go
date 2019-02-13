@@ -69,5 +69,12 @@ func verifyAndroidKeystoreFormat(att AttestationObject, clientDataHash []byte) (
 
 	// §8.4.3. Verify that the attestationChallenge field in the attestation certificate extension data is identical to clientDataHash.
 	// attCert.Extensions
+
+	// As noted in §8.4.1 (https://w3c.github.io/webauthn/#key-attstn-cert-requirements) the Android Key Attestation attestation certificate's
+	// android key attestation certificate extension data is identified by the OID "1.3.6.1.4.1.11129.2.1.17".
+	// idExtData := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 1, 17}
+
+	// This is about as far as I can get right now without testing. Need to test more with a Android Key Attestation Cert
+	// Will update once I find a cert
 	return androidAttestationKey, nil, ErrNotImplemented
 }

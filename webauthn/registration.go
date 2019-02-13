@@ -13,6 +13,7 @@ import (
 
 type RegistrationOption func(*protocol.PublicKeyCredentialCreationOptions)
 
+// Generate a new set of registration data to be sent to the client and authenticator.
 func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOption) (*protocol.CredentialCreation, *SessionData, error) {
 	challenge, err := protocol.CreateChallenge()
 	if err != nil {
@@ -76,24 +77,29 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 	return &response, &newSessionData, nil
 }
 
+// Provide non-default parameters regarding the authenticator to select.
 func WithAuthenticatorSelection(authenticatorSelection protocol.AuthenticatorSelection) RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.AuthenticatorSelection = authenticatorSelection
 	}
 }
 
+// Provide non-default parameters regarding credentials to exclude from retrieval.
 func WithExclusions(excludeList []protocol.CredentialDescriptor) RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.CredentialExcludeList = excludeList
 	}
 }
 
+// Provide non-default parameters regarding whether the authenticator should attest to the credential.
 func WithConveyancePreference(preference protocol.ConveyancePreference) RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
 		cco.Attestation = preference
 	}
 }
 
+// Take the response from the authenticator and client and verify the credential against the user's credentials and
+// session data.
 func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
 		protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
