@@ -44,7 +44,7 @@ func verifyAndroidKeystoreFormat(att AttestationObject, clientDataHash []byte) (
 	x5c, x509present := att.AttStatement["x5c"].([]interface{})
 	if x509present {
 		// Handle Basic Attestation steps for the x509 Certificate
-		return handleBasicAttestation(sig, clientDataHash, att.RawAuthData, att.AuthData.AAGUID, alg, x5c)
+		return handleBasicAttestation(sig, clientDataHash, att.RawAuthData, att.AuthData.AttData.AAGUID, alg, x5c)
 	}
 
 	// §8.4.2. Verify that sig is a valid signature over the concatenation of authenticatorData and clientDataHash

@@ -2,13 +2,18 @@ package protocol
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/rsa"
+	"encoding/asn1"
 	"encoding/binary"
 	"fmt"
+	"hash"
 	"math/big"
 
 	"github.com/ugorji/go/codec"
+	"golang.org/x/crypto/ed25519"
 )
 
 var minAuthDataLength = 37
@@ -36,12 +41,17 @@ type AuthenticatorResponse struct {
 // The authenticator data, at least during attestation, contains the Public Key that the RP stores
 // and will associate with the user attempting to register.
 type AuthenticatorData struct {
-	Flags        AuthenticatorFlags `json:"flags"`
-	Counter      uint32             `json:"sign_count"`
-	RPIDHash     []byte             `json:"rpid"`
-	AAGUID       []byte             `json:"aaguid"`
-	CredentialID []byte             `json:"credential_id"`
-	PublicKey    PublicKeyData      `json:"public_key"`
+	RPIDHash []byte                 `json:"rpid"`
+	Flags    AuthenticatorFlags     `json:"flags"`
+	Counter  uint32                 `json:"sign_count"`
+	AttData  AttestedCredentialData `json:"att_data"`
+	ExtData  []byte                 `json:"ext_data"`
+}
+
+type AttestedCredentialData struct {
+	AAGUID              []byte `json:"aaguid"`
+	CredentialID        []byte `json:"credential_id"`
+	CredentialPublicKey []byte `json:"public_key"`
 }
 
 // PublicKeyData The public key portion of a Relying Party-specific credential key pair, generated
@@ -54,20 +64,34 @@ type AuthenticatorData struct {
 type PublicKeyData struct {
 	// Decode the results to int by default.
 	_struct bool `codec:",int" json:"public_key"`
-	// The type of key created. Should be RSA or EC2.
+	// The type of key created. Should be OKP, EC2, or RSA.
 	KeyType int64 `codec:"1" json:"kty"`
 	// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.
 	Algorithm int64 `codec:"3" json:"alg"`
+}
+type EC2PublicKeyData struct {
+	PublicKeyData
 	// If the key type is EC2, the curve on which we derive the signature from.
 	Curve int64 `codec:"-1,omitempty" json:"crv"`
 	// A byte string 32 bytes in length that holds the x coordinate of the key.
 	XCoord []byte `codec:"-2,omitempty" json:"x-coordinate"`
 	// A byte string 32 bytes in length that holds the y coordinate of the key.
 	YCoord []byte `codec:"-3,omitempty" json:"y-coordinate"`
-	// We use this to hold the constructed key material. Should be either a rsa.PublicKey or ecdsa.PublicKey.
-	KeyMaterial interface{} `codec:"-" json:"key_material"`
-	// The raw bytes retreived to create this data structure.
-	Raw []byte `codec:"-" json:"raw"`
+}
+
+type RSAPublicKeyData struct {
+	PublicKeyData
+	// Represents the modulus parameter for the RSA algorithm
+	Modulus []byte `codec:"-1,omitempty" json:"mod"`
+	// Represents the exponent parameter for the RSA algorithm
+	Exponent []byte `codec:"-2,omitempty" json:"exp"`
+}
+
+type OKPPublicKeyData struct {
+	PublicKeyData
+	Curve int64
+	// A byte string that holds the x coordinate of the key.
+	XCoord []byte `codec:"-2,omitempty" json:"x-coordinate"`
 }
 
 // COSEAlgorithmIdentifier From §5.10.5. A number identifying a cryptographic algorithm. The algorithm
@@ -77,19 +101,39 @@ type PublicKeyData struct {
 type COSEAlgorithmIdentifier int
 
 const (
-	// AlgES256 Elliptic Curve with SHA-256
+	// AlgES256 ECDSA with SHA-256
 	AlgES256 COSEAlgorithmIdentifier = -7
-	// AlgRS256 RSA with SHA-256
+	// AlgES384 ECDSA with SHA-384
+	AlgES384 COSEAlgorithmIdentifier = -35
+	// AlgES512 ECDSA with SHA-512
+	AlgES512 COSEAlgorithmIdentifier = -36
+	// AlgRS1 RSASSA-PKCS1-v1_5 with SHA-1
+	AlgRS1 COSEAlgorithmIdentifier = -65535
+	// AlgRS256 RSASSA-PKCS1-v1_5 with SHA-256
 	AlgRS256 COSEAlgorithmIdentifier = -257
+	// AlgRS384 RSASSA-PKCS1-v1_5 with SHA-384
+	AlgRS384 COSEAlgorithmIdentifier = -258
+	// AlgRS512 RSASSA-PKCS1-v1_5 with SHA-512
+	AlgRS512 COSEAlgorithmIdentifier = -259
+	// AlgPS256 RSASSA-PSS with SHA-256
+	AlgPS256 COSEAlgorithmIdentifier = -37
+	// AlgPS384 RSASSA-PSS with SHA-384
+	AlgPS384 COSEAlgorithmIdentifier = -38
+	// AlgPS512 RSASSA-PSS with SHA-512
+	AlgPS512 COSEAlgorithmIdentifier = -39
+	// AlgEdDSA EdDSA
+	AlgEdDSA COSEAlgorithmIdentifier = -8
 )
 
 // The Key Type derived from the IANA COSE AuthData
 type COSEKeyType int
 
 const (
-	// An Elliptic Curve Public Key
+	// OctetKey is an Octet Key
+	OctetKey COSEKeyType = 1
+	// EllipticKey is an Elliptic Curve Public Key
 	EllipticKey COSEKeyType = 2
-	// An RSA Public Key
+	// RSAKey is an RSA Public Key
 	RSAKey COSEKeyType = 3
 )
 
@@ -159,7 +203,7 @@ const (
 	// the authenticator added attested credential data.
 	FlagAttestedCredentialData = 0x040 // Referred to as AT
 	// FlagHasExtension Bite 10000000 in the byte sequence. Indicates if the authenticator data has extensions.
-	FlagHasExtension = 0x080 //  Referred to as ED
+	FlagHasExtensions = 0x080 //  Referred to as ED
 )
 
 // UserPresent returns if the UP flag was set
@@ -178,8 +222,8 @@ func (flag AuthenticatorFlags) HasAttestedCredentialData() bool {
 }
 
 // HasExtension returns if the ED flag was set
-func (flag AuthenticatorFlags) HasExtension() bool {
-	return (flag & FlagHasExtension) == FlagHasExtension
+func (flag AuthenticatorFlags) HasExtensions() bool {
+	return (flag & FlagHasExtensions) == FlagHasExtensions
 }
 
 // Unmarshal will take the raw Authenticator Data and marshalls it into AuthenticatorData for further validation.
@@ -195,85 +239,76 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 	}
 
 	a.RPIDHash = rawAuthData[:32]
-
 	a.Flags = AuthenticatorFlags(rawAuthData[32])
-
 	a.Counter = binary.BigEndian.Uint32(rawAuthData[33:37])
-
+	remaining := 0
 	if a.Flags.HasAttestedCredentialData() {
 		if len(rawAuthData) > minAuthDataLength {
-			return a.unmarshalAttestedData(rawAuthData)
+			a.unmarshalAttestedData(rawAuthData)
+			attDataLen := len(a.AttData.AAGUID) + 2 + len(a.AttData.CredentialID) + len(a.AttData.CredentialPublicKey)
+			remaining = len(rawAuthData) - minAuthDataLength - attDataLen
 		} else {
 			return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
 		}
 	}
 
-	if a.Flags.HasExtension() {
-		// This is currently not implemented in the spec
-		return ErrNotSpecImplemented
+	if a.Flags.HasExtensions() {
+		if remaining != 0 {
+			a.ExtData = rawAuthData[len(rawAuthData)-remaining:]
+			remaining -= len(a.ExtData)
+		} else {
+			return ErrBadRequest.WithDetails("Extensions flag set but extensions data is missing")
+		}
+	}
+
+	if remaining != 0 {
+		return ErrBadRequest.WithDetails("Leftover bytes decoding AuthenticatorData")
 	}
 
 	return nil
-}
-
-// If Attestation Data is present, unmarshall that into the appropriate public key structure
-// Attested data is outlined in Section 6.4.1 https://w3c.github.io/webauthn/#sec-attested-credential-data
-func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
-	a.AAGUID = rawAuthData[37:53]
-
-	idLength := binary.BigEndian.Uint16(rawAuthData[53:55])
-
-	a.CredentialID = rawAuthData[55 : 55+idLength]
-
-	pubKeyBytes := rawAuthData[55+idLength:]
-
-	err := a.PublicKey.parseNewKey(pubKeyBytes)
-
-	return err
 }
 
 // Figure out what kind of COSE material was provided and create the data for the new key
-func (newKey *PublicKeyData) parseNewKey(keyBytes []byte) error {
+func parsePublicKey(keyBytes []byte) (interface{}, error) {
 	var cborHandler codec.Handle = new(codec.CborHandle)
-	codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&newKey)
-	newKey.Raw = keyBytes
-	switch COSEKeyType(newKey.KeyType) {
+	pk := PublicKeyData{}
+	codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&pk)
+	switch COSEKeyType(pk.KeyType) {
+	case OctetKey:
+		o := OKPPublicKeyData{}
+		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&o)
+		o.PublicKeyData = pk
+		return o, nil
 	case EllipticKey:
-		return newKey.parseEllipticCurve()
+		e := EC2PublicKeyData{}
+		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&e)
+		e.PublicKeyData = pk
+		return e, nil
 	case RSAKey:
-		return newKey.parseRSA()
+		r := RSAPublicKeyData{}
+		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&r)
+		r.PublicKeyData = pk
+		return r, nil
 	default:
-		return ErrUnsupportedKey
+		return nil, ErrUnsupportedKey
 	}
-	return nil
 }
 
-// Parse the Elliptic Curve key material into a the KeyMaterial field
-func (newKey *PublicKeyData) parseEllipticCurve() error {
-	var curve elliptic.Curve
-	switch newKey.Algorithm {
-	case -36: // IANA COSE code for ECDSA w/ SHA-512
-		curve = elliptic.P521()
-	case -35: // IANA COSE code for ECDSA w/ SHA-384
-		curve = elliptic.P384()
-	case -7: // IANA COSE code for ECDSA w/ SHA-256
-		curve = elliptic.P256()
-	default:
-		return ErrUnsupportedAlgorithm
-	}
-
-	newKey.KeyMaterial = &ecdsa.PublicKey{
-		Curve: curve,
-		X:     big.NewInt(0).SetBytes(newKey.XCoord),
-		Y:     big.NewInt(0).SetBytes(newKey.YCoord),
-	}
-
-	return nil
+// If Attestation Data is present, unmarshall that into the appropriate public key structure
+func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) {
+	a.AttData.AAGUID = rawAuthData[37:53]
+	idLength := binary.BigEndian.Uint16(rawAuthData[53:55])
+	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
+	a.AttData.CredentialPublicKey = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
 }
-
-// Parse the RSA key material into a the KeyMaterial field
-func (newKey *PublicKeyData) parseRSA() error {
-	return ErrNotImplemented
+func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
+	var cborHandler codec.Handle = new(codec.CborHandle)
+	var m interface{}
+	codec.NewDecoderBytes(keyBytes, cborHandler).Decode(&m)
+	var rawBytes []byte
+	enc := codec.NewEncoderBytes(&rawBytes, cborHandler)
+	enc.Encode(m)
+	return rawBytes
 }
 
 // Verify on AuthenticatorData handles Steps 9 through 12 for Registration
@@ -313,4 +348,137 @@ func (a *AuthenticatorData) Verify(rpIdHash []byte, userVerificationRequired boo
 	// This is not yet fully implemented by the spec or by browsers
 
 	return nil
+}
+
+func (k *OKPPublicKeyData) verify(data []byte, sig []byte) (bool, error) {
+	f := HasherFromCOSEAlg(COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm))
+	h := f()
+	h.Write(data)
+	return ed25519.Verify(k.XCoord, h.Sum(nil), sig), nil
+}
+
+func (k *EC2PublicKeyData) verify(data []byte, sig []byte) (bool, error) {
+	var curve elliptic.Curve
+	switch COSEAlgorithmIdentifier(k.Algorithm) {
+	case AlgES512: // IANA COSE code for ECDSA w/ SHA-512
+		curve = elliptic.P521()
+	case AlgES384: // IANA COSE code for ECDSA w/ SHA-384
+		curve = elliptic.P384()
+	case AlgES256: // IANA COSE code for ECDSA w/ SHA-256
+		curve = elliptic.P256()
+	default:
+		return false, ErrUnsupportedAlgorithm
+	}
+
+	pubkey := &ecdsa.PublicKey{
+		Curve: curve,
+		X:     big.NewInt(0).SetBytes(k.XCoord),
+		Y:     big.NewInt(0).SetBytes(k.YCoord),
+	}
+
+	type ECDSASignature struct {
+		R, S *big.Int
+	}
+
+	e := &ECDSASignature{}
+	f := HasherFromCOSEAlg(COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm))
+	h := f()
+	h.Write(data)
+	_, error := asn1.Unmarshal(sig, e)
+	return ecdsa.Verify(pubkey, h.Sum(nil), e.R, e.S), error
+}
+
+func (k *RSAPublicKeyData) verify(data []byte, sig []byte) (bool, error) {
+	pubkey := &rsa.PublicKey{
+		N: big.NewInt(0).SetBytes(k.Modulus),
+		E: int(uint(k.Exponent[2]) | uint(k.Exponent[1])<<8 | uint(k.Exponent[0])<<16),
+	}
+
+	f := HasherFromCOSEAlg(COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm))
+	h := f()
+	h.Write(data)
+
+	var hash crypto.Hash
+	switch COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm) {
+	case AlgRS1:
+		hash = crypto.SHA1
+	case AlgPS256, AlgRS256:
+		hash = crypto.SHA256
+	case AlgPS384, AlgRS384:
+		hash = crypto.SHA384
+	case AlgPS512, AlgRS512:
+		hash = crypto.SHA512
+	default:
+		return false, ErrUnsupportedAlgorithm
+	}
+	switch COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm) {
+	case AlgPS256, AlgPS384, AlgPS512:
+		err := rsa.VerifyPSS(pubkey, hash, h.Sum(nil), sig, nil)
+		return err == nil, err
+
+	case AlgRS1, AlgRS256, AlgRS384, AlgRS512:
+		err := rsa.VerifyPKCS1v15(pubkey, hash, h.Sum(nil), sig)
+		return err == nil, err
+	default:
+		return false, ErrUnsupportedAlgorithm
+	}
+}
+
+type SignatureAlgorithm int
+
+const (
+	UnknownSignatureAlgorithm SignatureAlgorithm = iota
+	MD2WithRSA
+	MD5WithRSA
+	SHA1WithRSA
+	SHA256WithRSA
+	SHA384WithRSA
+	SHA512WithRSA
+	DSAWithSHA1
+	DSAWithSHA256
+	ECDSAWithSHA1
+	ECDSAWithSHA256
+	ECDSAWithSHA384
+	ECDSAWithSHA512
+	SHA256WithRSAPSS
+	SHA384WithRSAPSS
+	SHA512WithRSAPSS
+)
+
+var signatureAlgorithmDetails = []struct {
+	algo    SignatureAlgorithm
+	coseAlg COSEAlgorithmIdentifier
+	name    string
+	hasher  func() hash.Hash
+}{
+	{SHA1WithRSA, AlgRS1, "SHA1-RSA", crypto.SHA1.New},
+	{SHA256WithRSA, AlgRS256, "SHA256-RSA", crypto.SHA256.New},
+	{SHA384WithRSA, AlgRS384, "SHA384-RSA", crypto.SHA384.New},
+	{SHA512WithRSA, AlgRS512, "SHA512-RSA", crypto.SHA512.New},
+	{SHA256WithRSAPSS, AlgPS256, "SHA256-RSAPSS", crypto.SHA256.New},
+	{SHA384WithRSAPSS, AlgPS384, "SHA384-RSAPSS", crypto.SHA384.New},
+	{SHA512WithRSAPSS, AlgPS512, "SHA512-RSAPSS", crypto.SHA512.New},
+	{ECDSAWithSHA256, AlgES256, "ECDSA-SHA256", crypto.SHA256.New},
+	{ECDSAWithSHA384, AlgES384, "ECDSA-SHA384", crypto.SHA384.New},
+	{ECDSAWithSHA512, AlgES512, "ECDSA-SHA512", crypto.SHA512.New},
+	{UnknownSignatureAlgorithm, AlgEdDSA, "EdDSA", crypto.SHA512.New},
+}
+
+func SigAlgFromCOSEAlg(coseAlg COSEAlgorithmIdentifier) SignatureAlgorithm {
+	for _, details := range signatureAlgorithmDetails {
+		if details.coseAlg == coseAlg {
+			return details.algo
+		}
+	}
+	return UnknownSignatureAlgorithm
+}
+
+func HasherFromCOSEAlg(coseAlg COSEAlgorithmIdentifier) func() hash.Hash {
+	for _, details := range signatureAlgorithmDetails {
+		if details.coseAlg == coseAlg {
+			return details.hasher
+		}
+	}
+	// default to SHA256?  Why not.
+	return crypto.SHA256.New
 }
