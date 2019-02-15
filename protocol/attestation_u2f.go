@@ -5,6 +5,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/x509"
+
+	"github.com/ugorji/go/codec"
 )
 
 var u2fAttestationKey = "fido-u2f"
@@ -17,9 +19,9 @@ func init() {
 func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []interface{}, error) {
 	// Signing procedure step - If the credential public key of the given credential is not of
 	// algorithm -7 ("ES256"), stop and return an error.
-	if att.AuthData.PublicKey.Algorithm != -7 {
-		return u2fAttestationKey, nil, ErrUnsupportedAlgorithm.WithDetails("Non-ES256 Public Key algorithm used")
-	}
+	//if att.AuthData.PublicKey.Algorithm != -7 {
+	//	return u2fAttestationKey, nil, ErrUnsupportedAlgorithm.WithDetails("Non-ES256 Public Key algorithm used")
+	//}
 
 	// U2F Step 1. Verify that attStmt is valid CBOR conforming to the syntax defined above
 	// and perform CBOR decoding on it to extract the contained fields.
@@ -80,9 +82,9 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 
 	rpIdHash := att.AuthData.RPIDHash
 
-	credentialID := att.AuthData.CredentialID
+	credentialID := att.AuthData.AttData.CredentialID
 
-	credentialPublicKey := att.AuthData.PublicKey
+	credentialPublicKey := att.AuthData.AttData.CredentialPublicKey
 
 	// Step 4. Convert the COSE_KEY formatted credentialPublicKey (see Section 7 of RFC8152 [https://www.w3.org/TR/webauthn/#biblio-rfc8152])
 	// to Raw ANSI X9.62 public key format (see ALG_KEY_ECC_X962_RAW in Section 3.6.2 Public Key
@@ -96,15 +98,17 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	// its size to be of 32 bytes. If size differs or "-3" key is not found, terminate this algorithm and
 	// return an appropriate error.
 
-	if len(credentialPublicKey.XCoord) > 32 || len(credentialPublicKey.YCoord) > 32 {
-		return u2fAttestationKey, nil, ErrAttestation.WithDetails("X or Y Coordinate for key is invalid length")
-	}
+	//if len(credentialPublicKey.XCoord) > 32 || len(credentialPublicKey.YCoord) > 32 {
+	//	return u2fAttestationKey, nil, ErrAttestation.WithDetails("X or Y Coordinate for key is invalid length")
+	//}
+
+	key := EC2PublicKeyData{}
+	codec.NewDecoder(bytes.NewReader(credentialPublicKey), new(codec.CborHandle)).Decode(&key)
 
 	// Let publicKeyU2F be the concatenation 0x04 || x || y.
-
 	publicKeyU2F := bytes.NewBuffer([]byte{0x04})
-	publicKeyU2F.Write(credentialPublicKey.XCoord)
-	publicKeyU2F.Write(credentialPublicKey.YCoord)
+	publicKeyU2F.Write(key.XCoord)
+	publicKeyU2F.Write(key.YCoord)
 
 	// Step 5. Let verificationData be the concatenation of (0x00 || rpIdHash || clientDataHash || credentialId || publicKeyU2F)
 	// (see §4.3 of FIDO-U2F-Message-Formats [https://www.w3.org/TR/webauthn/#biblio-fido-u2f-message-formats]).
@@ -122,5 +126,5 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	}
 
 	// Step 7. If successful, return attestation type Basic with the attestation trust path set to x5c.
-	return "Fido U2F Basic", x5c, nil
+	return "Fido U2F Basic", x5c, sigErr
 }
