@@ -104,24 +104,24 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge []byte, relyingPa
 
 	sigData := append(p.Raw.AssertionResponse.AuthenticatorData, clientDataHash[:]...)
 
-	key, err := parsePublicKey(credentialBytes)
-	valid := false
+	key, err := ParsePublicKey(credentialBytes)
+	var valid bool
 	switch key.(type) {
 	case OKPPublicKeyData:
 		o := key.(OKPPublicKeyData)
-		valid, err = o.verify(sigData, p.Response.Signature)
+		valid, err = o.Verify(sigData, p.Response.Signature)
 	case EC2PublicKeyData:
 		e := key.(EC2PublicKeyData)
-		valid, err = e.verify(sigData, p.Response.Signature)
+		valid, err = e.Verify(sigData, p.Response.Signature)
 	case RSAPublicKeyData:
 		r := key.(RSAPublicKeyData)
-		valid, err = r.verify(sigData, p.Response.Signature)
+		valid, err = r.Verify(sigData, p.Response.Signature)
 	default:
 		return ErrUnsupportedKey
 	}
 
-	if true != valid {
-		return ErrAssertionSignature.WithInfo(err.Error())
+	if !valid {
+		return ErrAssertionSignature.WithDetails(fmt.Sprintf("Error validating the assertion signature: %+v\n", err))
 	}
 	return nil
 }

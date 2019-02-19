@@ -185,7 +185,7 @@ func handleECDAAAttesation(signature, clientDataHash, ecdaaKeyID []byte) (string
 	return "Packed (ECDAA)", nil, ErrNotSpecImplemented
 }
 
-func handleSelfAttestation(alg int64, pubKey []byte, clientDataHash, authData, signature []byte) (string, []interface{}, error) {
+func handleSelfAttestation(alg int64, pubKey, authData, clientDataHash, signature []byte) (string, []interface{}, error) {
 	attestationType := "Packed (Self)"
 	// §4.1 Validate that alg matches the algorithm of the credentialPublicKey in authenticatorData.
 
@@ -193,35 +193,40 @@ func handleSelfAttestation(alg int64, pubKey []byte, clientDataHash, authData, s
 	// clientDataHash using the credential public key with alg.
 	verificationData := append(authData, clientDataHash...)
 
-	key, err := parsePublicKey(pubKey)
-	valid := false
+	key, err := ParsePublicKey(pubKey)
+	if err != nil {
+		return attestationType, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the public key: %+v\n", err))
+	}
+
+	var valid bool
+
 	switch key.(type) {
 	case OKPPublicKeyData:
 		o := key.(OKPPublicKeyData)
 		if alg != o.PublicKeyData.Algorithm {
-			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm").WithInfo("Packed (Self)")
+			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
 		}
-		valid, err = o.verify(verificationData, signature)
-		if true != valid {
-			return attestationType, nil, ErrAttestation.WithDetails("Failed to validate signature with OKP key for self attestation").WithInfo(err.Error())
+		valid, err = o.Verify(verificationData, signature)
+		if !valid {
+			return attestationType, nil, ErrAttestation.WithDetails("Failed to validate signature with OKP key for self attestation")
 		}
 	case EC2PublicKeyData:
 		e := key.(EC2PublicKeyData)
 		if alg != e.PublicKeyData.Algorithm {
-			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm").WithInfo("Packed (Self)")
+			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
 		}
-		valid, err = e.verify(verificationData, signature)
-		if true != valid {
-			return attestationType, nil, ErrAttestation.WithDetails("Failed to validate signature with EC2 key for self attestation").WithInfo(err.Error())
+		valid, err = e.Verify(verificationData, signature)
+		if !valid {
+			return attestationType, nil, ErrAttestation.WithDetails(fmt.Sprintf("Failed to validate signature with EC2 key for self attestation: %+v", err))
 		}
 	case RSAPublicKeyData:
 		r := key.(RSAPublicKeyData)
 		if alg != r.PublicKeyData.Algorithm {
-			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm").WithInfo("Packed (Self)")
+			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
 		}
-		valid, err = r.verify(verificationData, signature)
-		if true != valid {
-			return attestationType, nil, ErrAttestation.WithDetails("Failed to validate signature with RSA key for self attestation").WithInfo(err.Error())
+		valid, err = r.Verify(verificationData, signature)
+		if !valid {
+			return attestationType, nil, ErrAttestation.WithDetails(fmt.Sprintf("Failed to validate signature with RSA key for self attestation: %+v", err))
 		}
 	default:
 		return attestationType, nil, ErrUnsupportedKey

@@ -37,52 +37,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 		},
 	}
 
-	credentialParams := []protocol.CredentialParameter{
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgES256,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgES384,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgES512,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgRS1,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgRS256,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgRS384,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgRS512,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgPS256,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgPS384,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgPS512,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgEdDSA,
-		},
-	}
+	credentialParams := defaultRegistrationCredentialParameters()
 
 	authSelection := protocol.AuthenticatorSelection{
 		AuthenticatorAttachment: protocol.CrossPlatform,
@@ -158,5 +113,54 @@ func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, res
 		return nil, invalidErr
 	}
 
-	return MakeNewCredential(parsedResponse)
+	return MakeNewCredential(parsedResponse), nil
+}
+
+func defaultRegistrationCredentialParameters() []protocol.CredentialParameter {
+	return []protocol.CredentialParameter{
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgES256,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgES384,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgES512,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgRS1,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgRS256,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgRS384,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgRS512,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgPS256,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgPS384,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgPS512,
+		},
+		protocol.CredentialParameter{
+			Type:      protocol.PublicKeyCredentialType,
+			Algorithm: protocol.AlgEdDSA,
+		},
+	}
 }

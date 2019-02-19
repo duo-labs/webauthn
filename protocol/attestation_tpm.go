@@ -73,7 +73,7 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Unable to decode TPMT_PUBLIC in attestation statement")
 	}
 
-	key, err := parsePublicKey(att.AuthData.AttData.CredentialPublicKey)
+	key, err := ParsePublicKey(att.AuthData.AttData.CredentialPublicKey)
 	switch key.(type) {
 	case EC2PublicKeyData:
 		e := key.(EC2PublicKeyData)

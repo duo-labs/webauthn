@@ -49,8 +49,9 @@ type AuthenticatorData struct {
 }
 
 type AttestedCredentialData struct {
-	AAGUID              []byte `json:"aaguid"`
-	CredentialID        []byte `json:"credential_id"`
+	AAGUID       []byte `json:"aaguid"`
+	CredentialID []byte `json:"credential_id"`
+	// The raw credential public key bytes received from the attestation data
 	CredentialPublicKey []byte `json:"public_key"`
 }
 
@@ -241,7 +242,9 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 	a.RPIDHash = rawAuthData[:32]
 	a.Flags = AuthenticatorFlags(rawAuthData[32])
 	a.Counter = binary.BigEndian.Uint32(rawAuthData[33:37])
+
 	remaining := 0
+
 	if a.Flags.HasAttestedCredentialData() {
 		if len(rawAuthData) > minAuthDataLength {
 			a.unmarshalAttestedData(rawAuthData)
@@ -269,23 +272,23 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 }
 
 // Figure out what kind of COSE material was provided and create the data for the new key
-func parsePublicKey(keyBytes []byte) (interface{}, error) {
+func ParsePublicKey(keyBytes []byte) (interface{}, error) {
 	var cborHandler codec.Handle = new(codec.CborHandle)
 	pk := PublicKeyData{}
 	codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&pk)
 	switch COSEKeyType(pk.KeyType) {
 	case OctetKey:
-		o := OKPPublicKeyData{}
+		var o OKPPublicKeyData
 		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&o)
 		o.PublicKeyData = pk
 		return o, nil
 	case EllipticKey:
-		e := EC2PublicKeyData{}
+		var e EC2PublicKeyData
 		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&e)
 		e.PublicKeyData = pk
 		return e, nil
 	case RSAKey:
-		r := RSAPublicKeyData{}
+		var r RSAPublicKeyData
 		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&r)
 		r.PublicKeyData = pk
 		return r, nil
@@ -350,14 +353,16 @@ func (a *AuthenticatorData) Verify(rpIdHash []byte, userVerificationRequired boo
 	return nil
 }
 
-func (k *OKPPublicKeyData) verify(data []byte, sig []byte) (bool, error) {
+// Verify Octet Key Pair (OKP) Public Key Signature
+func (k *OKPPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
 	f := HasherFromCOSEAlg(COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm))
 	h := f()
 	h.Write(data)
 	return ed25519.Verify(k.XCoord, h.Sum(nil), sig), nil
 }
 
-func (k *EC2PublicKeyData) verify(data []byte, sig []byte) (bool, error) {
+// Verify Elliptic Curce Public Key Signature
+func (k *EC2PublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
 	var curve elliptic.Curve
 	switch COSEAlgorithmIdentifier(k.Algorithm) {
 	case AlgES512: // IANA COSE code for ECDSA w/ SHA-512
@@ -388,7 +393,8 @@ func (k *EC2PublicKeyData) verify(data []byte, sig []byte) (bool, error) {
 	return ecdsa.Verify(pubkey, h.Sum(nil), e.R, e.S), error
 }
 
-func (k *RSAPublicKeyData) verify(data []byte, sig []byte) (bool, error) {
+// Verify RSA Public Key Signature
+func (k *RSAPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
 	pubkey := &rsa.PublicKey{
 		N: big.NewInt(0).SetBytes(k.Modulus),
 		E: int(uint(k.Exponent[2]) | uint(k.Exponent[1])<<8 | uint(k.Exponent[0])<<16),
@@ -424,46 +430,7 @@ func (k *RSAPublicKeyData) verify(data []byte, sig []byte) (bool, error) {
 	}
 }
 
-type SignatureAlgorithm int
-
-const (
-	UnknownSignatureAlgorithm SignatureAlgorithm = iota
-	MD2WithRSA
-	MD5WithRSA
-	SHA1WithRSA
-	SHA256WithRSA
-	SHA384WithRSA
-	SHA512WithRSA
-	DSAWithSHA1
-	DSAWithSHA256
-	ECDSAWithSHA1
-	ECDSAWithSHA256
-	ECDSAWithSHA384
-	ECDSAWithSHA512
-	SHA256WithRSAPSS
-	SHA384WithRSAPSS
-	SHA512WithRSAPSS
-)
-
-var signatureAlgorithmDetails = []struct {
-	algo    SignatureAlgorithm
-	coseAlg COSEAlgorithmIdentifier
-	name    string
-	hasher  func() hash.Hash
-}{
-	{SHA1WithRSA, AlgRS1, "SHA1-RSA", crypto.SHA1.New},
-	{SHA256WithRSA, AlgRS256, "SHA256-RSA", crypto.SHA256.New},
-	{SHA384WithRSA, AlgRS384, "SHA384-RSA", crypto.SHA384.New},
-	{SHA512WithRSA, AlgRS512, "SHA512-RSA", crypto.SHA512.New},
-	{SHA256WithRSAPSS, AlgPS256, "SHA256-RSAPSS", crypto.SHA256.New},
-	{SHA384WithRSAPSS, AlgPS384, "SHA384-RSAPSS", crypto.SHA384.New},
-	{SHA512WithRSAPSS, AlgPS512, "SHA512-RSAPSS", crypto.SHA512.New},
-	{ECDSAWithSHA256, AlgES256, "ECDSA-SHA256", crypto.SHA256.New},
-	{ECDSAWithSHA384, AlgES384, "ECDSA-SHA384", crypto.SHA384.New},
-	{ECDSAWithSHA512, AlgES512, "ECDSA-SHA512", crypto.SHA512.New},
-	{UnknownSignatureAlgorithm, AlgEdDSA, "EdDSA", crypto.SHA512.New},
-}
-
+// Return which signature algorithm is being used from the COSE Key
 func SigAlgFromCOSEAlg(coseAlg COSEAlgorithmIdentifier) SignatureAlgorithm {
 	for _, details := range signatureAlgorithmDetails {
 		if details.coseAlg == coseAlg {
@@ -473,6 +440,7 @@ func SigAlgFromCOSEAlg(coseAlg COSEAlgorithmIdentifier) SignatureAlgorithm {
 	return UnknownSignatureAlgorithm
 }
 
+// Return the Hashing interface to be used for a given COSE Algorithm
 func HasherFromCOSEAlg(coseAlg COSEAlgorithmIdentifier) func() hash.Hash {
 	for _, details := range signatureAlgorithmDetails {
 		if details.coseAlg == coseAlg {

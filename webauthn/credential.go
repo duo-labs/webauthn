@@ -27,5 +27,5 @@ func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*Credential, e
 		},
 	}
 
-	return newCredential, nil
+	return newCredential
 }
