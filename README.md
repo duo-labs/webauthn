@@ -143,4 +143,4 @@ func beginLogin() {
 
 Acknowledgements
 ----------------
-I could not have made this library without the work of [Jordan Wright](https://twitter.com/jw_sec) and the designs done for our demo site by [Emily Rosen](http://www.emiroze.design/). When I began refactoring this library in December 2018, [Koen Vlaswinkel's](https://github.com/koesie10) Golang WebAuthn library really helped set me in the right direction. Thanks to everyone who submitted issues and pull requests to help make this library what it is today!
+I could not have made this library without the work of [Jordan Wright](https://twitter.com/jw_sec) and the designs done for our demo site by [Emily Rosen](http://www.emiroze.design/). When I began refactoring this library in December 2018, [Koen Vlaswinkel's](https://github.com/koesie10) Golang WebAuthn library really helped set me in the right direction. A huge thanks to [Alex Seigler](https://github.com/aseigler) for his continuing work on this WebAuthn library and many others. Thanks to everyone who submitted issues and pull requests to help make this library what it is today!
