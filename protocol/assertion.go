@@ -2,9 +2,7 @@ package protocol
 
 import (
 	"crypto/sha256"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"net/http"
 )
@@ -104,27 +102,26 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge []byte, relyingPa
 	// Step 16. Using the credential public key looked up in step 3, verify that sig is
 	// a valid signature over the binary concatenation of authData and hash.
 
-	// Put this into proper certificate format for Step 16
-	pemBlock, _ := pem.Decode(credentialBytes)
-	if pemBlock == nil {
-		return ErrParsingData.WithDetails("Unable to decode stored public key credential")
-	}
-
-	parsedKey, err := x509.ParsePKIXPublicKey(pemBlock.Bytes)
-	if err != nil {
-		return ErrParsingData.WithDetails("Unable to parse pem decoded public key").WithInfo(err.Error())
-	}
-
-	credentialCertificate := x509.Certificate{PublicKey: parsedKey}
-
 	sigData := append(p.Raw.AssertionResponse.AuthenticatorData, clientDataHash[:]...)
 
-	// For COSE Key signature validation, we currently use ECDSA w/ SHA-256 primarily
-	invalidSigError := credentialCertificate.CheckSignature(x509.ECDSAWithSHA256, sigData, p.Response.Signature)
-	if invalidSigError != nil {
-		fmt.Println("returned error:", invalidSigError.Error())
-		return ErrAssertionSignature.WithInfo(invalidSigError.Error())
+	key, err := ParsePublicKey(credentialBytes)
+	var valid bool
+	switch key.(type) {
+	case OKPPublicKeyData:
+		o := key.(OKPPublicKeyData)
+		valid, err = o.Verify(sigData, p.Response.Signature)
+	case EC2PublicKeyData:
+		e := key.(EC2PublicKeyData)
+		valid, err = e.Verify(sigData, p.Response.Signature)
+	case RSAPublicKeyData:
+		r := key.(RSAPublicKeyData)
+		valid, err = r.Verify(sigData, p.Response.Signature)
+	default:
+		return ErrUnsupportedKey
 	}
 
+	if !valid {
+		return ErrAssertionSignature.WithDetails(fmt.Sprintf("Error validating the assertion signature: %+v\n", err))
+	}
 	return nil
 }
