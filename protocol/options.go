@@ -18,7 +18,7 @@ type PublicKeyCredentialCreationOptions struct {
 	AuthenticatorSelection AuthenticatorSelection   `json:"authenticatorSelection,omitempty"`
 	Timeout                int                      `json:"timeout,omitempty"`
 	CredentialExcludeList  []CredentialDescriptor   `json:"excludeCredentials,omitempty"`
-	Extensions             AuthenticationExtensions `json:"extenstions,omitempty"`
+	Extensions             AuthenticationExtensions `json:"extensions,omitempty"`
 	Attestation            ConveyancePreference     `json:"attestation,omitempty"`
 }
 
@@ -31,7 +31,7 @@ type PublicKeyCredentialRequestOptions struct {
 	RelyingPartyID     string                      `json:"rpId,omitempty"`
 	AllowedCredentials []CredentialDescriptor      `json:"allowCredentials,omitempty"`
 	UserVerification   UserVerificationRequirement `json:"userVerification,omitempty"` // Default is "preferred"
-	Extensions         AuthenticationExtensions    `json:"extenstions,omitempty"`
+	Extensions         AuthenticationExtensions    `json:"extensions,omitempty"`
 }
 
 // This dictionary contains the attributes that are specified by a caller when referring to a public
