@@ -6,6 +6,8 @@ import (
 	"encoding/asn1"
 	"fmt"
 	"strings"
+
+	"github.com/duo-labs/webauthn/protocol/webauthncose"
 )
 
 var packedAttestationKey = "packed"
@@ -193,44 +195,21 @@ func handleSelfAttestation(alg int64, pubKey, authData, clientDataHash, signatur
 	// clientDataHash using the credential public key with alg.
 	verificationData := append(authData, clientDataHash...)
 
-	key, err := ParsePublicKey(pubKey)
+	key, err := webauthncose.ParsePublicKey(pubKey)
 	if err != nil {
 		return attestationType, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the public key: %+v\n", err))
 	}
 
-	var valid bool
+	k := key.(webauthncose.PublicKeyData)
 
-	switch key.(type) {
-	case OKPPublicKeyData:
-		o := key.(OKPPublicKeyData)
-		if alg != o.PublicKeyData.Algorithm {
-			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
-		}
-		valid, err = o.Verify(verificationData, signature)
-		if !valid {
-			return attestationType, nil, ErrAttestation.WithDetails("Failed to validate signature with OKP key for self attestation")
-		}
-	case EC2PublicKeyData:
-		e := key.(EC2PublicKeyData)
-		if alg != e.PublicKeyData.Algorithm {
-			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
-		}
-		valid, err = e.Verify(verificationData, signature)
-		if !valid {
-			return attestationType, nil, ErrAttestation.WithDetails(fmt.Sprintf("Failed to validate signature with EC2 key for self attestation: %+v", err))
-		}
-	case RSAPublicKeyData:
-		r := key.(RSAPublicKeyData)
-		if alg != r.PublicKeyData.Algorithm {
-			return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
-		}
-		valid, err = r.Verify(verificationData, signature)
-		if !valid {
-			return attestationType, nil, ErrAttestation.WithDetails(fmt.Sprintf("Failed to validate signature with RSA key for self attestation: %+v", err))
-		}
-	default:
-		return attestationType, nil, ErrUnsupportedKey
+	if alg != k.Algorithm {
+		return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
 	}
 
-	return attestationType, nil, nil
+	valid, err := webauthncose.VerifySignature(key, verificationData, signature)
+	if !valid && err == nil {
+		return attestationType, nil, ErrInvalidAttestation.WithDetails("Unabled to verify signature")
+	}
+
+	return attestationType, nil, err
 }

@@ -1,5 +1,9 @@
 package protocol
 
+import (
+	"github.com/duo-labs/webauthn/protocol/webauthncose"
+)
+
 type CredentialCreation struct {
 	Response PublicKeyCredentialCreationOptions `json:"publicKey"`
 }
@@ -50,8 +54,8 @@ type CredentialDescriptor struct {
 // CredentialParameter is the credential type and algorithm
 // that the relying party wants the authenticator to create
 type CredentialParameter struct {
-	Type      CredentialType          `json:"type"`
-	Algorithm COSEAlgorithmIdentifier `json:"alg"`
+	Type      CredentialType               `json:"type"`
+	Algorithm webauthncose.COSEAlgorithmIdentifier `json:"alg"`
 }
 
 // This enumeration defines the valid credential types.

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/duo-labs/webauthn/protocol/webauthncose"
 )
 
 // The raw response returned to us from an authenticator when we request a
@@ -104,17 +106,17 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge []byte, relyingPa
 
 	sigData := append(p.Raw.AssertionResponse.AuthenticatorData, clientDataHash[:]...)
 
-	key, err := ParsePublicKey(credentialBytes)
+	key, err := webauthncose.ParsePublicKey(credentialBytes)
 	var valid bool
 	switch key.(type) {
-	case OKPPublicKeyData:
-		o := key.(OKPPublicKeyData)
+	case webauthncose.OKPPublicKeyData:
+		o := key.(webauthncose.OKPPublicKeyData)
 		valid, err = o.Verify(sigData, p.Response.Signature)
-	case EC2PublicKeyData:
-		e := key.(EC2PublicKeyData)
+	case webauthncose.EC2PublicKeyData:
+		e := key.(webauthncose.EC2PublicKeyData)
 		valid, err = e.Verify(sigData, p.Response.Signature)
-	case RSAPublicKeyData:
-		r := key.(RSAPublicKeyData)
+	case webauthncose.RSAPublicKeyData:
+		r := key.(webauthncose.RSAPublicKeyData)
 		valid, err = r.Verify(sigData, p.Response.Signature)
 	default:
 		return ErrUnsupportedKey
