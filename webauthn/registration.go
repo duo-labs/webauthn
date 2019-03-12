@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/duo-labs/webauthn/protocol"
+	"github.com/duo-labs/webauthn/protocol/webauthncose"
 )
 
 // BEGIN REGISTRATION
@@ -92,6 +93,11 @@ func WithConveyancePreference(preference protocol.ConveyancePreference) Registra
 		cco.Attestation = preference
 	}
 }
+func WithExtensions(preference protocol.AuthenticationExtensions) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
+		cco.Extensions = preference
+	}
+}
 
 // Take the response from the authenticator and client and verify the credential against the user's credentials and
 // session data.
@@ -120,47 +126,47 @@ func defaultRegistrationCredentialParameters() []protocol.CredentialParameter {
 	return []protocol.CredentialParameter{
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgES256,
+			Algorithm: webauthncose.AlgES256,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgES384,
+			Algorithm: webauthncose.AlgES384,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgES512,
+			Algorithm: webauthncose.AlgES512,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgRS1,
+			Algorithm: webauthncose.AlgRS1,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgRS256,
+			Algorithm: webauthncose.AlgRS256,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgRS384,
+			Algorithm: webauthncose.AlgRS384,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgRS512,
+			Algorithm: webauthncose.AlgRS512,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgPS256,
+			Algorithm: webauthncose.AlgPS256,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgPS384,
+			Algorithm: webauthncose.AlgPS384,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgPS512,
+			Algorithm: webauthncose.AlgPS512,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: protocol.AlgEdDSA,
+			Algorithm: webauthncose.AlgEdDSA,
 		},
 	}
 }

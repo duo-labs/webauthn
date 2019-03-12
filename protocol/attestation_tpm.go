@@ -10,6 +10,8 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/duo-labs/webauthn/protocol/webauthncose"
+
 	"github.com/duo-labs/webauthn/protocol/googletpm"
 )
 
@@ -41,7 +43,7 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Error retreiving alg value")
 	}
 
-	coseAlg := COSEAlgorithmIdentifier(alg)
+	coseAlg := webauthncose.COSEAlgorithmIdentifier(alg)
 
 	x5c, x509present := att.AttStatement["x5c"].([]interface{})
 	if !x509present {
@@ -76,17 +78,17 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Unable to decode TPMT_PUBLIC in attestation statement")
 	}
 
-	key, err := ParsePublicKey(att.AuthData.AttData.CredentialPublicKey)
+	key, err := webauthncose.ParsePublicKey(att.AuthData.AttData.CredentialPublicKey)
 	switch key.(type) {
-	case EC2PublicKeyData:
-		e := key.(EC2PublicKeyData)
+	case webauthncose.EC2PublicKeyData:
+		e := key.(webauthncose.EC2PublicKeyData)
 		if pubArea.ECCParameters.CurveID != googletpm.EllipticCurve(e.Curve) ||
 			pubArea.ECCParameters.Point.X != new(big.Int).SetBytes(e.XCoord) ||
 			pubArea.ECCParameters.Point.Y != new(big.Int).SetBytes(e.YCoord) {
 			return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Mismatch between ECCParameters in pubArea and credentialPublicKey")
 		}
-	case RSAPublicKeyData:
-		r := key.(RSAPublicKeyData)
+	case webauthncose.RSAPublicKeyData:
+		r := key.(webauthncose.RSAPublicKeyData)
 		mod := new(big.Int).SetBytes(r.Modulus)
 		exp := uint32(r.Exponent[0]) + uint32(r.Exponent[1])<<8 + uint32(r.Exponent[2])<<16
 		if 0 != pubArea.RSAParameters.Modulus.Cmp(mod) ||
@@ -111,7 +113,7 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Type is not set to TPM_ST_ATTEST_CERTIFY")
 	}
 	// 3/4 Verify that extraData is set to the hash of attToBeSigned using the hash algorithm employed in "alg".
-	f := HasherFromCOSEAlg(coseAlg)
+	f := webauthncose.HasherFromCOSEAlg(coseAlg)
 	h := f()
 	h.Write(attToBeSigned)
 	if 0 != bytes.Compare(certInfo.ExtraData, h.Sum(nil)) {
@@ -146,7 +148,7 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 			return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Error parsing certificate from ASN.1")
 		}
 
-		sigAlg := SigAlgFromCOSEAlg(coseAlg)
+		sigAlg := webauthncose.SigAlgFromCOSEAlg(coseAlg)
 
 		err = aikCert.CheckSignature(x509.SignatureAlgorithm(sigAlg), certInfoBytes, sigBytes)
 		if err != nil {
