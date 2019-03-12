@@ -5,6 +5,8 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
+
+	"github.com/duo-labs/webauthn/protocol/webauthncose"
 )
 
 var androidAttestationKey = "android-key"
@@ -68,11 +70,11 @@ func verifyAndroidKeyFormat(att AttestationObject, clientDataHash []byte) (strin
 		return androidAttestationKey, nil, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Signature validation error: %+v\n", err))
 	}
 	// Verify that the public key in the first certificate in x5c matches the credentialPublicKey in the attestedCredentialData in authenticatorData.
-	pubKey, err := ParsePublicKey(att.AuthData.AttData.CredentialPublicKey)
+	pubKey, err := webauthncose.ParsePublicKey(att.AuthData.AttData.CredentialPublicKey)
 	if err != nil {
 		return androidAttestationKey, nil, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Error parsing public key: %+v\n", err))
 	}
-	e := pubKey.(EC2PublicKeyData)
+	e := pubKey.(webauthncose.EC2PublicKeyData)
 	valid, err = e.Verify(signatureData, sig)
 	if err != nil || valid != true {
 		return androidAttestationKey, nil, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Error parsing public key: %+v\n", err))
