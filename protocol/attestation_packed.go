@@ -200,10 +200,27 @@ func handleSelfAttestation(alg int64, pubKey, authData, clientDataHash, signatur
 		return attestationType, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the public key: %+v\n", err))
 	}
 
-	k := key.(webauthncose.PublicKeyData)
-
-	if alg != k.Algorithm {
-		return attestationType, nil, ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
+	switch key.(type) {
+	case webauthncose.OKPPublicKeyData:
+		k := key.(webauthncose.OKPPublicKeyData)
+		err := verifyKeyAlgorithm(k.Algorithm, alg)
+		if err != nil {
+			return attestationType, nil, err
+		}
+	case webauthncose.EC2PublicKeyData:
+		k := key.(webauthncose.EC2PublicKeyData)
+		err := verifyKeyAlgorithm(k.Algorithm, alg)
+		if err != nil {
+			return attestationType, nil, err
+		}
+	case webauthncose.RSAPublicKeyData:
+		k := key.(webauthncose.RSAPublicKeyData)
+		err := verifyKeyAlgorithm(k.Algorithm, alg)
+		if err != nil {
+			return attestationType, nil, err
+		}
+	default:
+		return attestationType, nil, ErrInvalidAttestation.WithDetails("Error verifying the public key data")
 	}
 
 	valid, err := webauthncose.VerifySignature(key, verificationData, signature)
@@ -212,4 +229,11 @@ func handleSelfAttestation(alg int64, pubKey, authData, clientDataHash, signatur
 	}
 
 	return attestationType, nil, err
+}
+
+func verifyKeyAlgorithm(keyAlgorithm, attestedAlgorithm int64) error {
+	if keyAlgorithm != attestedAlgorithm {
+		return ErrInvalidAttestation.WithDetails("Public key algorithm does not equal att statement algorithm")
+	}
+	return nil
 }
