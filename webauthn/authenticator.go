@@ -21,7 +21,7 @@ type Authenticator struct {
 }
 
 // Allow for easy marhsalling of authenticator options that are provided to the user
-func SelectAuthenticator(att string, rrk bool, uv string) p.AuthenticatorSelection {
+func SelectAuthenticator(att string, rrk *bool, uv string) p.AuthenticatorSelection {
 	return p.AuthenticatorSelection{
 		AuthenticatorAttachment: p.AuthenticatorAttachment(att),
 		RequireResidentKey:      rrk,

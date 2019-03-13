@@ -2,6 +2,7 @@ package webauthn
 
 import (
 	"bytes"
+	"encoding/base64"
 	"net/http"
 
 	"github.com/duo-labs/webauthn/protocol"
@@ -40,14 +41,15 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	credentialParams := defaultRegistrationCredentialParameters()
 
+	rrk := false
 	authSelection := protocol.AuthenticatorSelection{
 		AuthenticatorAttachment: protocol.CrossPlatform,
-		RequireResidentKey:      false,
+		RequireResidentKey:      &rrk,
 		UserVerification:        protocol.VerificationPreferred,
 	}
 
 	creationOptions := protocol.PublicKeyCredentialCreationOptions{
-		Challenge:              challenge,
+		Challenge:              base64.RawURLEncoding.EncodeToString(challenge),
 		RelyingParty:           relyingParty,
 		User:                   webAuthnUser,
 		Parameters:             credentialParams,

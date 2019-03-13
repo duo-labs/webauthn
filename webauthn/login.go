@@ -2,6 +2,7 @@ package webauthn
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 
@@ -43,9 +44,9 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	}
 
 	requestOptions := protocol.PublicKeyCredentialRequestOptions{
-		Challenge:          challenge,
+		Challenge:          base64.RawURLEncoding.EncodeToString(challenge),
 		Timeout:            webauthn.Config.Timeout,
-		RelyingPartyID:     webauthn.Config.RPID,
+		RelyingPartyID:     base64.RawURLEncoding.EncodeToString([]byte(webauthn.Config.RPID)),
 		UserVerification:   webauthn.Config.AuthenticatorSelection.UserVerification,
 		AllowedCredentials: allowedCredentials,
 	}

@@ -15,7 +15,7 @@ type CredentialAssertion struct {
 // In order to create a Credential via create(), the caller specifies a few parameters in a CredentialCreationOptions object.
 // See §5.4. Options for Credential Creation https://www.w3.org/TR/webauthn/#dictionary-makecredentialoptions
 type PublicKeyCredentialCreationOptions struct {
-	Challenge              Challenge                `json:"challenge"`
+	Challenge              string                   `json:"challenge"`
 	RelyingParty           RelyingPartyEntity       `json:"rp"`
 	User                   UserEntity               `json:"user"`
 	Parameters             []CredentialParameter    `json:"pubKeyCredParams,omitempty"`
@@ -30,7 +30,7 @@ type PublicKeyCredentialCreationOptions struct {
 // Its challenge member MUST be present, while its other members are OPTIONAL.
 // See §5.5. Options for Assertion Generation https://www.w3.org/TR/webauthn/#assertion-options
 type PublicKeyCredentialRequestOptions struct {
-	Challenge          Challenge                   `json:"challenge"`
+	Challenge          string                      `json:"challenge"`
 	Timeout            int                         `json:"timeout,omitempty"`
 	RelyingPartyID     string                      `json:"rpId,omitempty"`
 	AllowedCredentials []CredentialDescriptor      `json:"allowCredentials,omitempty"`
@@ -54,7 +54,7 @@ type CredentialDescriptor struct {
 // CredentialParameter is the credential type and algorithm
 // that the relying party wants the authenticator to create
 type CredentialParameter struct {
-	Type      CredentialType               `json:"type"`
+	Type      CredentialType                       `json:"type"`
 	Algorithm webauthncose.COSEAlgorithmIdentifier `json:"alg"`
 }
 
@@ -87,7 +87,7 @@ type AuthenticatorSelection struct {
 	// RequireResidentKey this member describes the Relying Party's requirements regarding resident
 	// credentials. If the parameter is set to true, the authenticator MUST create a client-side-resident
 	// public key credential source when creating a public key credential.
-	RequireResidentKey bool `json:"requireResidentKey,omitempty"`
+	RequireResidentKey *bool `json:"requireResidentKey,omitempty"`
 	// UserVerification This member describes the Relying Party's requirements regarding user verification for
 	// the create() operation. Eligible authenticators are filtered to only those capable of satisfying this
 	// requirement.
@@ -120,3 +120,5 @@ func (a *PublicKeyCredentialRequestOptions) GetAllowedCredentialIDs() [][]byte {
 	}
 	return allowedCredentialIDs
 }
+
+type Extensions interface{}
