@@ -19,7 +19,24 @@ func TestPublicKeyCredentialRequestOptions_GetAllowedCredentialIDs(t *testing.T)
 		fields fields
 		want   [][]byte
 	}{
-		// TODO: Add test cases.
+		{
+			"Correct Credential IDs",
+			fields{
+				Challenge: Challenge([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
+				Timeout:   60,
+				AllowedCredentials: []CredentialDescriptor{
+					{
+						"public-key", []byte("1234"), []AuthenticatorTransport{"usb"},
+					},
+				},
+				RelyingPartyID:   "test.org",
+				UserVerification: VerificationPreferred,
+				Extensions:       AuthenticationExtensions{},
+			},
+			[][]byte{
+				[]byte("1234"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
