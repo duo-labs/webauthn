@@ -62,6 +62,7 @@ func TestCollectedClientData_Verify(t *testing.T) {
 		ceremony           CeremonyType
 		relyingPartyOrigin string
 	}
+	
 	tests := []struct {
 		name    string
 		fields  fields
