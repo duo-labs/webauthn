@@ -46,7 +46,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	requestOptions := protocol.PublicKeyCredentialRequestOptions{
 		Challenge:          base64.RawURLEncoding.EncodeToString(challenge),
 		Timeout:            webauthn.Config.Timeout,
-		RelyingPartyID:     base64.RawURLEncoding.EncodeToString([]byte(webauthn.Config.RPID)),
+		RelyingPartyID:     webauthn.Config.RPID,
 		UserVerification:   webauthn.Config.AuthenticatorSelection.UserVerification,
 		AllowedCredentials: allowedCredentials,
 	}
