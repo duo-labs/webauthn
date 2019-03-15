@@ -24,6 +24,7 @@ type ParsedCredentialAssertionData struct {
 	Raw      CredentialAssertionResponse
 }
 
+// The 
 type AuthenticatorAssertionResponse struct {
 	AuthenticatorResponse
 	AuthenticatorData URLEncodedBase64 `json:"authenticatorData"`

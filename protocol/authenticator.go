@@ -187,6 +187,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) {
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
 	a.AttData.CredentialPublicKey = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
 }
+
 func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
 	var cborHandler codec.Handle = new(codec.CborHandle)
 	var m interface{}
