@@ -86,14 +86,9 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 		return attestationType, x5c, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing certificate from ASN.1 data: %+v", err))
 	}
 
-	// YUBIKEYS on Chrome give an incorrect packed attestation, so if we see a yubico cert attempt to fix it.
-	// yubikeys on firefox fall back to u2f format
-	if strings.Contains(attCert.Subject.CommonName, "Yubico") {
-		err = attCert.CheckSignature(x509.ECDSAWithSHA256, signatureData, signature)
-	} else {
-		err = attCert.CheckSignature(x509.SignatureAlgorithm(alg), signatureData, signature)
-	}
-
+	coseAlg := webauthncose.COSEAlgorithmIdentifier(alg)
+	sigAlg := webauthncose.SigAlgFromCOSEAlg(coseAlg)
+	err = attCert.CheckSignature(x509.SignatureAlgorithm(sigAlg), signatureData, signature)
 	if err != nil {
 		return attestationType, x5c, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Signature validation error: %+v\n", err))
 	}

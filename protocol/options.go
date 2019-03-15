@@ -122,3 +122,15 @@ func (a *PublicKeyCredentialRequestOptions) GetAllowedCredentialIDs() [][]byte {
 }
 
 type Extensions interface{}
+
+type ServerResponse struct {
+	Status  ServerResponseStatus `json:"status"`
+	Message string               `json:"errorMessage"`
+}
+
+type ServerResponseStatus string
+
+const (
+	StatusOk     ServerResponseStatus = "ok"
+	StatusFailed ServerResponseStatus = "failed"
+)
