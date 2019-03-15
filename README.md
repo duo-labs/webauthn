@@ -1,6 +1,7 @@
 WebAuthn Library
 =============
 [![GoDoc](https://godoc.org/github.com/duo-labs/webauthn?status.svg)](https://godoc.org/github.com/duo-labs/webauthn)
+[![Build Status](https://travis-ci.org/duo-labs/webauthn.svg?branch=master)](https://travis-ci.org/duo-labs/webauthn)
 
 This library is meant to handle [Web Authentication](https://w3c.github.io/webauthn) for Go apps that wish to implement a passwordless solution for users. While the specification is currently in Candidate Recommendation, this library conforms as much as possible to 
 the guidelines and implementation procedures outlined by the document.
