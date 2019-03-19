@@ -44,7 +44,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	}
 
 	requestOptions := protocol.PublicKeyCredentialRequestOptions{
-		Challenge:          base64.RawURLEncoding.EncodeToString(challenge),
+		Challenge:          challenge,
 		Timeout:            webauthn.Config.Timeout,
 		RelyingPartyID:     webauthn.Config.RPID,
 		UserVerification:   webauthn.Config.AuthenticatorSelection.UserVerification,
@@ -56,7 +56,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	}
 
 	newSessionData := SessionData{
-		Challenge:            []byte(challenge),
+		Challenge:            base64.RawURLEncoding.EncodeToString(challenge),
 		UserID:               user.WebAuthnID(),
 		AllowedCredentialIDs: requestOptions.GetAllowedCredentialIDs(),
 	}

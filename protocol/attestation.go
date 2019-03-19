@@ -134,6 +134,9 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 	// But first let's make sure attestation is present. If it isn't, we don't need to handle
 	// any of the following steps
 	if attestationObject.Format == "none" {
+		if len(attestationObject.AttStatement) != 0 {
+			ErrAttestationFormat.WithInfo("Attestation format none with attestation present")
+		}
 		return nil
 	}
 

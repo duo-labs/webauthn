@@ -30,7 +30,7 @@ type PublicKeyCredentialCreationOptions struct {
 // Its challenge member MUST be present, while its other members are OPTIONAL.
 // See §5.5. Options for Assertion Generation https://www.w3.org/TR/webauthn/#assertion-options
 type PublicKeyCredentialRequestOptions struct {
-	Challenge          string                      `json:"challenge"`
+	Challenge          Challenge                   `json:"challenge"`
 	Timeout            int                         `json:"timeout,omitempty"`
 	RelyingPartyID     string                      `json:"rpId,omitempty"`
 	AllowedCredentials []CredentialDescriptor      `json:"allowCredentials,omitempty"`
@@ -46,7 +46,7 @@ type CredentialDescriptor struct {
 	// The valid credential types.
 	Type CredentialType `json:"type"`
 	// CredentialID The ID of a credential to allow/disallow
-	CredentialID []byte `json:"id"`
+	CredentialID URLEncodedBase64 `json:"id"`
 	// The authenticator transports that can be used
 	Transport []AuthenticatorTransport `json:"transports,omitempty"`
 }

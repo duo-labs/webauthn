@@ -162,6 +162,8 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 		} else {
 			return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
 		}
+	} else {
+		return ErrBadRequest.WithDetails("Attested credential flag not set")
 	}
 
 	if a.Flags.HasExtensions() {

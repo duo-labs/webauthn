@@ -6,6 +6,7 @@ import (
 	"encoding/asn1"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/duo-labs/webauthn/protocol/webauthncose"
 )
@@ -73,6 +74,20 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 	// Step 2.1. Verify that sig is a valid signature over the concatenation of authenticatorData
 	// and clientDataHash using the attestation public key in attestnCert with the algorithm specified in alg.
 	attestationType := "Packed (Basic)"
+
+	for _, c := range x5c {
+		cb, cv := c.([]byte)
+		if !cv {
+			return attestationType, x5c, ErrAttestation.WithDetails("Error getting certificate from x5c cert chain")
+		}
+		ct, err := x509.ParseCertificate(cb)
+		if err != nil {
+			return attestationType, x5c, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing certificate from ASN.1 data: %+v", err))
+		}
+		if ct.NotBefore.After(time.Now()) || ct.NotAfter.Before(time.Now()) {
+			return attestationType, x5c, ErrAttestationFormat.WithDetails("Cert in chain not time valid")
+		}
+	}
 
 	attCertBytes, valid := x5c[0].([]byte)
 	if !valid {

@@ -64,7 +64,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	response := protocol.CredentialCreation{Response: creationOptions}
 	newSessionData := SessionData{
-		Challenge: []byte(challenge),
+		Challenge: base64.RawURLEncoding.EncodeToString(challenge),
 		UserID:    user.WebAuthnID(),
 	}
 
@@ -116,7 +116,6 @@ func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, res
 	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
 
 	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigin)
-
 	if invalidErr != nil {
 		return nil, invalidErr
 	}
