@@ -11,7 +11,11 @@ func TestCreateChallenge(t *testing.T) {
 		want    Challenge
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"Successfull Challenge Create",
+			Challenge{},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -20,6 +24,7 @@ func TestCreateChallenge(t *testing.T) {
 				t.Errorf("CreateChallenge() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			tt.want = got
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CreateChallenge() = %v, want %v", got, tt.want)
 			}

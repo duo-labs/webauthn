@@ -17,11 +17,35 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 		authDataCount uint32
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
+		name        string
+		fields      fields
+		args        args
+		wantWarning bool
 	}{
-		// TODO: Add test cases.
+		{
+			"Update Counter",
+			fields{
+				AAGUID:       make([]byte, 16),
+				SignCount:    1,
+				CloneWarning: false,
+			},
+			args{
+				authDataCount: 2,
+			},
+			false,
+		},
+		{
+			"Update Counter",
+			fields{
+				AAGUID:       make([]byte, 16),
+				SignCount:    2,
+				CloneWarning: false,
+			},
+			args{
+				authDataCount: 1,
+			},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -31,6 +55,10 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 				CloneWarning: tt.fields.CloneWarning,
 			}
 			a.UpdateCounter(tt.args.authDataCount)
+			if !tt.wantWarning && a.CloneWarning {
+				t.Errorf("Got clone warning when it should be false")
+				return
+			}
 		})
 	}
 }

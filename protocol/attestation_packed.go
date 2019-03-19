@@ -38,6 +38,7 @@ func verifyPackedFormat(att AttestationObject, clientDataHash []byte) (string, [
 
 	// Get the alg value - A COSEAlgorithmIdentifier containing the identifier of the algorithm
 	// used to generate the attestation signature.
+
 	alg, present := att.AttStatement["alg"].(int64)
 	if !present {
 		return packedAttestationKey, nil, ErrAttestationFormat.WithDetails("Error retreiving alg value")
