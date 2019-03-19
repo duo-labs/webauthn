@@ -38,6 +38,14 @@ func TestAttestationVerify(t *testing.T) {
 	}
 }
 
+func attestationTestUnpackRequest(t *testing.T, request string) CredentialCreation {
+	options := CredentialCreation{}
+	if err := json.Unmarshal([]byte(request), &options); err != nil {
+		t.Fatal(err)
+	}
+	return options
+}
+
 func attestationTestUnpackResponse(t *testing.T, response string) ParsedCredentialCreationData {
 	ccr := CredentialCreationResponse{}
 	if err := json.Unmarshal([]byte(response), &ccr); err != nil {
