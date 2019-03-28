@@ -124,6 +124,15 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 			if !reflect.DeepEqual(got.Type, tt.want.Type) {
 				t.Errorf("Type = %v \n want: %v", got, tt.want)
 			}
+			if !reflect.DeepEqual(got.Response.CollectedClientData, tt.want.Response.CollectedClientData) {
+				t.Errorf("CollectedClientData = %v \n want: %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got.Response.AttestationObject.Format, tt.want.Response.AttestationObject.Format) {
+				t.Errorf("Format = %v \n want: %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got.Response.AttestationObject.AuthData.AttData.CredentialID, tt.want.Response.AttestationObject.AuthData.AttData.CredentialID) {
+				t.Errorf("CredentialID = %v \n want: %v", got, tt.want)
+			}
 		})
 	}
 }
