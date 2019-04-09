@@ -71,10 +71,11 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 	// that was sent to the authenticator in the PublicKeyCredentialRequestOptions
 	// passed to the get() call.
 
-	if 0 != strings.Compare(storedChallenge, c.Challenge) {
+	challenge := c.Challenge
+	if 0 != strings.Compare(storedChallenge, challenge) {
 		err := ErrVerification.WithDetails("Error validating challenge")
-		fmt.Printf("\nExpected b Value: %s\nReceived b: %s\n", storedChallenge, c.Challenge)
-		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, c.Challenge))
+		fmt.Printf("\nExpected b Value: %s\nReceived b: %s\n", storedChallenge, challenge)
+		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, challenge))
 	}
 
 	// Registration Step 5 & Assertion Step 9. Verify that the value of C.origin matches

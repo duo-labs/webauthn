@@ -8,7 +8,7 @@ import (
 const ChallengeLength = 32
 
 // Challenge that should be signed and returned by the authenticator
-type Challenge []byte
+type Challenge URLEncodedBase64
 
 // Create a new challenge to be sent to the authenticator. The spec recommends using
 // at least 16 bytes with 100 bits of entropy. We use 32 bytes.

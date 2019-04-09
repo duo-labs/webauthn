@@ -108,7 +108,7 @@ const (
 	FlagUserPresent = 0x001 // Referred to as UP
 	// FlagUserVerified Bit 00000100 in the byte sequence. Tells us if user is verified
 	// by the authenticator using a biometric or PIN
-	FlagUserVerified = 0x003 // Referred to as UV
+	FlagUserVerified = 0x004 // Referred to as UV
 	// FlagAttestedCredentialData Bit 01000000 in the byte sequence. Indicates whether
 	// the authenticator added attested credential data.
 	FlagAttestedCredentialData = 0x040 // Referred to as AT
@@ -152,18 +152,20 @@ func (a *AuthenticatorData) Unmarshal(rawAuthData []byte) error {
 	a.Flags = AuthenticatorFlags(rawAuthData[32])
 	a.Counter = binary.BigEndian.Uint32(rawAuthData[33:37])
 
-	remaining := 0
+	remaining := len(rawAuthData) - minAuthDataLength
 
 	if a.Flags.HasAttestedCredentialData() {
 		if len(rawAuthData) > minAuthDataLength {
 			a.unmarshalAttestedData(rawAuthData)
 			attDataLen := len(a.AttData.AAGUID) + 2 + len(a.AttData.CredentialID) + len(a.AttData.CredentialPublicKey)
-			remaining = len(rawAuthData) - minAuthDataLength - attDataLen
+			remaining = remaining - attDataLen
 		} else {
 			return ErrBadRequest.WithDetails("Attested credential flag set but data is missing")
 		}
 	} else {
-		return ErrBadRequest.WithDetails("Attested credential flag not set")
+		if !a.Flags.HasExtensions() && len(rawAuthData) != 37 {
+			return ErrBadRequest.WithDetails("Attested credential flag not set")
+		}
 	}
 
 	if a.Flags.HasExtensions() {
@@ -212,7 +214,7 @@ func (a *AuthenticatorData) Verify(rpIdHash []byte, userVerificationRequired boo
 
 	// Registration Step 10 & Assertion Step 12
 	// Verify that the User Present bit of the flags in authData is set.
-	if !a.Flags.UserPresent() {
+	if userVerificationRequired && !a.Flags.UserPresent() {
 		return ErrVerification.WithInfo(fmt.Sprintln("User presence flag not set by authenticator"))
 	}
 

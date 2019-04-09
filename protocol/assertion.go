@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -49,6 +50,17 @@ func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAs
 		return nil, ErrBadRequest.WithDetails("Parse error for Assertion")
 	}
 
+	if car.ID == "" {
+		return nil, ErrBadRequest.WithDetails("CredentialAssertionResponse with ID missing")
+	}
+
+	_, err = base64.RawURLEncoding.DecodeString(car.ID)
+	if err != nil {
+		return nil, ErrBadRequest.WithDetails("CredentialAssertionResponse with ID not base64url encoded")
+	}
+	if car.Type != "public-key" {
+		return nil, ErrBadRequest.WithDetails("CredentialAssertionResponse with bad type")
+	}
 	var par ParsedCredentialAssertionData
 	par.ID, par.RawID, par.Type = car.ID, car.RawID, car.Type
 	par.Raw = car

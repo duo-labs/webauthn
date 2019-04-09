@@ -103,6 +103,10 @@ func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse
 		return nil, err
 	}
 
+	if !p.AttestationObject.AuthData.Flags.HasAttestedCredentialData() {
+		return nil, ErrAttestationFormat.WithInfo("Attestation missing attested credential data flag")
+	}
+
 	return &p, nil
 }
 

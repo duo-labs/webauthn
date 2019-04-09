@@ -49,7 +49,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 	}
 
 	creationOptions := protocol.PublicKeyCredentialCreationOptions{
-		Challenge:              base64.RawURLEncoding.EncodeToString(challenge),
+		Challenge:              challenge,
 		RelyingParty:           relyingParty,
 		User:                   webAuthnUser,
 		Parameters:             credentialParams,
@@ -136,10 +136,6 @@ func defaultRegistrationCredentialParameters() []protocol.CredentialParameter {
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgES512,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: webauthncose.AlgRS1,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
