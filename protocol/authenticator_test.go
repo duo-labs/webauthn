@@ -7,8 +7,8 @@ import (
 )
 
 func TestAuthenticatorFlags_UserPresent(t *testing.T) {
-	var goodByte byte = 0x001
-	var badByte byte = 0x010
+	var goodByte byte = 0x01
+	var badByte byte = 0x10
 	tests := []struct {
 		name string
 		flag AuthenticatorFlags
@@ -35,8 +35,8 @@ func TestAuthenticatorFlags_UserPresent(t *testing.T) {
 }
 
 func TestAuthenticatorFlags_UserVerified(t *testing.T) {
-	var goodByte byte = 0x003
-	var badByte byte = 0x020
+	var goodByte byte = 0x04
+	var badByte byte = 0x02
 	tests := []struct {
 		name string
 		flag AuthenticatorFlags
@@ -63,8 +63,8 @@ func TestAuthenticatorFlags_UserVerified(t *testing.T) {
 }
 
 func TestAuthenticatorFlags_HasAttestedCredentialData(t *testing.T) {
-	var goodByte byte = 0x040
-	var badByte byte = 0x010
+	var goodByte byte = 0x40
+	var badByte byte = 0x01
 	tests := []struct {
 		name string
 		flag AuthenticatorFlags
@@ -91,8 +91,8 @@ func TestAuthenticatorFlags_HasAttestedCredentialData(t *testing.T) {
 }
 
 func TestAuthenticatorFlags_HasExtensions(t *testing.T) {
-	var goodByte byte = 0x080
-	var badByte byte = 0x010
+	var goodByte byte = 0x80
+	var badByte byte = 0x01
 	tests := []struct {
 		name string
 		flag AuthenticatorFlags
