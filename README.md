@@ -101,7 +101,7 @@ func beginRegistration() {
     // See the struct declarations for values
     authSelect := protocol.AuthenticatorSelection{        
 		AuthenticatorAttachment: protocol.AuthenticatorAttachment("platform"),
-		RequireResidentKey: false,
+		RequireResidentKey: protocol.ResidentKeyUnrequired(),
         UserVerification: protocol.VerificationRequired
     }
 
