@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 )
@@ -54,8 +55,25 @@ type ParsedCredentialCreationData struct {
 func ParseCredentialCreationResponse(response *http.Request) (*ParsedCredentialCreationData, error) {
 	var ccr CredentialCreationResponse
 	err := json.NewDecoder(response.Body).Decode(&ccr)
-	if err != nil {
+	if err != nil || ccr.ID == "" {
 		return nil, ErrBadRequest.WithDetails("Parse error for Registration")
+	}
+
+	if ccr.ID == "" {
+		return nil, ErrBadRequest.WithDetails("Parse error for Registration").WithInfo("Missing ID")
+	}
+
+	testB64, err := base64.RawURLEncoding.DecodeString(ccr.ID)
+	if err != nil || !(len(testB64) > 0) {
+		return nil, ErrBadRequest.WithDetails("Parse error for Registration").WithInfo("ID not base64.RawURLEncoded")
+	}
+
+	if ccr.PublicKeyCredential.Credential.Type == "" {
+		return nil, ErrBadRequest.WithDetails("Parse error for Registration").WithInfo("Missing type")
+	}
+
+	if ccr.PublicKeyCredential.Credential.Type != "public-key" {
+		return nil, ErrBadRequest.WithDetails("Parse error for Registration").WithInfo("Type not public-key")
 	}
 
 	var pcc ParsedCredentialCreationData
@@ -74,7 +92,7 @@ func ParseCredentialCreationResponse(response *http.Request) (*ParsedCredentialC
 
 // Verifies the Client and Attestation data as laid out by §7.1. Registering a new credential
 // https://www.w3.org/TR/webauthn/#registering-a-new-credential
-func (pcc *ParsedCredentialCreationData) Verify(storedChallenge Challenge, verifyUser bool, relyingPartyID, relyingPartyOrigin string) error {
+func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUser bool, relyingPartyID, relyingPartyOrigin string) error {
 
 	// Handles steps 3 through 6 - Verifying the Client Data against the Relying Party's stored data
 	verifyError := pcc.Response.CollectedClientData.Verify(storedChallenge, CreateCeremony, relyingPartyOrigin)

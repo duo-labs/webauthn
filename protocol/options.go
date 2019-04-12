@@ -46,7 +46,7 @@ type CredentialDescriptor struct {
 	// The valid credential types.
 	Type CredentialType `json:"type"`
 	// CredentialID The ID of a credential to allow/disallow
-	CredentialID []byte `json:"id"`
+	CredentialID URLEncodedBase64 `json:"id"`
 	// The authenticator transports that can be used
 	Transport []AuthenticatorTransport `json:"transports,omitempty"`
 }
@@ -54,7 +54,7 @@ type CredentialDescriptor struct {
 // CredentialParameter is the credential type and algorithm
 // that the relying party wants the authenticator to create
 type CredentialParameter struct {
-	Type      CredentialType               `json:"type"`
+	Type      CredentialType                       `json:"type"`
 	Algorithm webauthncose.COSEAlgorithmIdentifier `json:"alg"`
 }
 
@@ -87,7 +87,7 @@ type AuthenticatorSelection struct {
 	// RequireResidentKey this member describes the Relying Party's requirements regarding resident
 	// credentials. If the parameter is set to true, the authenticator MUST create a client-side-resident
 	// public key credential source when creating a public key credential.
-	RequireResidentKey bool `json:"requireResidentKey,omitempty"`
+	RequireResidentKey *bool `json:"requireResidentKey,omitempty"`
 	// UserVerification This member describes the Relying Party's requirements regarding user verification for
 	// the create() operation. Eligible authenticators are filtered to only those capable of satisfying this
 	// requirement.
@@ -120,3 +120,17 @@ func (a *PublicKeyCredentialRequestOptions) GetAllowedCredentialIDs() [][]byte {
 	}
 	return allowedCredentialIDs
 }
+
+type Extensions interface{}
+
+type ServerResponse struct {
+	Status  ServerResponseStatus `json:"status"`
+	Message string               `json:"errorMessage"`
+}
+
+type ServerResponseStatus string
+
+const (
+	StatusOk     ServerResponseStatus = "ok"
+	StatusFailed ServerResponseStatus = "failed"
+)

@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strings"
@@ -46,13 +44,16 @@ const (
 	// Indicates token binding was used when communicating with the
 	// negotiated when communicating with the Relying Party.
 	Supported TokenBindingStatus = "supported"
+	// Indicates token binding not supported
+	// when communicating with the Relying Party.
+	NotSupported TokenBindingStatus = "not-supported"
 )
 
 // Handles steps 3 through 6 of verfying the registering client data of a
 // new credential and steps 7 through 10 of verifying an authentication assertion
 // See https://www.w3.org/TR/webauthn/#registering-a-new-credential
 // and https://www.w3.org/TR/webauthn/#verifying-assertion
-func (c *CollectedClientData) Verify(storedChallenge []byte, ceremony CeremonyType, relyingPartyOrigin string) error {
+func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyType, relyingPartyOrigin string) error {
 
 	// Registration Step 3. Verify that the value of C.type is webauthn.create.
 
@@ -70,11 +71,11 @@ func (c *CollectedClientData) Verify(storedChallenge []byte, ceremony CeremonyTy
 	// that was sent to the authenticator in the PublicKeyCredentialRequestOptions
 	// passed to the get() call.
 
-	clientChallengeBytes, err := base64.RawURLEncoding.DecodeString(c.Challenge)
-	if !bytes.Equal(storedChallenge, clientChallengeBytes) {
+	challenge := c.Challenge
+	if 0 != strings.Compare(storedChallenge, challenge) {
 		err := ErrVerification.WithDetails("Error validating challenge")
-		fmt.Printf("\nExpected b Value: %s\nReceived b: %s\n", storedChallenge, clientChallengeBytes)
-		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, clientChallengeBytes))
+		fmt.Printf("\nExpected b Value: %s\nReceived b: %s\n", storedChallenge, challenge)
+		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, challenge))
 	}
 
 	// Registration Step 5 & Assertion Step 9. Verify that the value of C.origin matches
@@ -94,7 +95,14 @@ func (c *CollectedClientData) Verify(storedChallenge []byte, ceremony CeremonyTy
 	// matches the state of Token Binding for the TLS connection over which the assertion was
 	// obtained. If Token Binding was used on that TLS connection, also verify that C.tokenBinding.id
 	// matches the base64url encoding of the Token Binding ID for the connection.
-
+	if c.TokenBinding != nil {
+		if c.TokenBinding.Status == "" {
+			return ErrParsingData.WithDetails("Error decoding clientData, token binding present without status")
+		}
+		if c.TokenBinding.Status != Present && c.TokenBinding.Status != Supported && c.TokenBinding.Status != NotSupported {
+			return ErrParsingData.WithDetails("Error decoding clientData, token binding present with invalid status").WithInfo(fmt.Sprintf("Got: %s\n", c.TokenBinding.Status))
+		}
+	}
 	// Not yet fully implemented by the spec, browsers, and me.
 
 	return nil
