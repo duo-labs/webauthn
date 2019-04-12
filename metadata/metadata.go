@@ -1,60 +1,84 @@
-package protocol
+package metadata
 
 import (
-	"fmt"
+	"bytes"
+	"crypto"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/mitchellh/mapstructure"
+	uuid "github.com/satori/go.uuid"
+
 	jwt "github.com/dgrijalva/jwt-go"
-	"golang.org/x/text/language"
+)
+
+var Metadata = make(map[uuid.UUID]MetadataTOCPayloadEntry)
+var Conformance = false
+
+// AuthenticatorAttestationType - The ATTESTATION constants are 16 bit long integers indicating the specific attestation that authenticator supports.
+type AuthenticatorAttestationType uint16
+
+const (
+	// BasicFull - Indicates full basic attestation, based on an attestation private key shared among a class of authenticators (e.g. same model). Authenticators must provide its attestation signature during the registration process for the same reason. The attestation trust anchor is shared with FIDO Servers out of band (as part of the Metadata). This sharing process shouldt be done according to [UAFMetadataService].
+	BasicFull AuthenticatorAttestationType = 0x3E07
+	// BasicSurrogate - Just syntactically a Basic Attestation. The attestation object self-signed, i.e. it is signed using the UAuth.priv key, i.e. the key corresponding to the UAuth.pub key included in the attestation object. As a consequence it does not provide a cryptographic proof of the security characteristics. But it is the best thing we can do if the authenticator is not able to have an attestation private key.
+	BasicSurrogate
+	// Ecdaa - Indicates use of elliptic curve based direct anonymous attestation as defined in [FIDOEcdaaAlgorithm]. Support for this attestation type is optional at this time. It might be required by FIDO Certification.
+	Ecdaa
+	// AttCA - Indicates PrivacyCA attestation as defined in [TCG-CMCProfile-AIKCertEnroll]. Support for this attestation type is optional at this time. It might be required by FIDO Certification.
+	AttCA
 )
 
 // AuthenticatorStatus - This enumeration describes the status of an authenticator model as identified by its AAID and potentially some additional information (such as a specific attestation key).
-type AuthenticatorStatus int
+type AuthenticatorStatus string
 
 const (
-	// NOT_FIDO_CERTIFIED - This authenticator is not FIDO certified.
-	NOT_FIDO_CERTIFIED AuthenticatorStatus = iota
-	// FIDO_CERTIFIED - This authenticator has passed FIDO functional certification. This certification scheme is phased out and will be replaced by FIDO_CERTIFIED_L1.
-	FIDO_CERTIFIED
-	// USER_VERIFICATION_BYPASS - Indicates that malware is able to bypass the user verification. This means that the authenticator could be used without the user's consent and potentially even without the user's knowledge.
-	USER_VERIFICATION_BYPASS
-	// ATTESTATION_KEY_COMPROMISE - Indicates that an attestation key for this authenticator is known to be compromised. Additional data should be supplied, including the key identifier and the date of compromise, if known.
-	ATTESTATION_KEY_COMPROMISE
-	// USER_KEY_REMOTE_COMPROMISE - This authenticator has identified weaknesses that allow registered keys to be compromised and should not be trusted. This would include both, e.g. weak entropy that causes predictable keys to be generated or side channels that allow keys or signatures to be forged, guessed or extracted.
-	USER_KEY_REMOTE_COMPROMISE
-	// USER_KEY_PHYSICAL_COMPROMISE - This authenticator has known weaknesses in its key protection mechanism(s) that allow user keys to be extracted by an adversary in physical possession of the device.
-	USER_KEY_PHYSICAL_COMPROMISE
-	// UPDATE_AVAILABLE - A software or firmware update is available for the device. Additional data should be supplied including a URL where users can obtain an update and the date the update was published.
-	UPDATE_AVAILABLE
-	// REVOKED - The FIDO Alliance has determined that this authenticator should not be trusted for any reason, for example if it is known to be a fraudulent product or contain a deliberate backdoor.
-	REVOKED
-	// SELF_ASSERTION_SUBMITTED - The authenticator vendor has completed and submitted the self-certification checklist to the FIDO Alliance. If this completed checklist is publicly available, the URL will be specified in StatusReport.url.
-	SELF_ASSERTION_SUBMITTED
-	// FIDO_CERTIFIED_L1 - The authenticator has passed FIDO Authenticator certification at level 1. This level is the more strict successor of FIDO_CERTIFIED.
-	FIDO_CERTIFIED_L1
-	// FIDO_CERTIFIED_L1plus - The authenticator has passed FIDO Authenticator certification at level 1+. This level is the more than level 1.
-	FIDO_CERTIFIED_L1plus
-	// FIDO_CERTIFIED_L2 - The authenticator has passed FIDO Authenticator certification at level 2. This level is more strict than level 1+.
-	FIDO_CERTIFIED_L2
-	// FIDO_CERTIFIED_L2plus - The authenticator has passed FIDO Authenticator certification at level 2+. This level is more strict than level 2.
-	FIDO_CERTIFIED_L2plus
-	// FIDO_CERTIFIED_L3 - The authenticator has passed FIDO Authenticator certification at level 3. This level is more strict than level 2+.
-	FIDO_CERTIFIED_L3
-	// FIDO_CERTIFIED_L3plus - The authenticator has passed FIDO Authenticator certification at level 3+. This level is more strict than level 3.
-	FIDO_CERTIFIED_L3plus
+	// NotFidoCertified - This authenticator is not FIDO certified.
+	NotFidoCertified = "NOT_FIDO_CERTIFIED"
+	// FidoCertified - This authenticator has passed FIDO functional certification. This certification scheme is phased out and will be replaced by FIDO_CERTIFIED_L1.
+	FidoCertified = "FIDO_CERTIFIED"
+	// UserVerificationBypass - Indicates that malware is able to bypass the user verification. This means that the authenticator could be used without the user's consent and potentially even without the user's knowledge.
+	UserVerificationBypass = "USER_VERIFICATION_BYPASS"
+	// AttestationKeyCompromise - Indicates that an attestation key for this authenticator is known to be compromised. Additional data should be supplied, including the key identifier and the date of compromise, if known.
+	AttestationKeyCompromise = "ATTESTATION_KEY_COMPROMISE"
+	// UserKeyRemoteCompromise - This authenticator has identified weaknesses that allow registered keys to be compromised and should not be trusted. This would include both, e.g. weak entropy that causes predictable keys to be generated or side channels that allow keys or signatures to be forged, guessed or extracted.
+	UserKeyRemoteCompromise = "USER_KEY_REMOTE_COMPROMISE"
+	// UserKeyPhysicalCompromise - This authenticator has known weaknesses in its key protection mechanism(s) that allow user keys to be extracted by an adversary in physical possession of the device.
+	UserKeyPhysicalCompromise = "USER_KEY_PHYSICAL_COMPROMISE"
+	// UpdateAvailable - A software or firmware update is available for the device. Additional data should be supplied including a URL where users can obtain an update and the date the update was published.
+	UpdateAvailable = "UPDATE_AVAILABLE"
+	// Revoked - The FIDO Alliance has determined that this authenticator should not be trusted for any reason, for example if it is known to be a fraudulent product or contain a deliberate backdoor.
+	Revoked = "REVOKED"
+	// SelfAssertionSubmitted - The authenticator vendor has completed and submitted the self-certification checklist to the FIDO Alliance. If this completed checklist is publicly available, the URL will be specified in StatusReport.url.
+	SelfAssertionSubmitted = "SELF_ASSERTION_SUBMITTED"
+	// FidoCertifiedL1 - The authenticator has passed FIDO Authenticator certification at level 1. This level is the more strict successor of FIDO_CERTIFIED.
+	FidoCertifiedL1 = "FIDO_CERTIFIED_L1"
+	// FidoCertifiedL1plus - The authenticator has passed FIDO Authenticator certification at level 1+. This level is the more than level 1.
+	FidoCertifiedL1plus = "FIDO_CERTIFIED_L1plus"
+	// FidoCertifiedL2 - The authenticator has passed FIDO Authenticator certification at level 2. This level is more strict than level 1+.
+	FidoCertifiedL2 = "FIDO_CERTIFIED_L2"
+	// FidoCertifiedL2plus - The authenticator has passed FIDO Authenticator certification at level 2+. This level is more strict than level 2.
+	FidoCertifiedL2plus = "FIDO_CERTIFIED_L2plus"
+	// FidoCertifiedL3 - The authenticator has passed FIDO Authenticator certification at level 3. This level is more strict than level 2+.
+	FidoCertifiedL3 = "FIDO_CERTIFIED_L3"
+	// FidoCertifiedL3plus - The authenticator has passed FIDO Authenticator certification at level 3+. This level is more strict than level 3.
+	FidoCertifiedL3plus = "FIDO_CERTIFIED_L3plus"
 )
 
 // UndesiredAuthenticatorStatus is an array of undesirable authenticator statuses
 var UndesiredAuthenticatorStatus = [...]AuthenticatorStatus{
-	ATTESTATION_KEY_COMPROMISE,
-	USER_VERIFICATION_BYPASS,
-	USER_KEY_REMOTE_COMPROMISE,
-	USER_KEY_PHYSICAL_COMPROMISE,
-	REVOKED,
+	AttestationKeyCompromise,
+	UserVerificationBypass,
+	UserKeyRemoteCompromise,
+	UserKeyPhysicalCompromise,
+	Revoked,
 }
 
-func isUndesiredAuthenticatorStatus(status AuthenticatorStatus) bool {
+// IsUndesiredAuthenticatorStatus returns whether the supplied authenticator status is desirable or not
+func IsUndesiredAuthenticatorStatus(status AuthenticatorStatus) bool {
 	for _, s := range UndesiredAuthenticatorStatus {
 		if s == status {
 			return true
@@ -66,7 +90,7 @@ func isUndesiredAuthenticatorStatus(status AuthenticatorStatus) bool {
 // StatusReport - Contains the current BiometricStatusReport of one of the authenticator's biometric component.
 type StatusReport struct {
 	// Status of the authenticator. Additional fields MAY be set depending on this value.
-	Status AuthenticatorStatus `json:"status"`
+	Status string `json:"status"`
 	// ISO-8601 formatted date since when the status code was set, if applicable. If no date is given, the status is assumed to be effective while present.
 	EffectiveDate string `json:"effectiveDate"`
 	// Base64-encoded [RFC4648] (not base64url!) DER [ITU-X690-2008] PKIX certificate value related to the current status, if applicable.
@@ -122,7 +146,8 @@ type MetadataTOCPayloadEntry struct {
 	// URL of a list of rogue (i.e. untrusted) individual authenticators.
 	RogueListURL string `json:"rogueListURL"`
 	// The hash value computed over the Base64url encoding of the UTF-8 representation of the JSON encoded rogueList available at rogueListURL (with type rogueListEntry[]).
-	RogueListHash string `json:"rogueListHash"`
+	RogueListHash     string `json:"rogueListHash"`
+	MetadataStatement MetadataStatement
 }
 
 // RogueListEntry - Contains a list of individual authenticators known to be rogue
@@ -143,14 +168,6 @@ type MetadataTOCPayload struct {
 	NextUpdate string `json:"nextUpdate"`
 	// List of zero or more MetadataTOCPayloadEntry objects.
 	Entries []MetadataTOCPayloadEntry `json:"entries"`
-}
-
-// AlternativeDescription - This descriptor contains description in alternative languages.
-type AlternativeDescription struct {
-	// IETF language codes
-	Language language.Tag
-	// Description values can contain any UTF-8 characters.
-	Description string
 }
 
 // Version - Represents a generic version with major and minor fields.
@@ -293,7 +310,7 @@ type MetadataStatement struct {
 	// A human-readable, short description of the authenticator, in English.
 	Description string `json:"description"`
 	// A list of human-readable short descriptions of the authenticator in different languages.
-	AlternativeDescriptions []AlternativeDescription `json:"alternativeDescriptions"`
+	AlternativeDescriptions map[string]string `json:"alternativeDescriptions"`
 	// Earliest (i.e. lowest) trustworthy authenticatorVersion meeting the requirements specified in this metadata statement.
 	AuthenticatorVersion uint16 `json:"authenticatorVersion"`
 	// The FIDO protocol family. The values "uaf", "u2f", and "fido2" are supported.
@@ -365,18 +382,55 @@ type MDSGetEndpointsResponse struct {
 	Result []string `json:"result"`
 }
 
-func ProcessMDSTOC(url string, c http.Client) (MetadataTOCPayload, error) {
+func ProcessMDSTOC(url string, c http.Client) (MetadataTOCPayload, string, error) {
+	var tocAlg string
 	var payload MetadataTOCPayload
+
+	body, err := downloadBytes(url, c)
+	if err != nil {
+		return payload, tocAlg, err
+	}
+	var parser = new(jwt.Parser)
+	token, _, err := parser.ParseUnverified(string(body), jwt.MapClaims{})
+	if err != nil {
+		return payload, tocAlg, err
+	}
+	tocAlg = token.Header["alg"].(string)
+	err = mapstructure.Decode(token.Claims, &payload)
+	return payload, tocAlg, err
+}
+
+func GetMetadataStatement(entry MetadataTOCPayloadEntry, alg string, c http.Client) (MetadataStatement, error) {
+	var statement MetadataStatement
+
+	body, err := downloadBytes(entry.URL, c)
+	if err != nil {
+		return statement, err
+	}
+
+	hasher := crypto.SHA256.New()
+	_, _ = hasher.Write(body)
+	hashed := hasher.Sum(nil)
+	entryHash, _ := base64.RawURLEncoding.DecodeString(entry.Hash)
+	if !bytes.Equal(hashed, entryHash) {
+		return statement, errors.New("Hash value mismatch between entry.Hash and downloaded bytes")
+	}
+
+	out := make([]byte, base64.RawURLEncoding.DecodedLen(len(body)))
+	_, err = base64.RawURLEncoding.Decode(out, body)
+	if err != nil {
+		return statement, err
+	}
+	err = json.Unmarshal(out, &statement)
+	return statement, err
+}
+
+func downloadBytes(url string, c http.Client) ([]byte, error) {
 	res, err := c.Get(url)
 	if err != nil {
-		return payload, err
+		return nil, err
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
-	var token *jwt.Token
-	var parser = new(jwt.Parser)
-	token, _, err = parser.ParseUnverified(string(body), jwt.MapClaims{})
-	header := token.Header["x5c"]
-	fmt.Println(header)
-	return payload, err
+	return body, err
 }
