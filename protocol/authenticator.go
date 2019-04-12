@@ -105,15 +105,19 @@ type AuthenticatorFlags byte
 // The bits that do not have flags are reserved for future use.
 const (
 	// FlagUserPresent Bit 00000001 in the byte sequence. Tells us if user is present
-	FlagUserPresent = 0x001 // Referred to as UP
+	FlagUserPresent AuthenticatorFlags = 1 << iota // Referred to as UP
+	_                                              // Reserved
 	// FlagUserVerified Bit 00000100 in the byte sequence. Tells us if user is verified
 	// by the authenticator using a biometric or PIN
-	FlagUserVerified = 0x004 // Referred to as UV
+	FlagUserVerified // Referred to as UV
+	_                // Reserved
+	_                // Reserved
+	_                // Reserved
 	// FlagAttestedCredentialData Bit 01000000 in the byte sequence. Indicates whether
 	// the authenticator added attested credential data.
-	FlagAttestedCredentialData = 0x040 // Referred to as AT
-	// FlagHasExtension Bite 10000000 in the byte sequence. Indicates if the authenticator data has extensions.
-	FlagHasExtensions = 0x080 //  Referred to as ED
+	FlagAttestedCredentialData // Referred to as AT
+	// FlagHasExtension Bit 10000000 in the byte sequence. Indicates if the authenticator data has extensions.
+	FlagHasExtensions //  Referred to as ED
 )
 
 // UserPresent returns if the UP flag was set
