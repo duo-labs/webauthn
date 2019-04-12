@@ -2,6 +2,7 @@ package webauthn
 
 import (
 	"bytes"
+	"encoding/base64"
 	"net/http"
 
 	"github.com/duo-labs/webauthn/protocol"
@@ -40,9 +41,10 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	credentialParams := defaultRegistrationCredentialParameters()
 
+	rrk := false
 	authSelection := protocol.AuthenticatorSelection{
 		AuthenticatorAttachment: protocol.CrossPlatform,
-		RequireResidentKey:      false,
+		RequireResidentKey:      &rrk,
 		UserVerification:        protocol.VerificationPreferred,
 	}
 
@@ -62,7 +64,7 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	response := protocol.CredentialCreation{Response: creationOptions}
 	newSessionData := SessionData{
-		Challenge: []byte(challenge),
+		Challenge: base64.RawURLEncoding.EncodeToString(challenge),
 		UserID:    user.WebAuthnID(),
 	}
 
@@ -114,7 +116,6 @@ func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, res
 	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
 
 	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigin)
-
 	if invalidErr != nil {
 		return nil, invalidErr
 	}
@@ -135,10 +136,6 @@ func defaultRegistrationCredentialParameters() []protocol.CredentialParameter {
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgES512,
-		},
-		protocol.CredentialParameter{
-			Type:      protocol.PublicKeyCredentialType,
-			Algorithm: webauthncose.AlgRS1,
 		},
 		protocol.CredentialParameter{
 			Type:      protocol.PublicKeyCredentialType,

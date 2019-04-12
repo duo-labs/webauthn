@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -52,6 +53,17 @@ func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAs
 		return nil, ErrBadRequest.WithDetails("Parse error for Assertion")
 	}
 
+	if car.ID == "" {
+		return nil, ErrBadRequest.WithDetails("CredentialAssertionResponse with ID missing")
+	}
+
+	_, err = base64.RawURLEncoding.DecodeString(car.ID)
+	if err != nil {
+		return nil, ErrBadRequest.WithDetails("CredentialAssertionResponse with ID not base64url encoded")
+	}
+	if car.Type != "public-key" {
+		return nil, ErrBadRequest.WithDetails("CredentialAssertionResponse with bad type")
+	}
 	var par ParsedCredentialAssertionData
 	par.ID, par.RawID, par.Type = car.ID, car.RawID, car.Type
 	par.Raw = car
@@ -76,7 +88,7 @@ func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAs
 // Follow the remaining steps outlined in §7.2 Verifying an authentication assertion
 // (https://www.w3.org/TR/webauthn/#verifying-assertion) and return an error if there
 // is a failure during each step.
-func (p *ParsedCredentialAssertionData) Verify(storedChallenge []byte, relyingPartyID, relyingPartyOrigin string, verifyUser bool, credentialBytes []byte) error {
+func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPartyID, relyingPartyOrigin string, verifyUser bool, credentialBytes []byte) error {
 
 	// Steps 4 through 6 in verifying the assertion data (https://www.w3.org/TR/webauthn/#verifying-assertion) are
 	// "assertive" steps, i.e "Let JSONtext be the result of running UTF-8 decode on the value of cData."

@@ -67,7 +67,7 @@ func (k *OKPPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return oKey.Verify(h.Sum(nil), sig), nil
+	return oKey.Verify(sig, h.Sum(nil)), nil
 }
 
 // Verify Elliptic Curce Public Key Signature

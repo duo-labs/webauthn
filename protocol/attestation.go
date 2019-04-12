@@ -18,7 +18,7 @@ import (
 // The initial unpacked 'response' object received by the relying party. This
 // contains the clientDataJSON object, which will be marshalled into
 // CollectedClientData, and the 'attestationObject', which contains
-// infomation about the authenticator, and the newly minted
+// information about the authenticator, and the newly minted
 // public key credential. The information in both objects are used
 // to verify the authenticity of the ceremony and new credential
 type AuthenticatorAttestationResponse struct {
@@ -103,6 +103,10 @@ func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse
 		return nil, err
 	}
 
+	if !p.AttestationObject.AuthData.Flags.HasAttestedCredentialData() {
+		return nil, ErrAttestationFormat.WithInfo("Attestation missing attested credential data flag")
+	}
+
 	return &p, nil
 }
 
@@ -134,6 +138,9 @@ func (attestationObject *AttestationObject) Verify(relyingPartyID string, client
 	// But first let's make sure attestation is present. If it isn't, we don't need to handle
 	// any of the following steps
 	if attestationObject.Format == "none" {
+		if len(attestationObject.AttStatement) != 0 {
+			return ErrAttestationFormat.WithInfo("Attestation format none with attestation present")
+		}
 		return nil
 	}
 

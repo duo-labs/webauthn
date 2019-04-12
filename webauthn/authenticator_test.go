@@ -66,7 +66,7 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 func TestSelectAuthenticator(t *testing.T) {
 	type args struct {
 		att string
-		rrk bool
+		rrk *bool
 		uv  string
 	}
 	tests := []struct {
@@ -77,24 +77,24 @@ func TestSelectAuthenticator(t *testing.T) {
 		{"Generate Correct Authenticator Selection",
 			args{
 				att: "platform",
-				rrk: true,
+				rrk: p.ResidentKeyUnrequired(),
 				uv:  "preferred",
 			},
 			p.AuthenticatorSelection{
 				AuthenticatorAttachment: p.Platform,
-				RequireResidentKey:      true,
+				RequireResidentKey:      p.ResidentKeyUnrequired(),
 				UserVerification:        p.VerificationPreferred,
 			},
 		},
 		{"Generate Correct Authenticator Selection",
 			args{
 				att: "cross-platform",
-				rrk: true,
+				rrk: p.ResidentKeyRequired(),
 				uv:  "required",
 			},
 			p.AuthenticatorSelection{
 				AuthenticatorAttachment: p.CrossPlatform,
-				RequireResidentKey:      true,
+				RequireResidentKey:      p.ResidentKeyRequired(),
 				UserVerification:        p.VerificationRequired,
 			},
 		},

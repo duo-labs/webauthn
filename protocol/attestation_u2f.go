@@ -18,6 +18,10 @@ func init() {
 
 // verifyU2FFormat - Follows verification steps set out by https://www.w3.org/TR/webauthn/#fido-u2f-attestation
 func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []interface{}, error) {
+
+	if !bytes.Equal(att.AuthData.AttData.AAGUID, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}) {
+		return u2fAttestationKey, nil, ErrUnsupportedAlgorithm.WithDetails("U2F attestation format AAGUID not set to 0x00")
+	}
 	// Signing procedure step - If the credential public key of the given credential is not of
 	// algorithm -7 ("ES256"), stop and return an error.
 	key := webauthncose.EC2PublicKeyData{}
