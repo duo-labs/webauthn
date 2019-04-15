@@ -20,18 +20,24 @@ Make sure your `user` model is able to handle the interface functions laid out i
 
 ### Initialize the request handler
 ```golang
-import "github.com/duo-labs/webauthn"
+import "github.com/duo-labs/webauthn/webauthn"
 
-var web webauthn.WebAuthn
+var (
+    web *webauthn.WebAuthn
+    err error
+)
 
 // Your initialization function
 func main() {
-    web = webauthn.New(&webauthn.Config{
+    web, err = webauthn.New(&webauthn.Config{
         RPDisplayName: "Duo Labs", // Display Name for your site
         RPID: "duo.com", // Generally the FQDN for your site
         RPOrigin: "https://login.duo.com", // The origin URL for WebAuthn requests
         RPIcon: "https://duo.com/logo.png", // Optional icon URL for your site
     })
+    if err != nil {
+        fmt.Println(err)
+    }
 }
 
 ```
@@ -92,7 +98,7 @@ You can modify the registration options in the following ways:
 ```golang
 // Wherever you handle your WebAuthn requests
 import "github.com/duo-labs/webauthn/protocol"
-import "github.com/duo-labs/webauthn"
+import "github.com/duo-labs/webauthn/webauthn"
 
 var webAuthnHandler webauthn.WebAuthn // init this in your init function
 
@@ -122,7 +128,7 @@ You can modify the login options to allow only certain credentials:
 ```golang
 // Wherever you handle your WebAuthn requests
 import "github.com/duo-labs/webauthn/protocol"
-import "github.com/duo-labs/webauthn"
+import "github.com/duo-labs/webauthn/webauthn"
 
 var webAuthnHandler webauthn.WebAuthn // init this in your init function
 
