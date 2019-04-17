@@ -65,7 +65,9 @@ func verifyAndroidKeyFormat(att AttestationObject, clientDataHash []byte) (strin
 		return androidAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing certificate from ASN.1 data: %+v", err))
 	}
 
-	err = attCert.CheckSignature(x509.SignatureAlgorithm(alg), signatureData, sig)
+	coseAlg := webauthncose.COSEAlgorithmIdentifier(alg)
+	sigAlg := webauthncose.SigAlgFromCOSEAlg(coseAlg)
+	err = attCert.CheckSignature(x509.SignatureAlgorithm(sigAlg), signatureData, sig)
 	if err != nil {
 		return androidAttestationKey, nil, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Signature validation error: %+v\n", err))
 	}
