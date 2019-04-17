@@ -38,7 +38,6 @@ type PublicKeyCredential struct {
 type ParsedPublicKeyCredential struct {
 	ParsedCredential
 	RawID      []byte                                `json:"rawId"`
-	Raw        PublicKeyCredential                   `json:"raw"`
 	Extensions AuthenticationExtensionsClientOutputs `json:"extensions,omitempty"`
 }
 

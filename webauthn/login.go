@@ -62,7 +62,9 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 		UserVerification:     requestOptions.UserVerification,
 	}
 
-	return &requestOptions, &newSessionData, nil
+	response := protocol.CredentialAssertion{requestOptions}
+
+	return &response, &newSessionData, nil
 }
 
 // Updates the allowed credential list with Credential Descripiptors, discussed in §5.10.3

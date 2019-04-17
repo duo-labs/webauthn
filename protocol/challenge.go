@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 )
 
 // ChallengeLength - Length of bytes to generate for a challenge
@@ -19,4 +20,8 @@ func CreateChallenge() (Challenge, error) {
 		return nil, err
 	}
 	return challenge, nil
+}
+
+func (c Challenge) String() string {
+	return base64.RawURLEncoding.EncodeToString(c)
 }

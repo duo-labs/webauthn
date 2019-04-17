@@ -25,6 +25,8 @@ type ParsedCredentialAssertionData struct {
 	Raw      CredentialAssertionResponse
 }
 
+// The AuthenticatorAssertionResponse contains the raw authenticator assertion data and is parsed into
+// ParsedAssertionResponse
 type AuthenticatorAssertionResponse struct {
 	AuthenticatorResponse
 	AuthenticatorData URLEncodedBase64 `json:"authenticatorData"`
@@ -32,6 +34,7 @@ type AuthenticatorAssertionResponse struct {
 	UserHandle        URLEncodedBase64 `json:"userHandle,omitempty"`
 }
 
+// Parsed form of AuthenticatorAssertionResponse
 type ParsedAssertionResponse struct {
 	CollectedClientData CollectedClientData
 	AuthenticatorData   AuthenticatorData

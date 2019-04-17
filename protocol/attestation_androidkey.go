@@ -1,4 +1,4 @@
-﻿package protocol
+package protocol
 
 import (
 	"bytes"
@@ -65,7 +65,9 @@ func verifyAndroidKeyFormat(att AttestationObject, clientDataHash []byte) (strin
 		return androidAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing certificate from ASN.1 data: %+v", err))
 	}
 
-	err = attCert.CheckSignature(x509.SignatureAlgorithm(alg), signatureData, sig)
+	coseAlg := webauthncose.COSEAlgorithmIdentifier(alg)
+	sigAlg := webauthncose.SigAlgFromCOSEAlg(coseAlg)
+	err = attCert.CheckSignature(x509.SignatureAlgorithm(sigAlg), signatureData, sig)
 	if err != nil {
 		return androidAttestationKey, nil, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Signature validation error: %+v\n", err))
 	}
@@ -132,7 +134,7 @@ type keyDescription struct {
 	KeymasterVersion         int
 	KeymasterSecurityLevel   asn1.Enumerated
 	AttestationChallenge     []byte
-	UniqueId                 []byte
+	UniqueID                 []byte
 	SoftwareEnforced         authorizationList
 	TeeEnforced              authorizationList
 }
@@ -157,21 +159,21 @@ type authorizationList struct {
 	TrustedConfirmationRequired interface{} `asn1:"tag:508,explicit,optional"`
 	UnlockedDeviceRequired      interface{} `asn1:"tag:509,explicit,optional"`
 	AllApplications             interface{} `asn1:"tag:600,explicit,optional"`
-	ApplicationId               interface{} `asn1:"tag:601,explicit,optional"`
+	ApplicationID               interface{} `asn1:"tag:601,explicit,optional"`
 	CreationDateTime            int         `asn1:"tag:701,explicit,optional"`
 	Origin                      int         `asn1:"tag:702,explicit,optional"`
 	RootOfTrust                 rootOfTrust `asn1:"tag:704,explicit,optional"`
 	OsVersion                   int         `asn1:"tag:705,explicit,optional"`
 	OsPatchLevel                int         `asn1:"tag:706,explicit,optional"`
-	AttestationApplicationId    []byte      `asn1:"tag:709,explicit,optional"`
-	AttestationIdBrand          []byte      `asn1:"tag:710,explicit,optional"`
-	AttestationIdDevice         []byte      `asn1:"tag:711,explicit,optional"`
-	AttestationIdProduct        []byte      `asn1:"tag:712,explicit,optional"`
-	AttestationIdSerial         []byte      `asn1:"tag:713,explicit,optional"`
-	AttestationIdImei           []byte      `asn1:"tag:714,explicit,optional"`
-	AttestationIdMeid           []byte      `asn1:"tag:715,explicit,optional"`
-	AttestationIdManufacturer   []byte      `asn1:"tag:716,explicit,optional"`
-	AttestationIdModel          []byte      `asn1:"tag:717,explicit,optional"`
+	AttestationApplicationID    []byte      `asn1:"tag:709,explicit,optional"`
+	AttestationIDBrand          []byte      `asn1:"tag:710,explicit,optional"`
+	AttestationIDDevice         []byte      `asn1:"tag:711,explicit,optional"`
+	AttestationIDProduct        []byte      `asn1:"tag:712,explicit,optional"`
+	AttestationIDSerial         []byte      `asn1:"tag:713,explicit,optional"`
+	AttestationIDImei           []byte      `asn1:"tag:714,explicit,optional"`
+	AttestationIDMeid           []byte      `asn1:"tag:715,explicit,optional"`
+	AttestationIDManufacturer   []byte      `asn1:"tag:716,explicit,optional"`
+	AttestationIDModel          []byte      `asn1:"tag:717,explicit,optional"`
 	VendorPatchLevel            int         `asn1:"tag:718,explicit,optional"`
 	BootPatchLevel              int         `asn1:"tag:719,explicit,optional"`
 }

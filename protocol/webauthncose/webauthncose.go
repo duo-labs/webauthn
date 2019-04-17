@@ -37,24 +37,24 @@ type EC2PublicKeyData struct {
 	// If the key type is EC2, the curve on which we derive the signature from.
 	Curve int64 `codec:"-1,omitempty" json:"crv"`
 	// A byte string 32 bytes in length that holds the x coordinate of the key.
-	XCoord []byte `codec:"-2,omitempty" json:"x-coordinate"`
+	XCoord []byte `codec:"-2,omitempty" json:"x"`
 	// A byte string 32 bytes in length that holds the y coordinate of the key.
-	YCoord []byte `codec:"-3,omitempty" json:"y-coordinate"`
+	YCoord []byte `codec:"-3,omitempty" json:"y"`
 }
 
 type RSAPublicKeyData struct {
 	PublicKeyData
 	// Represents the modulus parameter for the RSA algorithm
-	Modulus []byte `codec:"-1,omitempty" json:"mod"`
+	Modulus []byte `codec:"-1,omitempty" json:"n"`
 	// Represents the exponent parameter for the RSA algorithm
-	Exponent []byte `codec:"-2,omitempty" json:"exp"`
+	Exponent []byte `codec:"-2,omitempty" json:"e"`
 }
 
 type OKPPublicKeyData struct {
 	PublicKeyData
 	Curve int64
 	// A byte string that holds the x coordinate of the key.
-	XCoord []byte `codec:"-2,omitempty" json:"x-coordinate"`
+	XCoord []byte `codec:"-2,omitempty" json:"x"`
 }
 
 // Verify Octet Key Pair (OKP) Public Key Signature

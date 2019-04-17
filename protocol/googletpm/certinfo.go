@@ -202,6 +202,7 @@ func decodeCertifyInfo(in *bytes.Buffer) (*CertifyInfo, error) {
 
 	return &ci, nil
 }
+
 func decodeCreationInfo(in *bytes.Buffer) (*CreationInfo, error) {
 	var ci CreationInfo
 
@@ -217,6 +218,7 @@ func decodeCreationInfo(in *bytes.Buffer) (*CreationInfo, error) {
 
 	return &ci, nil
 }
+
 func decodeQuoteInfo(in *bytes.Buffer) (*QuoteInfo, error) {
 	var out QuoteInfo
 	sel, err := decodeTPMLPCRSelection(in)
@@ -229,6 +231,7 @@ func decodeQuoteInfo(in *bytes.Buffer) (*QuoteInfo, error) {
 	}
 	return &out, nil
 }
+
 func decodeTPMLPCRSelection(buf *bytes.Buffer) (PCRSelection, error) {
 	var count uint32
 	var sel PCRSelection

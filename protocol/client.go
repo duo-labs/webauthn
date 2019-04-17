@@ -85,10 +85,10 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 		return ErrParsingData.WithDetails("Error decoding clientData origin as URL")
 	}
 
-	if clientDataOrigin.Hostname() != relyingPartyOrigin {
-		fmt.Printf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, c.Origin)
+	if !strings.EqualFold(clientDataOrigin.Hostname(), relyingPartyOrigin) {
+		fmt.Printf("Expected: %q\nReceived: %q\n", relyingPartyOrigin, clientDataOrigin.Hostname())
 		err := ErrVerification.WithDetails("Error validating origin")
-		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, c.Origin))
+		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, clientDataOrigin.Hostname()))
 	}
 
 	// Registration Step 6 and Assertion Step 10. Verify that the value of C.tokenBinding.status

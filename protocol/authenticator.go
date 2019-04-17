@@ -105,15 +105,19 @@ type AuthenticatorFlags byte
 // The bits that do not have flags are reserved for future use.
 const (
 	// FlagUserPresent Bit 00000001 in the byte sequence. Tells us if user is present
-	FlagUserPresent = 0x001 // Referred to as UP
+	FlagUserPresent AuthenticatorFlags = 1 << iota // Referred to as UP
+	_                                              // Reserved
 	// FlagUserVerified Bit 00000100 in the byte sequence. Tells us if user is verified
 	// by the authenticator using a biometric or PIN
-	FlagUserVerified = 0x004 // Referred to as UV
+	FlagUserVerified // Referred to as UV
+	_                // Reserved
+	_                // Reserved
+	_                // Reserved
 	// FlagAttestedCredentialData Bit 01000000 in the byte sequence. Indicates whether
 	// the authenticator added attested credential data.
-	FlagAttestedCredentialData = 0x040 // Referred to as AT
-	// FlagHasExtension Bite 10000000 in the byte sequence. Indicates if the authenticator data has extensions.
-	FlagHasExtensions = 0x080 //  Referred to as ED
+	FlagAttestedCredentialData // Referred to as AT
+	// FlagHasExtension Bit 10000000 in the byte sequence. Indicates if the authenticator data has extensions.
+	FlagHasExtensions //  Referred to as ED
 )
 
 // UserPresent returns if the UP flag was set
@@ -131,7 +135,7 @@ func (flag AuthenticatorFlags) HasAttestedCredentialData() bool {
 	return (flag & FlagAttestedCredentialData) == FlagAttestedCredentialData
 }
 
-// HasExtension returns if the ED flag was set
+// HasExtensions returns if the ED flag was set
 func (flag AuthenticatorFlags) HasExtensions() bool {
 	return (flag & FlagHasExtensions) == FlagHasExtensions
 }
@@ -191,6 +195,8 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) {
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
 	a.AttData.CredentialPublicKey = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
 }
+
+// Unmarshall the credential's Public Key into CBOR encoding
 func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
 	var cborHandler codec.Handle = new(codec.CborHandle)
 	var m interface{}
@@ -199,6 +205,18 @@ func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
 	enc := codec.NewEncoderBytes(&rawBytes, cborHandler)
 	enc.Encode(m)
 	return rawBytes
+}
+
+// ResidentKeyRequired - Require that the key be private key resident to the client device
+func ResidentKeyRequired() *bool {
+	required := true
+	return &required
+}
+
+// ResidentKeyUnrequired - Do not require that the private key be resident to the client device.
+func ResidentKeyUnrequired() *bool {
+	required := false
+	return &required
 }
 
 // Verify on AuthenticatorData handles Steps 9 through 12 for Registration
