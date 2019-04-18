@@ -382,11 +382,11 @@ type MDSGetEndpointsResponse struct {
 	Result []string `json:"result"`
 }
 
-func ProcessMDSTOC(url string, c http.Client) (MetadataTOCPayload, string, error) {
+func ProcessMDSTOC(url string, suffix string, c http.Client) (MetadataTOCPayload, string, error) {
 	var tocAlg string
 	var payload MetadataTOCPayload
 
-	body, err := downloadBytes(url, c)
+	body, err := downloadBytes(url+suffix, c)
 	if err != nil {
 		return payload, tocAlg, err
 	}
@@ -400,10 +400,10 @@ func ProcessMDSTOC(url string, c http.Client) (MetadataTOCPayload, string, error
 	return payload, tocAlg, err
 }
 
-func GetMetadataStatement(entry MetadataTOCPayloadEntry, alg string, c http.Client) (MetadataStatement, error) {
+func GetMetadataStatement(entry MetadataTOCPayloadEntry, suffix string, alg string, c http.Client) (MetadataStatement, error) {
 	var statement MetadataStatement
 
-	body, err := downloadBytes(entry.URL, c)
+	body, err := downloadBytes(entry.URL+suffix, c)
 	if err != nil {
 		return statement, err
 	}
@@ -411,17 +411,24 @@ func GetMetadataStatement(entry MetadataTOCPayloadEntry, alg string, c http.Clie
 	hasher := crypto.SHA256.New()
 	_, _ = hasher.Write(body)
 	hashed := hasher.Sum(nil)
-	entryHash, _ := base64.RawURLEncoding.DecodeString(entry.Hash)
+	entryHash, err := base64.URLEncoding.DecodeString(entry.Hash)
+	if err != nil {
+		entryHash, err = base64.RawURLEncoding.DecodeString(entry.Hash)
+	}
+	if err != nil {
+		return statement, err
+	}
 	if !bytes.Equal(hashed, entryHash) {
 		return statement, errors.New("Hash value mismatch between entry.Hash and downloaded bytes")
 	}
 
-	out := make([]byte, base64.RawURLEncoding.DecodedLen(len(body)))
-	_, err = base64.RawURLEncoding.Decode(out, body)
+	n := base64.URLEncoding.DecodedLen(len(body))
+	out := make([]byte, n)
+	m, err := base64.URLEncoding.Decode(out, body)
 	if err != nil {
 		return statement, err
 	}
-	err = json.Unmarshal(out, &statement)
+	err = json.Unmarshal(out[:m], &statement)
 	return statement, err
 }
 

@@ -2,11 +2,12 @@ package protocol
 
 import (
 	"bytes"
-	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/json"
 	"fmt"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	jose "gopkg.in/square/go-jose.v2"
 )
 
 var safetyNetAttestationKey = "android-safetynet"
@@ -23,7 +24,6 @@ type SafetyNetResponse struct {
 	CtsProfileMatch            bool     `json:"ctsProfileMatch"`
 	ApkCertificateDigestSha256 [][]byte `json:"apkCertificateDigestSha256"`
 	BasicIntegrity             bool     `json:"basicIntegrity"`
-	jwt.StandardClaims
 }
 
 // Thanks to @koesie10 and @herrjemand for outlining how to support this type really well
@@ -68,55 +68,47 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		return safetyNetAttestationKey, nil, ErrAttestationFormat.WithDetails("Unable to find the SafetyNet response")
 	}
 
-	var verifyKey *rsa.PublicKey
-
-	parsedJWT, parseErr := jwt.ParseWithClaims(string(response), &SafetyNetResponse{}, func(token *jwt.Token) (interface{}, error) {
-		// since we only use the one private key to sign the tokens,
-		// we also only use its public counter part to verify
-		return verifyKey, nil
-	})
-
-	//joseResponse, parseErr := jose.ParseSigned(string(response))
+	joseResponse, parseErr := jose.ParseSigned(string(response))
 	if parseErr != nil {
 		return safetyNetAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the SafetyNet response: %+v", parseErr))
 	}
 
 	// Unpack the safetynet certs for the next steps
-	//certOpts := x509.VerifyOptions{
-	//	DNSName: "attest.android.com",
-	//}
+	certOpts := x509.VerifyOptions{
+		DNSName: "attest.android.com",
+	}
 
-	//certChain, err := joseResponse.Signatures[0].Protected.Certificates(certOpts)
+	certChain, err := joseResponse.Signatures[0].Protected.Certificates(certOpts)
 
 	// Throws error if not present or can't be verified
 	// This accomplishes §8.5.5 Verify that attestationCert is issued to the hostname "attest.android.com"
 	// https://developer.android.com/training/safetynet/index.html#compat-check-response
-	//if err != nil {
-	//	return safetyNetAttestationKey, nil, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Error finding cert issued to correct hostname: %+v", err))
-	//}
+	if err != nil {
+		return safetyNetAttestationKey, nil, ErrInvalidAttestation.WithDetails(fmt.Sprintf("Error finding cert issued to correct hostname: %+v", err))
+	}
 
 	// Get cert public key from chain if present
-	//leafCert := certChain[0][0]
-	//certPublicKey := leafCert.PublicKey
+	leafCert := certChain[0][0]
+	certPublicKey := leafCert.PublicKey
 
 	// Get the JWT payload if the public key is successfully verified against it
-	//payload, err := joseResponse.Verify(certPublicKey)
-	//if err != nil {
-	//	return safetyNetAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the SafetyNet certificates: %+v", err))
-	//}
+	payload, err := joseResponse.Verify(certPublicKey)
+	if err != nil {
+		return safetyNetAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the SafetyNet certificates: %+v", err))
+	}
 
 	// marshall the JWT payload into the safetynet response json
-	//var safetyNetResponse SafetyNetResponse
-	//err := json.Unmarshal(payload, &safetyNetResponse)
-	//if err != nil {
-	//	return safetyNetAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the SafetyNet response: %+v", err))
-	//}
+	var safetyNetResponse SafetyNetResponse
+	err = json.Unmarshal(payload, &safetyNetResponse)
+	if err != nil {
+		return safetyNetAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the SafetyNet response: %+v", err))
+	}
 
 	// §8.5.3 Verify that the nonce in the response is identical to the Base64 encoding of the SHA-256 hash of the concatenation
 	// of authenticatorData and clientDataHash.
 
 	nonceBuffer := sha256.Sum256(append(att.RawAuthData, clientDataHash...))
-	if !bytes.Equal(nonceBuffer[:], parsedJWT.Claims.(*SafetyNetResponse).Nonce) {
+	if !bytes.Equal(nonceBuffer[:], safetyNetResponse.Nonce) {
 		return safetyNetAttestationKey, nil, ErrInvalidAttestation.WithDetails("Invalid nonce for in SafetyNet response")
 	}
 
@@ -127,7 +119,7 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 	// Done above
 
 	// §8.5.6 Verify that the ctsProfileMatch attribute in the payload of response is true.
-	if parsedJWT.Claims.(*SafetyNetResponse).CtsProfileMatch {
+	if !safetyNetResponse.CtsProfileMatch {
 		return safetyNetAttestationKey, nil, ErrInvalidAttestation.WithDetails("ctsProfileMatch attribute of the JWT payload is false")
 	}
 

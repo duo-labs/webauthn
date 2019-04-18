@@ -46,7 +46,7 @@ type CredentialDescriptor struct {
 	// The valid credential types.
 	Type CredentialType `json:"type"`
 	// CredentialID The ID of a credential to allow/disallow
-	CredentialID URLEncodedBase64 `json:"id"`
+	CredentialID []byte `json:"id"`
 	// The authenticator transports that can be used
 	Transport []AuthenticatorTransport `json:"transports,omitempty"`
 }
