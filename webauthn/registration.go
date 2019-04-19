@@ -105,7 +105,7 @@ func WithExtensions(preference protocol.AuthenticationExtensions) RegistrationOp
 // session data.
 func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
 	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
-		protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
+		return nil, protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
 
 	parsedResponse, err := protocol.ParseCredentialCreationResponse(response)
