@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/duo-labs/webauthn/metadata"
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/duo-labs/webauthn/protocol/webauthncose"
 )
 
@@ -175,6 +178,31 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 		asn1.Unmarshal(foundAAGUID, &unMarshalledAAGUID)
 		if !bytes.Equal(aaguid, unMarshalledAAGUID) {
 			return attestationType, x5c, ErrInvalidAttestation.WithDetails("Certificate AAGUID does not match Auth Data certificate")
+		}
+	}
+	uuid, err := uuid.FromBytes(aaguid)
+
+	if meta, ok := metadata.Metadata[uuid]; ok {
+		for _, s := range meta.StatusReports {
+			if metadata.IsUndesiredAuthenticatorStatus(metadata.AuthenticatorStatus(s.Status)) {
+				return attestationType, x5c, ErrInvalidAttestation.WithDetails("Authenticator with undesirable status encountered")
+			}
+		}
+
+		if attCert.Subject.CommonName != attCert.Issuer.CommonName {
+			var hasBasicFull = false
+			for _, a := range meta.MetadataStatement.AttestationTypes {
+				if metadata.AuthenticatorAttestationType(a) == metadata.AuthenticatorAttestationType(metadata.BasicFull) {
+					hasBasicFull = true
+				}
+			}
+			if !hasBasicFull {
+				return attestationType, x5c, ErrInvalidAttestation.WithDetails("Attestation with full attestation from authentictor that does not support full attestation")
+			}
+		}
+	} else {
+		if metadata.Conformance {
+			return attestationType, x5c, ErrInvalidAttestation.WithDetails("AAGUID not found in metadata during conformance testing")
 		}
 	}
 
