@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/duo-labs/webauthn/metadata"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
 )
@@ -120,16 +122,17 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		return safetyNetAttestationKey, nil, ErrInvalidAttestation.WithDetails("ctsProfileMatch attribute of the JWT payload is false")
 	}
 
-	// Verify sanity of timestamp in the payload
-	now := time.Now()
-	oneMinuteAgo := now.Add(-time.Minute)
-	t := time.Unix(safetyNetResponse.TimestampMs/1000, 0)
-	if t.After(now) {
-		return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp after current time")
-	} else if t.Before(oneMinuteAgo) {
-		return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp before one minute ago")
+	if metadata.Conformance {
+		// Verify sanity of timestamp in the payload
+		now := time.Now()
+		oneMinuteAgo := now.Add(-time.Minute)
+		t := time.Unix(safetyNetResponse.TimestampMs/1000, 0)
+		if t.After(now) {
+			return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp after current time")
+		} else if t.Before(oneMinuteAgo) {
+			return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp before one minute ago")
+		}
 	}
-
 	// §8.5.7 If successful, return implementation-specific values representing attestation type Basic and attestation
 	// trust path attestationCert.
 	return "Basic attestation with SafetyNet", certChain, nil
