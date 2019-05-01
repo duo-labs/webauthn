@@ -135,5 +135,5 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 	}
 	// §8.5.7 If successful, return implementation-specific values representing attestation type Basic and attestation
 	// trust path attestationCert.
-	return "Basic attestation with SafetyNet", certChain, nil
+	return "Basic attestation with SafetyNet", nil, nil
 }
