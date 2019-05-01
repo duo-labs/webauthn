@@ -3,12 +3,15 @@ package metadata
 import (
 	"bytes"
 	"crypto"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/cloudflare/cfssl/revoke"
 	"github.com/mitchellh/mapstructure"
 	uuid "github.com/satori/go.uuid"
 
@@ -390,14 +393,92 @@ func ProcessMDSTOC(url string, suffix string, c http.Client) (MetadataTOCPayload
 	if err != nil {
 		return payload, tocAlg, err
 	}
-	var parser = new(jwt.Parser)
-	token, _, err := parser.ParseUnverified(string(body), jwt.MapClaims{})
+
+	token, err := jwt.Parse(string(body), func(token *jwt.Token) (interface{}, error) {
+		chain := token.Header["x5c"].([]interface{})
+		valid, err := ValidateChain(chain, c)
+		if !valid || err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		o := make([]byte, base64.StdEncoding.DecodedLen(len(chain[0].(string))))
+		n, err := base64.StdEncoding.Decode(o, []byte(chain[0].(string)))
+		cert, err := x509.ParseCertificate(o[:n])
+		if err != nil {
+			fmt.Println(err)
+		}
+		return cert.PublicKey, err
+	})
 	if err != nil {
 		return payload, tocAlg, err
 	}
+
 	tocAlg = token.Header["alg"].(string)
 	err = mapstructure.Decode(token.Claims, &payload)
+
 	return payload, tocAlg, err
+}
+
+func ValidateChain(chain []interface{}, c http.Client) (bool, error) {
+	rooturl := ""
+	if Conformance {
+		rooturl = "https://fidoalliance.co.nz/mds/pki/MDSROOT.crt"
+	} else {
+		rooturl = "https://mds.fidoalliance.org/Root.cer"
+	}
+
+	root, err := downloadBytes(rooturl, c)
+	if err != nil {
+		return false, err
+	}
+
+	roots := x509.NewCertPool()
+
+	ok := roots.AppendCertsFromPEM(root)
+	if !ok {
+		return false, err
+	}
+
+	o := make([]byte, base64.StdEncoding.DecodedLen(len(chain[1].(string))))
+	n, err := base64.StdEncoding.Decode(o, []byte(chain[1].(string)))
+	if err != nil {
+		return false, err
+	}
+	intcert, err := x509.ParseCertificate(o[:n])
+	if err != nil {
+		return false, err
+	}
+
+	if revoked, ok := revoke.VerifyCertificate(intcert); !ok {
+		return false, errors.New("Could not verify intermediate CRL")
+	} else if revoked {
+		return false, errors.New("Intermediate certificate is on revocation list")
+	}
+
+	ints := x509.NewCertPool()
+	ints.AddCert(intcert)
+
+	l := make([]byte, base64.StdEncoding.DecodedLen(len(chain[0].(string))))
+	n, err = base64.StdEncoding.Decode(l, []byte(chain[0].(string)))
+	if err != nil {
+		return false, err
+	}
+	leafcert, err := x509.ParseCertificate(l[:n])
+	if err != nil {
+		return false, err
+	}
+	if revoked, ok := revoke.VerifyCertificate(leafcert); !ok {
+		return false, errors.New("Could not verify leaf CRL")
+	} else if revoked {
+		return false, errors.New("Leaf certificate is on revocation list")
+	}
+
+	opts := x509.VerifyOptions{
+		Roots:         roots,
+		Intermediates: ints,
+	}
+	_, err = leafcert.Verify(opts)
+	return err == nil, err
 }
 
 func GetMetadataStatement(entry MetadataTOCPayloadEntry, suffix string, alg string, c http.Client) (MetadataStatement, error) {
