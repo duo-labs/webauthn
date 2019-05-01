@@ -12,6 +12,8 @@ type Credential struct {
 	// pair is known as the credential private key. Note that in the case of self attestation, the credential key pair is also
 	// used as the attestation key pair, see self attestation for details.
 	PublicKey []byte
+	// The attestation type used (if any) by the authenticator when creating the credential.
+	AttestationType string
 	// The Authenticator information for a given certificate
 	Authenticator Authenticator
 }
@@ -21,6 +23,7 @@ func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*Credential, e
 	newCredential := &Credential{
 		ID:        c.Response.AttestationObject.AuthData.AttData.CredentialID,
 		PublicKey: c.Response.AttestationObject.AuthData.AttData.CredentialPublicKey,
+		AttestationType: c.Response.AttestationObject.Format,
 		Authenticator: Authenticator{
 			AAGUID:    c.Response.AttestationObject.AuthData.AttData.AAGUID,
 			SignCount: c.Response.AttestationObject.AuthData.Counter,

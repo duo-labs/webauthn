@@ -59,7 +59,8 @@ type AttestationObject struct {
 	// The byteform version of the authenticator data, used in part for signature validation
 	RawAuthData []byte `json:"authData"`
 	// The format of the Attestation data.
-	Format       string                 `json:"fmt"`
+	Format string `json:"fmt"`
+	// The attestation statement data sent back if attestation is requested.
 	AttStatement map[string]interface{} `json:"attStmt,omitempty"`
 }
 
