@@ -122,17 +122,23 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		return safetyNetAttestationKey, nil, ErrInvalidAttestation.WithDetails("ctsProfileMatch attribute of the JWT payload is false")
 	}
 
-	if metadata.Conformance {
-		// Verify sanity of timestamp in the payload
-		now := time.Now()
-		oneMinuteAgo := now.Add(-time.Minute)
-		t := time.Unix(safetyNetResponse.TimestampMs/1000, 0)
-		if t.After(now) {
-			return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp after current time")
-		} else if t.Before(oneMinuteAgo) {
-			return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp before one minute ago")
+	// Verify sanity of timestamp in the payload
+	now := time.Now()
+	oneMinuteAgo := now.Add(-time.Minute)
+	t := time.Unix(safetyNetResponse.TimestampMs/1000, 0)
+	if t.After(now) {
+		// zero tolerance for post-dated timestamps
+		return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails("SafetyNet response with timestamp after current time")
+	} else if t.Before(oneMinuteAgo) {
+		// allow old timestamp for testing purposes
+		// TODO: Make this user configurable
+		msg := "SafetyNet response with timestamp before one minute ago"
+		fmt.Println(msg)
+		if metadata.Conformance {
+			return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails(msg)
 		}
 	}
+
 	// §8.5.7 If successful, return implementation-specific values representing attestation type Basic and attestation
 	// trust path attestationCert.
 	return "Basic attestation with SafetyNet", nil, nil
