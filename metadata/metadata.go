@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -531,7 +530,6 @@ func GetMetadataStatement(entry MetadataTOCPayloadEntry, suffix string, alg stri
 	// Caller is responsible for determining if entry is relevant.
 
 	// 2. Download the metadata statement from the URL specified by the field url.
-	fmt.Println(entry.URL)
 	body, err := downloadBytes(entry.URL+suffix, c)
 	if err != nil {
 		return statement, err
