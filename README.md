@@ -12,7 +12,7 @@ the guidelines and implementation procedures outlined by the document.
 An implementation of this library can be used at [webauthn.io](https://webauthn.io) and the code for this website can be found in the Duo Labs repository [`webauthn-io`](https://github.com/duo-labs/webauthn.io).
 
 ### Simplified demo
-A simplified demonstration of this library can be found [here](https://github.com/hbolimovsky/webauthn-example). It includes a minimal interface and is great for quickly testing out the code.
+A simplified demonstration of this library can be found [here](https://github.com/hbolimovsky/webauthn-example). It includes a minimal interface and is great for quickly testing out the code. The associated blog post can be found [here]().
 
 Quickstart
 ----------
