@@ -1,7 +1,6 @@
 package metadata
 
 import (
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -23,28 +22,28 @@ func TestMetadataTOCParsing(t *testing.T) {
 	}{
 		{
 			"success",
-			"../testdata/TestMetadataTOCParsing-P1.jwt",
+			"../testdata/MetadataTOCParsing-P1.jwt",
 			nil,
 		},
 		{
 			"verification_failure",
-			"../testdata/TestMetadataTOCParsing-F1.jwt",
-			jwt.ErrECDSAVerification,
-		},
-		{
-			"intermediate_revoked",
-			"../testdata/TestMetadataTOCParsing-F2.jwt",
+			"../testdata/MetadataTOCParsing-F1.jwt",
 			errIntermediateCertRevoked,
 		},
 		{
+			"intermediate_revoked",
+			"../testdata/MetadataTOCParsing-F2.jwt",
+			jwt.ErrECDSAVerification,
+		},
+		{
 			"leaf_revoked",
-			"../testdata/TestMetadataTOCParsing-F3.jwt",
+			"../testdata/MetadataTOCParsing-F3.jwt",
 			errLeafCertRevoked,
 		},
 		{
 			"asn1_parse_error",
-			"../testdata/TestMetadataTOCParsing-F4.jwt",
-			errors.New("asn1: structure error: tags don't match (16 vs {class:0 tag:4 length:22 isCompound:false}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} authKeyId @2"),
+			"../testdata/MetadataTOCParsing-F4.jwt",
+			errCRLUnavailable,
 		},
 	}
 
