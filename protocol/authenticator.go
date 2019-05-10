@@ -91,7 +91,7 @@ const (
 	// VerificationRequired User verification is required to create/release a credential
 	VerificationRequired UserVerificationRequirement = "required"
 	// VerificationPreferred User verification is preferred to create/release a credential
-	VerificationPreferred UserVerificationRequirement = "preferred"
+	VerificationPreferred UserVerificationRequirement = "preferred" // This is the default
 	// VerificationDiscouraged The authenticator should not verify the user for the credential
 	VerificationDiscouraged UserVerificationRequirement = "discouraged"
 )
