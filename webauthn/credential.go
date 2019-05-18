@@ -12,7 +12,7 @@ type Credential struct {
 	// pair is known as the credential private key. Note that in the case of self attestation, the credential key pair is also
 	// used as the attestation key pair, see self attestation for details.
 	PublicKey []byte
-	// The attestation type used (if any) by the authenticator when creating the credential.
+	// The attestation format used (if any) by the authenticator when creating the credential.
 	AttestationType string
 	// The Authenticator information for a given certificate
 	Authenticator Authenticator
