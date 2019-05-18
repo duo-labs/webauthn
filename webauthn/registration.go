@@ -43,9 +43,8 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	rrk := false
 	authSelection := protocol.AuthenticatorSelection{
-		AuthenticatorAttachment: protocol.CrossPlatform,
-		RequireResidentKey:      &rrk,
-		UserVerification:        protocol.VerificationPreferred,
+		RequireResidentKey: &rrk,
+		UserVerification:   protocol.VerificationPreferred,
 	}
 
 	creationOptions := protocol.PublicKeyCredentialCreationOptions{
