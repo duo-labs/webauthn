@@ -83,8 +83,8 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	case webauthncose.EC2PublicKeyData:
 		e := key.(webauthncose.EC2PublicKeyData)
 		if pubArea.ECCParameters.CurveID != googletpm.EllipticCurve(e.Curve) ||
-			pubArea.ECCParameters.Point.X != new(big.Int).SetBytes(e.XCoord) ||
-			pubArea.ECCParameters.Point.Y != new(big.Int).SetBytes(e.YCoord) {
+			0 != pubArea.ECCParameters.Point.X.Cmp(new(big.Int).SetBytes(e.XCoord)) ||
+			0 != pubArea.ECCParameters.Point.Y.Cmp(new(big.Int).SetBytes(e.YCoord)) {
 			return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Mismatch between ECCParameters in pubArea and credentialPublicKey")
 		}
 	case webauthncose.RSAPublicKeyData:
