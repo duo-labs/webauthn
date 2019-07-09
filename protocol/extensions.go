@@ -1,8 +1,8 @@
 package protocol
 
 // Extensions are discussed in §9. WebAuthn Extensions (https://www.w3.org/TR/webauthn/#extensions).
-// While they are talked about and have examples in the spec, they are currently not implemented
-// fully by browsers. Further work is planned to take place in Level 2 of the spec.
 
-// This is currently not fully implemented in the specification.
+// For a list of commonly supported extenstions, see §10. Defined Extensions 
+// (https://www.w3.org/TR/webauthn/#sctn-defined-extensions).
+
 type AuthenticationExtensionsClientOutputs map[interface{}]interface{}
