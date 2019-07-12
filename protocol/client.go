@@ -19,7 +19,7 @@ type CollectedClientData struct {
 	Challenge    string        `json:"challenge"`
 	Origin       string        `json:"origin"`
 	TokenBinding *TokenBinding `json:"tokenBinding,omitempty"`
-	// Chromium returns a hint sometimes about how to handle clientDataJSON in a safe manner
+	// Chromium (Chrome) returns a hint sometimes about how to handle clientDataJSON in a safe manner
 	Hint string `json:"new_keys_may_be_added_here,omitempty"`
 }
 

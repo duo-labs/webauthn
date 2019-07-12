@@ -75,9 +75,9 @@ func WithAllowedCredentials(allowList []protocol.CredentialDescriptor) LoginOpti
 	}
 }
 
-func WithUserVerification(userVerfication protocol.UserVerificationRequirement) LoginOption {
+func WithUserVerification(userVerification protocol.UserVerificationRequirement) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
-		cco.UserVerification = userVerfication
+		cco.UserVerification = userVerification
 	}
 }
 
