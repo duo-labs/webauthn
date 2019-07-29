@@ -55,8 +55,8 @@ type ParsedCredentialCreationData struct {
 func ParseCredentialCreationResponse(response *http.Request) (*ParsedCredentialCreationData, error) {
 	var ccr CredentialCreationResponse
 	err := json.NewDecoder(response.Body).Decode(&ccr)
-	if err != nil || ccr.ID == "" {
-		return nil, ErrBadRequest.WithDetails("Parse error for Registration")
+	if err != nil {
+		return nil, ErrBadRequest.WithDetails("Parse error for Registration").WithInfo(err.Error())
 	}
 
 	if ccr.ID == "" {
