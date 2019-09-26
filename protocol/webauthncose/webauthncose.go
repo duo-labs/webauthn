@@ -59,15 +59,12 @@ type OKPPublicKeyData struct {
 
 // Verify Octet Key Pair (OKP) Public Key Signature
 func (k *OKPPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
-	f := HasherFromCOSEAlg(COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm))
-	h := f()
-	h.Write(data)
 	var oKey eddsa.PublicKey
 	err := oKey.FromBytes(k.XCoord)
 	if err != nil {
 		return false, err
 	}
-	return oKey.Verify(sig, h.Sum(nil)), nil
+	return oKey.Verify(sig, data), nil
 }
 
 // Verify Elliptic Curce Public Key Signature
