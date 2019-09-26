@@ -3,7 +3,7 @@ package webauthn
 type User interface {
 	// User ID according to the Relying Party
 	WebAuthnID() []byte
-	// User Name according to the Relaying party
+	// User Name according to the Relying Party
 	WebAuthnName() string
 	// Display Name of the user
 	WebAuthnDisplayName() string
