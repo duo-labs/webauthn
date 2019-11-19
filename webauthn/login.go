@@ -13,7 +13,7 @@ import (
 // These objects help us creat the CredentialCreationOptions
 // that will be passed to the authenticator via the user client
 
-// Used to provide parameters that modify the default Credential Assertion Payload that is sent to the user.
+// LoginOption is used to provide parameters that modify the default Credential Assertion Payload that is sent to the user.
 type LoginOption func(*protocol.PublicKeyCredentialRequestOptions)
 
 // Creates the CredentialAssertion data payload that should be sent to the user agent for beginning the

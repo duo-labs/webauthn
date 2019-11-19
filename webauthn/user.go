@@ -1,5 +1,7 @@
 package webauthn
 
+// User is built to interface with the Relying Party's User entry and
+// elaborate the fields and methods needed for WebAuthn
 type User interface {
 	// User ID according to the Relying Party
 	WebAuthnID() []byte
