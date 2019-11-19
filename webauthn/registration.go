@@ -94,9 +94,11 @@ func WithConveyancePreference(preference protocol.ConveyancePreference) Registra
 		cco.Attestation = preference
 	}
 }
-func WithExtensions(preference protocol.AuthenticationExtensions) RegistrationOption {
+
+// Provide extension parameter to registration options
+func WithExtensions(extension protocol.AuthenticationExtensions) RegistrationOption {
 	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
-		cco.Extensions = preference
+		cco.Extensions = extension
 	}
 }
 
