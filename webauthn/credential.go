@@ -4,6 +4,7 @@ import (
 	"github.com/duo-labs/webauthn/protocol"
 )
 
+// Credential contains all needed information about a WebAuthn credential for storage
 type Credential struct {
 	// A probabilistically-unique byte sequence identifying a public key credential source and its authentication assertions.
 	ID []byte
@@ -18,11 +19,12 @@ type Credential struct {
 	Authenticator Authenticator
 }
 
+// MakeNewCredential will return a credential pointer on successful validation of a registration response
 func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*Credential, error) {
 
 	newCredential := &Credential{
-		ID:        c.Response.AttestationObject.AuthData.AttData.CredentialID,
-		PublicKey: c.Response.AttestationObject.AuthData.AttData.CredentialPublicKey,
+		ID:              c.Response.AttestationObject.AuthData.AttData.CredentialID,
+		PublicKey:       c.Response.AttestationObject.AuthData.AttData.CredentialPublicKey,
 		AttestationType: c.Response.AttestationObject.Format,
 		Authenticator: Authenticator{
 			AAGUID:    c.Response.AttestationObject.AuthData.AttData.AAGUID,

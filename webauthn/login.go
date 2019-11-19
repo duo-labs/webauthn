@@ -75,9 +75,17 @@ func WithAllowedCredentials(allowList []protocol.CredentialDescriptor) LoginOpti
 	}
 }
 
+// Request a user verification preference
 func WithUserVerification(userVerification protocol.UserVerificationRequirement) LoginOption {
 	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
 		cco.UserVerification = userVerification
+	}
+}
+
+// Request additional extensions for assertion
+func WithAssertionExtensions(extensions protocol.AuthenticationExtensions) LoginOption {
+	return func(cco *protocol.PublicKeyCredentialRequestOptions) {
+		cco.Extensions = extensions
 	}
 }
 
