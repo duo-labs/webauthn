@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 )
 
@@ -53,8 +54,15 @@ type ParsedCredentialCreationData struct {
 }
 
 func ParseCredentialCreationResponse(response *http.Request) (*ParsedCredentialCreationData, error) {
+	if response == nil || response.Body == nil {
+		return nil, ErrBadRequest.WithDetails("No response given")
+	}
+	return ParseCredentialCreationResponseBody(response.Body)
+}
+
+func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreationData, error) {
 	var ccr CredentialCreationResponse
-	err := json.NewDecoder(response.Body).Decode(&ccr)
+	err := json.NewDecoder(body).Decode(&ccr)
 	if err != nil {
 		return nil, ErrBadRequest.WithDetails("Parse error for Registration").WithInfo(err.Error())
 	}

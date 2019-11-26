@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/duo-labs/webauthn/protocol/webauthncose"
@@ -47,8 +48,19 @@ type ParsedAssertionResponse struct {
 // the attestation response data in a raw, mostly base64 encoded format, and parses the data into
 // manageable structures
 func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAssertionData, error) {
+	if response == nil || response.Body == nil {
+		return nil, ErrBadRequest.WithDetails("No response given")
+	}
+	return ParseCredentialRequestResponseBody(response.Body)
+}
+
+// Parse the credential request response into a format that is either required by the specification
+// or makes the assertion verification steps easier to complete. This takes an io.Reader that contains
+// the attestation response data in a raw, mostly base64 encoded format, and parses the data into
+// manageable structures
+func ParseCredentialRequestResponseBody(body io.Reader) (*ParsedCredentialAssertionData, error) {
 	var car CredentialAssertionResponse
-	err := json.NewDecoder(response.Body).Decode(&car)
+	err := json.NewDecoder(body).Decode(&car)
 	if err != nil {
 		return nil, ErrBadRequest.WithDetails("Parse error for Assertion")
 	}
