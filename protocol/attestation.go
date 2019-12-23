@@ -82,8 +82,7 @@ func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse
 
 	err := json.Unmarshal(ccr.ClientDataJSON, &p.CollectedClientData)
 	if err != nil {
-		fmt.Println("attestation response parsing error")
-		return nil, err
+		return nil, ErrParsingData.WithInfo(err.Error())
 	}
 
 	cborHandler := codec.CborHandle{}
@@ -91,8 +90,7 @@ func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse
 	// Decode the attestation data with unmarshalled auth data
 	err = codec.NewDecoderBytes(ccr.AttestationObject, &cborHandler).Decode(&p.AttestationObject)
 	if err != nil {
-		fmt.Println("parsing error")
-		return nil, err
+		return nil, ErrParsingData.WithInfo(err.Error())
 	}
 
 	// Step 8. Perform CBOR decoding on the attestationObject field of the AuthenticatorAttestationResponse
@@ -100,8 +98,7 @@ func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse
 	// the attestation statement attStmt.
 	err = p.AttestationObject.AuthData.Unmarshal(p.AttestationObject.RawAuthData)
 	if err != nil {
-		fmt.Println("error decoding auth data")
-		return nil, err
+		return nil, fmt.Errorf("error decoding auth data: %v", err)
 	}
 
 	if !p.AttestationObject.AuthData.Flags.HasAttestedCredentialData() {

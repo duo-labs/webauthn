@@ -98,7 +98,6 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPa
 	// returned by the authenticator
 	validError := p.Response.CollectedClientData.Verify(storedChallenge, AssertCeremony, relyingPartyOrigin)
 	if validError != nil {
-		fmt.Println("got error, ", validError)
 		return validError
 	}
 

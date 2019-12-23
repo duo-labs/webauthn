@@ -3,7 +3,6 @@ package webauthn
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 
 	"github.com/duo-labs/webauthn/protocol"
@@ -97,7 +96,6 @@ func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *
 
 	parsedResponse, err := protocol.ParseCredentialRequestResponse(response)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
