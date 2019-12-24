@@ -292,12 +292,14 @@ func DisplayPublicKey(cpk []byte) string {
 	case OKPPublicKeyData:
 		pKey := parsedKey.(OKPPublicKeyData)
 		if len(pKey.XCoord) != ed25519.PublicKeySize {
+			fmt.Println("bad length")
 			return "Cannot display key"
 		}
 		var oKey ed25519.PublicKey = make([]byte, ed25519.PublicKeySize)
 		copy(oKey, pKey.XCoord)
-		data, err := x509.MarshalPKIXPublicKey(oKey)
+		data, err := marshalEd25519PublicKey(oKey)
 		if err != nil {
+			fmt.Println(err)
 			return "Cannot display key"
 		}
 		pemBytes := pem.EncodeToMemory(&pem.Block{
