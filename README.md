@@ -61,7 +61,8 @@ func FinishRegistration(w http.ResponseWriter, r *http.Request) {
     // Get the session data stored from the function above
     // using gorilla/sessions it could look like this
     sessionData := store.Get(r, "registration-session")
-    credential, err := web.FinishRegistration(&user, sessionData, r)
+    parsedResponse, err := protocol.ParseCredentialCreationResponseBody(r.Body)
+    credential, err := web.CreateCredential(&user, sessionData, parsedResponse)
     // Handle validation or input errors
     // If creation was successful, store the credential object
     JSONResponse(w, "Registration Success", http.StatusOK) // Handle next steps
@@ -84,7 +85,8 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
     // Get the session data stored from the function above
     // using gorilla/sessions it could look like this
     sessionData := store.Get(r, "login-session")
-    credential, err := webauthn.FinishLogin(&user, sessionData, r)
+    parsedResponse, err := protocol.ParseCredentialRequestResponseBody(r.Body)
+    credential, err := webauthn.ValidateLogin(&user, sessionData, parsedResponse)
     // Handle validation or input errors
     // If login was successful, handle next steps
     JSONResponse(w, "Login Success", http.StatusOK)

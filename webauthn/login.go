@@ -90,13 +90,18 @@ func WithAssertionExtensions(extensions protocol.AuthenticationExtensions) Login
 
 // Take the response from the client and validate it against the user credentials and stored session data
 func (webauthn *WebAuthn) FinishLogin(user User, session SessionData, response *http.Request) (*Credential, error) {
-	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
-		return nil, protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
-	}
-
 	parsedResponse, err := protocol.ParseCredentialRequestResponse(response)
 	if err != nil {
 		return nil, err
+	}
+
+	return webauthn.ValidateLogin(user, session, parsedResponse)
+}
+
+// ValidateLogin takes a parsed response and validates it against the user credentials and session data
+func (webauthn *WebAuthn) ValidateLogin(user User, session SessionData, parsedResponse *protocol.ParsedCredentialAssertionData) (*Credential, error) {
+	if !bytes.Equal(user.WebAuthnID(), session.UserID) {
+		return nil, protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
 
 	// Step 1. If the allowCredentials option was given when this authentication ceremony was initiated,
