@@ -87,7 +87,6 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 	var safetyNetResponse SafetyNetResponse
 	err = mapstructure.Decode(token.Claims, &safetyNetResponse)
 	if err != nil {
-		fmt.Println(err)
 		return safetyNetAttestationKey, nil, ErrAttestationFormat.WithDetails(fmt.Sprintf("Error parsing the SafetyNet response: %+v", err))
 	}
 
@@ -133,7 +132,6 @@ func verifySafetyNetFormat(att AttestationObject, clientDataHash []byte) (string
 		// allow old timestamp for testing purposes
 		// TODO: Make this user configurable
 		msg := "SafetyNet response with timestamp before one minute ago"
-		fmt.Println(msg)
 		if metadata.Conformance {
 			return "Basic attestation with SafetyNet", nil, ErrInvalidAttestation.WithDetails(msg)
 		}

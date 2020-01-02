@@ -74,7 +74,6 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 	challenge := c.Challenge
 	if 0 != strings.Compare(storedChallenge, challenge) {
 		err := ErrVerification.WithDetails("Error validating challenge")
-		fmt.Printf("\nExpected b Value: %s\nReceived b: %s\n", storedChallenge, challenge)
 		return err.WithInfo(fmt.Sprintf("Expected b Value: %#v\nReceived b: %#v\n", storedChallenge, challenge))
 	}
 
@@ -86,7 +85,6 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 	}
 
 	if !strings.EqualFold(clientDataOrigin.Hostname(), relyingPartyOrigin) {
-		fmt.Printf("Expected: %q\nReceived: %q\n", relyingPartyOrigin, clientDataOrigin.Hostname())
 		err := ErrVerification.WithDetails("Error validating origin")
 		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, clientDataOrigin.Hostname()))
 	}

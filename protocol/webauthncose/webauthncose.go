@@ -279,7 +279,6 @@ func DisplayPublicKey(cpk []byte) string {
 			X:     big.NewInt(0).SetBytes(pKey.XCoord),
 			Y:     big.NewInt(0).SetBytes(pKey.YCoord),
 		}
-		fmt.Printf("Got formatted key %+v\n", eKey)
 		data, err := x509.MarshalPKIXPublicKey(eKey)
 		if err != nil {
 			return "Cannot display key"
