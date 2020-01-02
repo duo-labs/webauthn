@@ -10,10 +10,10 @@ import (
 	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
+	"golang.org/x/crypto/ed25519"
 	"hash"
 	"math/big"
 
-	"github.com/katzenpost/core/crypto/eddsa"
 	"github.com/ugorji/go/codec"
 )
 
@@ -59,12 +59,9 @@ type OKPPublicKeyData struct {
 
 // Verify Octet Key Pair (OKP) Public Key Signature
 func (k *OKPPublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
-	var oKey eddsa.PublicKey
-	err := oKey.FromBytes(k.XCoord)
-	if err != nil {
-		return false, err
-	}
-	return oKey.Verify(sig, data), nil
+	var key ed25519.PublicKey = make([]byte, ed25519.PublicKeySize)
+	copy(key, k.XCoord)
+	return ed25519.Verify(key, data, sig), nil
 }
 
 // Verify Elliptic Curce Public Key Signature
@@ -294,16 +291,19 @@ func DisplayPublicKey(cpk []byte) string {
 		return fmt.Sprintf("%s", pemBytes)
 	case OKPPublicKeyData:
 		pKey := parsedKey.(OKPPublicKeyData)
-		var oKey eddsa.PublicKey
-		err := oKey.FromBytes(pKey.XCoord)
+		if len(pKey.XCoord) != ed25519.PublicKeySize {
+			return "Cannot display key"
+		}
+		var oKey ed25519.PublicKey = make([]byte, ed25519.PublicKeySize)
+		copy(oKey, pKey.XCoord)
+		data, err := marshalEd25519PublicKey(oKey)
 		if err != nil {
 			return "Cannot display key"
 		}
-		var pemBytes string
-		err = oKey.ToPEMFile(pemBytes)
-		if err != nil {
-			return "Cannot display key"
-		}
+		pemBytes := pem.EncodeToMemory(&pem.Block{
+			Type:  "PUBLIC KEY",
+			Bytes: data,
+		})
 		return fmt.Sprintf("%s", pemBytes)
 
 	default:
