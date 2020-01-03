@@ -49,6 +49,11 @@ const (
 	NotSupported TokenBindingStatus = "not-supported"
 )
 
+// Returns the origin per the HTML spec: (scheme)://(host)[:(port)]
+func FullyQualifiedOrigin(u *url.URL) string {
+	return fmt.Sprintf("%s://%s", u.Scheme, u.Host)
+}
+
 // Handles steps 3 through 6 of verfying the registering client data of a
 // new credential and steps 7 through 10 of verifying an authentication assertion
 // See https://www.w3.org/TR/webauthn/#registering-a-new-credential
@@ -84,9 +89,9 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 		return ErrParsingData.WithDetails("Error decoding clientData origin as URL")
 	}
 
-	if !strings.EqualFold(clientDataOrigin.Hostname(), relyingPartyOrigin) {
+	if !strings.EqualFold(FullyQualifiedOrigin(clientDataOrigin), relyingPartyOrigin) {
 		err := ErrVerification.WithDetails("Error validating origin")
-		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, clientDataOrigin.Hostname()))
+		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, FullyQualifiedOrigin(clientDataOrigin)))
 	}
 
 	// Registration Step 6 and Assertion Step 10. Verify that the value of C.tokenBinding.status

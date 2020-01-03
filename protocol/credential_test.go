@@ -214,7 +214,7 @@ func TestParsedCredentialCreationData_Verify(t *testing.T) {
 				storedChallenge:    byteChallenge,
 				verifyUser:         false,
 				relyingPartyID:     `webauthn.io`,
-				relyingPartyOrigin: `webauthn.io`,
+				relyingPartyOrigin: `https://webauthn.io`,
 			},
 			wantErr: false,
 		},

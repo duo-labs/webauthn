@@ -50,11 +50,11 @@ func (config *Config) validate() error {
 	if config.RPOrigin == "" {
 		config.RPOrigin = config.RPID
 	} else {
-		url, err := url.Parse(config.RPOrigin)
+		u, err := url.Parse(config.RPOrigin)
 		if err != nil {
 			return fmt.Errorf("RPOrigin not valid URL: %+v", err)
 		}
-		config.RPOrigin = url.Hostname()
+		config.RPOrigin = protocol.FullyQualifiedOrigin(u)
 	}
 
 	return nil
