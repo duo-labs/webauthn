@@ -15,6 +15,7 @@ func setupCollectedClientData(challenge []byte) *CollectedClientData {
 	ccd.Challenge = base64.RawURLEncoding.EncodeToString(challenge)
 	return ccd
 }
+
 func TestVerifyCollectedClientData(t *testing.T) {
 	newChallenge, err := CreateChallenge()
 	if err != nil {
@@ -25,7 +26,7 @@ func TestVerifyCollectedClientData(t *testing.T) {
 	var storedChallenge = newChallenge
 
 	originURL, _ := url.Parse(ccd.Origin)
-	err = ccd.Verify(storedChallenge.String(), ccd.Type, originURL.Hostname())
+	err = ccd.Verify(storedChallenge.String(), ccd.Type, FullyQualifiedOrigin(originURL))
 	if err != nil {
 		t.Fatalf("error verifying challenge: expected %#v got %#v", Challenge(ccd.Challenge), storedChallenge)
 	}

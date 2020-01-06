@@ -32,7 +32,7 @@ func TestAttestationVerify(t *testing.T) {
 			// Test Base Verification
 			err = pcc.Verify(options.Response.Challenge.String(), false, options.Response.RelyingParty.ID, options.Response.RelyingParty.Name)
 			if err != nil {
-				t.Fatalf("Not valid: %+v", err)
+				t.Fatalf("Not valid: %+v (%+s)", err, err.(*Error).DevInfo)
 			}
 		})
 	}
@@ -85,7 +85,7 @@ var testAttestationOptions = []string{
 	`{"publicKey": {
 		"challenge": "rWiex8xDOPfiCgyFu4BLW6vVOmXKgPwHrlMCgEs9SBA=",
 		"rp": {
-		"name": "localhost",
+		"name": "http://localhost:9005",
 		"id": "localhost"
 		},
 		"user": {
@@ -110,7 +110,7 @@ var testAttestationOptions = []string{
 	`{"publicKey": {
 		"challenge": "+Ri5NZTzJ8b6mvW3TVScLotEoALfgBa2Bn4YSaIObHc=",
 		"rp": {
-		"name": "webauthn.io",
+		"name": "https://webauthn.io",
 		"id": "webauthn.io"
 		},
 		"user": {
@@ -136,7 +136,7 @@ var testAttestationOptions = []string{
 		"publicKey": {
 		  "challenge": "sVt4ScceMzqFSnfAq8hgLzblvo3fa4/aFVEcIESHIJ0=",
 		  "rp": {
-			"name": "webauthn.io",
+			"name": "https://webauthn.io",
 			"id": "webauthn.io"
 		  },
 		  "user": {
