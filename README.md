@@ -1,7 +1,7 @@
 WebAuthn Library
 =============
 [![GoDoc](https://godoc.org/github.com/duo-labs/webauthn?status.svg)](https://godoc.org/github.com/duo-labs/webauthn)
-[![Build Status](https://travis-ci.org/duo-labs/webauthn.svg?branch=master)](https://travis-ci.org/duo-labs/webauthn)
+![Build Status](https://github.com/duo-labs/webauthn/workflows/Go/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/duo-labs/webauthn)](https://goreportcard.com/report/github.com/duo-labs/webauthn)
 
 
