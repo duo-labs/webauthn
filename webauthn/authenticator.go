@@ -43,7 +43,7 @@ func SelectAuthenticator(att string, rrk *bool, uv string) p.AuthenticatorSelect
 //  → Less than or equal to the signature counter value stored in conjunction with credential’s id attribute.
 //  This is a signal that the authenticator may be cloned, see CloneWarning above for more information.
 func (a *Authenticator) UpdateCounter(authDataCount uint32) {
-	if authDataCount <= a.SignCount && authDataCount != 0 {
+	if authDataCount <= a.SignCount && (authDataCount != 0 || a.SignCount != 0) {
 		a.CloneWarning = true
 	}
 	a.SignCount = authDataCount
