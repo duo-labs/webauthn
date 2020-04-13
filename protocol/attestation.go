@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ugorji/go/codec"
+	"github.com/fxamacker/cbor/v2"
 )
 
 // From §5.2.1 (https://www.w3.org/TR/webauthn/#authenticatorattestationresponse)
@@ -85,10 +85,7 @@ func (ccr *AuthenticatorAttestationResponse) Parse() (*ParsedAttestationResponse
 		return nil, ErrParsingData.WithInfo(err.Error())
 	}
 
-	cborHandler := codec.CborHandle{}
-
-	// Decode the attestation data with unmarshalled auth data
-	err = codec.NewDecoderBytes(ccr.AttestationObject, &cborHandler).Decode(&p.AttestationObject)
+	err = cbor.Unmarshal(ccr.AttestationObject, &p.AttestationObject)
 	if err != nil {
 		return nil, ErrParsingData.WithInfo(err.Error())
 	}

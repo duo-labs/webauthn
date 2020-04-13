@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/ugorji/go/codec"
+	"github.com/fxamacker/cbor/v2"
 )
 
 var minAuthDataLength = 37
@@ -198,12 +198,9 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) {
 
 // Unmarshall the credential's Public Key into CBOR encoding
 func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
-	var cborHandler codec.Handle = new(codec.CborHandle)
 	var m interface{}
-	codec.NewDecoderBytes(keyBytes, cborHandler).Decode(&m)
-	var rawBytes []byte
-	enc := codec.NewEncoderBytes(&rawBytes, cborHandler)
-	enc.Encode(m)
+	cbor.Unmarshal(keyBytes, &m)
+	rawBytes, _ := cbor.Marshal(m)
 	return rawBytes
 }
 

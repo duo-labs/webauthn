@@ -1,7 +1,6 @@
 package webauthncose
 
 import (
-	"bytes"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -10,51 +9,52 @@ import (
 	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
-	"golang.org/x/crypto/ed25519"
 	"hash"
 	"math/big"
 
-	"github.com/ugorji/go/codec"
+	"golang.org/x/crypto/ed25519"
+
+	"github.com/fxamacker/cbor/v2"
 )
 
 // PublicKeyData The public key portion of a Relying Party-specific credential key pair, generated
 // by an authenticator and returned to a Relying Party at registration time. We unpack this object
-// using ugorji's codec library (github.com/ugorji/go/codec) which is why there are codec tags
+// using fxamacker's cbor library ("github.com/fxamacker/cbor/v2") which is why there are cbor tags
 // included. The tag field values correspond to the IANA COSE keys that give their respective
 // values.
 // See §6.4.1.1 https://www.w3.org/TR/webauthn/#sctn-encoded-credPubKey-examples for examples of this
 // COSE data.
 type PublicKeyData struct {
 	// Decode the results to int by default.
-	_struct bool `codec:",int" json:"public_key"`
+	_struct bool `cbor:",keyasint" json:"public_key"`
 	// The type of key created. Should be OKP, EC2, or RSA.
-	KeyType int64 `codec:"1" json:"kty"`
+	KeyType int64 `cbor:"1,keyasint" json:"kty"`
 	// A COSEAlgorithmIdentifier for the algorithm used to derive the key signature.
-	Algorithm int64 `codec:"3" json:"alg"`
+	Algorithm int64 `cbor:"3,keyasint" json:"alg"`
 }
 type EC2PublicKeyData struct {
 	PublicKeyData
 	// If the key type is EC2, the curve on which we derive the signature from.
-	Curve int64 `codec:"-1,omitempty" json:"crv"`
+	Curve int64 `cbor:"-1,keyasint,omitempty" json:"crv"`
 	// A byte string 32 bytes in length that holds the x coordinate of the key.
-	XCoord []byte `codec:"-2,omitempty" json:"x"`
+	XCoord []byte `cbor:"-2,keyasint,omitempty" json:"x"`
 	// A byte string 32 bytes in length that holds the y coordinate of the key.
-	YCoord []byte `codec:"-3,omitempty" json:"y"`
+	YCoord []byte `cbor:"-3,keyasint,omitempty" json:"y"`
 }
 
 type RSAPublicKeyData struct {
 	PublicKeyData
 	// Represents the modulus parameter for the RSA algorithm
-	Modulus []byte `codec:"-1,omitempty" json:"n"`
+	Modulus []byte `cbor:"-1,keyasint,omitempty" json:"n"`
 	// Represents the exponent parameter for the RSA algorithm
-	Exponent []byte `codec:"-2,omitempty" json:"e"`
+	Exponent []byte `cbor:"-2,keyasint,omitempty" json:"e"`
 }
 
 type OKPPublicKeyData struct {
 	PublicKeyData
 	Curve int64
 	// A byte string that holds the x coordinate of the key.
-	XCoord []byte `codec:"-2,omitempty" json:"x"`
+	XCoord []byte `cbor:"-2,keyasint,omitempty" json:"x"`
 }
 
 // Verify Octet Key Pair (OKP) Public Key Signature
@@ -156,23 +156,22 @@ func HasherFromCOSEAlg(coseAlg COSEAlgorithmIdentifier) func() hash.Hash {
 
 // Figure out what kind of COSE material was provided and create the data for the new key
 func ParsePublicKey(keyBytes []byte) (interface{}, error) {
-	var cborHandler codec.Handle = new(codec.CborHandle)
 	pk := PublicKeyData{}
-	codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&pk)
+	cbor.Unmarshal(keyBytes, &pk)
 	switch COSEKeyType(pk.KeyType) {
 	case OctetKey:
 		var o OKPPublicKeyData
-		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&o)
+		cbor.Unmarshal(keyBytes, &o)
 		o.PublicKeyData = pk
 		return o, nil
 	case EllipticKey:
 		var e EC2PublicKeyData
-		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&e)
+		cbor.Unmarshal(keyBytes, &e)
 		e.PublicKeyData = pk
 		return e, nil
 	case RSAKey:
 		var r RSAPublicKeyData
-		codec.NewDecoder(bytes.NewReader(keyBytes), cborHandler).Decode(&r)
+		cbor.Unmarshal(keyBytes, &r)
 		r.PublicKeyData = pk
 		return r, nil
 	default:
