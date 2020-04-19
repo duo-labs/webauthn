@@ -21,7 +21,7 @@ import (
 var Metadata = make(map[uuid.UUID]MetadataTOCPayloadEntry)
 
 // Conformance indicates if test metadata is currently being used
-var Conformance = false
+var Conformance = true
 
 // AuthenticatorAttestationType - The ATTESTATION constants are 16 bit long integers indicating the specific attestation that authenticator supports.
 type AuthenticatorAttestationType uint16
