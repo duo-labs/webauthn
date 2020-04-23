@@ -48,3 +48,15 @@ func TestVerifyCollectedClientDataIncorrectChallenge(t *testing.T) {
 		t.Fatalf("error expected but not received. expected %#v got %#v", Challenge(ccd.Challenge), storedChallenge)
 	}
 }
+
+func TestCanVerifySubdomains(t *testing.T) {
+	clientOrigin, err := url.Parse("https://sub2.sub1.domain.com")
+	if err != nil {
+		t.Fatal("err:", err)
+	}
+	relyingPartyOrigin := "https://domin.com"
+
+	if !checkOrigins(clientOrigin, relyingPartyOrigin) {
+		t.Fatal("err!", clientOrigin.Scheme+clientOrigin.Hostname(), relyingPartyOrigin)
+	}
+}

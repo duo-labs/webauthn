@@ -89,7 +89,7 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 		return ErrParsingData.WithDetails("Error decoding clientData origin as URL")
 	}
 
-	if !strings.EqualFold(FullyQualifiedOrigin(clientDataOrigin), relyingPartyOrigin) {
+	if !checkOrigins(clientDataOrigin, relyingPartyOrigin) {
 		err := ErrVerification.WithDetails("Error validating origin")
 		return err.WithInfo(fmt.Sprintf("Expected Value: %s\n Received: %s\n", relyingPartyOrigin, FullyQualifiedOrigin(clientDataOrigin)))
 	}
@@ -109,4 +109,57 @@ func (c *CollectedClientData) Verify(storedChallenge string, ceremony CeremonyTy
 	// Not yet fully implemented by the spec, browsers, and me.
 
 	return nil
+}
+
+func checkOrigins(clientDataOrigin *url.URL, relyingPartyOrigin string) bool {
+	relyingOriginUrl, err := url.Parse(relyingPartyOrigin)
+	if err != nil {
+		return false
+	}
+
+	//first we need to check schemes of our origins
+	if clientDataOrigin.Scheme != relyingOriginUrl.Scheme {
+		return false
+	}
+
+	clientOriginSlice := strings.Split(clientDataOrigin.Hostname(), ".")
+	//remove no-need www
+	//cause relying origin must be without "www"
+	if clientOriginSlice[0] == "www" {
+		clientOriginSlice = clientOriginSlice[1:]
+	}
+	relyingOriginSlice := strings.Split(relyingOriginUrl.Hostname(), ".")
+	relyingOriginSlice = revertSlice(relyingOriginSlice)
+	clientOriginSlice = revertSlice(clientOriginSlice)
+
+	//reverting slices for easy check from top domain to sub
+
+	//next check: we know what client origin must contain more or equal subdomains
+	//for example: client origin sub1.domain.com can't work with relying origin sub2.sub1.domain.com
+	if len(clientOriginSlice) < len(relyingOriginSlice) {
+		return false
+	}
+	//if lengths of slices are equal  we can check equals as strings
+	if len(clientOriginSlice) == len(relyingOriginSlice) {
+		return strings.EqualFold(FullyQualifiedOrigin(clientDataOrigin), FullyQualifiedOrigin(relyingOriginUrl))
+	}
+
+	//here we checks can subdomain be a client origin for relying original domain
+	response := true
+	for i := 0; i < len(relyingOriginSlice)-1; i++ {
+		if !strings.EqualFold(relyingOriginSlice[i], clientOriginSlice[i]) {
+			response = false
+			break
+		}
+	}
+
+	return response
+}
+
+func revertSlice(s []string) []string {
+	for left, right := 0, len(s)-1; left < right; left, right = left+1, right-1 {
+		s[left], s[right] = s[right], s[left]
+	}
+
+	return s
 }
