@@ -92,8 +92,11 @@ func (k *EC2PublicKeyData) Verify(data []byte, sig []byte) (bool, error) {
 	f := HasherFromCOSEAlg(COSEAlgorithmIdentifier(k.PublicKeyData.Algorithm))
 	h := f()
 	h.Write(data)
-	_, error := asn1.Unmarshal(sig, e)
-	return ecdsa.Verify(pubkey, h.Sum(nil), e.R, e.S), error
+	_, err := asn1.Unmarshal(sig, e)
+	if err != nil {
+		return false, ErrSigNotProvidedOrInvalid
+	}
+	return ecdsa.Verify(pubkey, h.Sum(nil), e.R, e.S), nil
 }
 
 // Verify RSA Public Key Signature
@@ -368,6 +371,10 @@ var (
 	ErrUnsupportedAlgorithm = &Error{
 		Type:    "unsupported_key_algorithm",
 		Details: "Unsupported public key algorithm",
+	}
+	ErrSigNotProvidedOrInvalid = &Error{
+		Type: "signature_not_provided_or_invalid",
+		Details: "Signature invalid or not provided",
 	}
 )
 
