@@ -113,8 +113,8 @@ func (webauthn *WebAuthn) ValidateLogin(user User, session SessionData, parsedRe
 	var credentialFound bool
 	if len(session.AllowedCredentialIDs) > 0 {
 		var credentialsOwned bool
-		for _, userCredential := range userCredentials {
-			for _, allowedCredentialID := range session.AllowedCredentialIDs {
+		for _, allowedCredentialID := range session.AllowedCredentialIDs {
+			for _, userCredential := range userCredentials {
 				if bytes.Equal(userCredential.ID, allowedCredentialID) {
 					credentialsOwned = true
 					break
