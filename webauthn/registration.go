@@ -41,18 +41,12 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	credentialParams := defaultRegistrationCredentialParameters()
 
-	rrk := false
-	authSelection := protocol.AuthenticatorSelection{
-		RequireResidentKey: &rrk,
-		UserVerification:   protocol.VerificationPreferred,
-	}
-
 	creationOptions := protocol.PublicKeyCredentialCreationOptions{
 		Challenge:              challenge,
 		RelyingParty:           relyingParty,
 		User:                   webAuthnUser,
 		Parameters:             credentialParams,
-		AuthenticatorSelection: authSelection,
+		AuthenticatorSelection: webauthn.Config.AuthenticatorSelection,
 		Timeout:                webauthn.Config.Timeout,
 		Attestation:            webauthn.Config.AttestationPreference,
 	}
@@ -63,8 +57,9 @@ func (webauthn *WebAuthn) BeginRegistration(user User, opts ...RegistrationOptio
 
 	response := protocol.CredentialCreation{Response: creationOptions}
 	newSessionData := SessionData{
-		Challenge: base64.RawURLEncoding.EncodeToString(challenge),
-		UserID:    user.WebAuthnID(),
+		Challenge:        base64.RawURLEncoding.EncodeToString(challenge),
+		UserID:           user.WebAuthnID(),
+		UserVerification: creationOptions.AuthenticatorSelection.UserVerification,
 	}
 
 	if err != nil {
@@ -119,7 +114,7 @@ func (webauthn *WebAuthn) CreateCredential(user User, session SessionData, parse
 		return nil, protocol.ErrBadRequest.WithDetails("ID mismatch for User and Session")
 	}
 
-	shouldVerifyUser := webauthn.Config.AuthenticatorSelection.UserVerification == protocol.VerificationRequired
+	shouldVerifyUser := session.UserVerification == protocol.VerificationRequired
 
 	invalidErr := parsedResponse.Verify(session.Challenge, shouldVerifyUser, webauthn.Config.RPID, webauthn.Config.RPOrigin)
 	if invalidErr != nil {
