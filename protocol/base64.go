@@ -14,6 +14,10 @@ type URLEncodedBase64 []byte
 // UnmarshalJSON base64 decodes a URL-encoded value, storing the result in the
 // provided byte slice.
 func (dest *URLEncodedBase64) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("null")) {
+		return nil
+	}
+
 	// Trim the leading spaces
 	data = bytes.Trim(data, "\"")
 	out := make([]byte, base64.RawURLEncoding.DecodedLen(len(data)))

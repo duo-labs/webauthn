@@ -15,26 +15,40 @@ func TestBase64UnmarshalJSON(t *testing.T) {
 		EncodedData URLEncodedBase64 `json:"encoded_data"`
 	}
 
-	message := "test base64 data"
-
-	expected := testData{
-		StringData:  "test string",
-		EncodedData: URLEncodedBase64(message),
+	tests := []struct {
+		encodedMessage   string
+		expectedTestData testData
+	}{
+		{
+			encodedMessage: "\"" + base64.RawURLEncoding.EncodeToString([]byte("test base64 data")) + "\"",
+			expectedTestData: testData{
+				StringData:  "test string",
+				EncodedData: URLEncodedBase64("test base64 data"),
+			},
+		},
+		{
+			encodedMessage: "null",
+			expectedTestData: testData{
+				StringData:  "test string",
+				EncodedData: nil,
+			},
+		},
 	}
 
-	encoded := base64.RawURLEncoding.EncodeToString([]byte(message))
-	raw := fmt.Sprintf(`{"string_data": "test string", "encoded_data": "%s"}`, encoded)
+	for _, test := range tests {
+		raw := fmt.Sprintf(`{"string_data": "test string", "encoded_data": %s}`, test.encodedMessage)
+		t.Logf("%s\n", raw)
+		got := testData{}
+		err := json.NewDecoder(strings.NewReader(raw)).Decode(&got)
+		if err != nil {
+			t.Fatalf("error decoding JSON: %v", err)
+		}
 
-	got := testData{}
-	err := json.NewDecoder(strings.NewReader(raw)).Decode(&got)
-	if err != nil {
-		t.Fatalf("error decoding JSON: %v", err)
-	}
-
-	if !bytes.Equal(expected.EncodedData, got.EncodedData) {
-		t.Fatalf("invalid URLEncodedBase64 data received: expected %s got %s", expected.EncodedData, got.EncodedData)
-	}
-	if expected.StringData != got.StringData {
-		t.Fatalf("invalid string data received: expected %s got %s", expected.StringData, got.StringData)
+		if !bytes.Equal(test.expectedTestData.EncodedData, got.EncodedData) {
+			t.Fatalf("invalid URLEncodedBase64 data received: expected %s got %s", test.expectedTestData.EncodedData, got.EncodedData)
+		}
+		if test.expectedTestData.StringData != got.StringData {
+			t.Fatalf("invalid string data received: expected %s got %s", test.expectedTestData.StringData, got.StringData)
+		}
 	}
 }
