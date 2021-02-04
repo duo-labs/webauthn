@@ -5,9 +5,9 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/x509"
+	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 
 	"github.com/duo-labs/webauthn/protocol/webauthncose"
-	"github.com/fxamacker/cbor/v2"
 )
 
 var u2fAttestationKey = "fido-u2f"
@@ -25,7 +25,7 @@ func verifyU2FFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	// Signing procedure step - If the credential public key of the given credential is not of
 	// algorithm -7 ("ES256"), stop and return an error.
 	key := webauthncose.EC2PublicKeyData{}
-	cbor.Unmarshal(att.AuthData.AttData.CredentialPublicKey, &key)
+	webauthncbor.Unmarshal(att.AuthData.AttData.CredentialPublicKey, &key)
 
 	if webauthncose.COSEAlgorithmIdentifier(key.PublicKeyData.Algorithm) != webauthncose.AlgES256 {
 		return u2fAttestationKey, nil, ErrUnsupportedAlgorithm.WithDetails("Non-ES256 Public Key algorithm used")
