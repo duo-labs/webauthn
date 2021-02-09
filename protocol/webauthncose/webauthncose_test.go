@@ -1,11 +1,10 @@
 package webauthncose
 
 import (
-	"bytes"
 	"crypto/rand"
 	"testing"
 
-	"github.com/ugorji/go/codec"
+	"github.com/fxamacker/cbor/v2"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -59,12 +58,9 @@ MCowBQYDK2VwAyEAe4gQJK3JgtOAuHceO5v45LOZi8fQWDBmAs5NDy/kt4E=
 		},
 	}
 	// Get the CBOR-encoded representation of the OKPPublicKeyData
-	buf := &bytes.Buffer{}
-	handler := &codec.CborHandle{}
-	encoder := codec.NewEncoder(buf, handler)
-	encoder.Encode(key)
+	buf, _ := cbor.Marshal(key)
 
-	got := DisplayPublicKey(buf.Bytes())
+	got := DisplayPublicKey(buf)
 	if got != expected {
 		t.Fatalf("incorrect PEM format received for ed25519 public key. expected\n%#v\n got \n%#v\n", expected, got)
 	}

@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ugorji/go/codec"
+	"github.com/fxamacker/cbor/v2"
 )
 
 func TestParseCredentialCreationResponse(t *testing.T) {
@@ -112,12 +112,11 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 			}
 			// Unmarshall CredentialPublicKey
 			var pkWant interface{}
-			cborHandler := new(codec.CborHandle)
 			keyBytesWant := tt.want.Response.AttestationObject.AuthData.AttData.CredentialPublicKey
-			codec.NewDecoderBytes(keyBytesWant, cborHandler).Decode(&pkWant)
+			cbor.Unmarshal(keyBytesWant, &pkWant)
 			var pkGot interface{}
 			keyBytesGot := got.Response.AttestationObject.AuthData.AttData.CredentialPublicKey
-			codec.NewDecoderBytes(keyBytesGot, cborHandler).Decode(&pkGot)
+			cbor.Unmarshal(keyBytesGot, &pkGot)
 			if !reflect.DeepEqual(pkGot, pkWant) {
 				t.Errorf("Response = %+v \n want: %+v", pkGot, pkWant)
 			}

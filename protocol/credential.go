@@ -26,8 +26,8 @@ type Credential struct {
 //  the attributes that are returned to the caller when a new credential
 // is created, or a new assertion is requested.
 type ParsedCredential struct {
-	ID   string `codec:"id"`
-	Type string `codec:"type"`
+	ID   string `cbor:"id"`
+	Type string `cbor:"type"`
 }
 
 type PublicKeyCredential struct {

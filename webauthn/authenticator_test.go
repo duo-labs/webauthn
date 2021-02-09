@@ -23,7 +23,7 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 		wantWarning bool
 	}{
 		{
-			"Update Counter",
+			"Increased counter",
 			fields{
 				AAGUID:       make([]byte, 16),
 				SignCount:    1,
@@ -35,7 +35,19 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 			false,
 		},
 		{
-			"Update Counter",
+			"Unchanged counter",
+			fields{
+				AAGUID:       make([]byte, 16),
+				SignCount:    1,
+				CloneWarning: false,
+			},
+			args{
+				authDataCount: 1,
+			},
+			true,
+		},
+		{
+			"Decreased counter",
 			fields{
 				AAGUID:       make([]byte, 16),
 				SignCount:    2,
@@ -43,6 +55,30 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 			},
 			args{
 				authDataCount: 1,
+			},
+			true,
+		},
+		{
+			"Zero counter",
+			fields{
+				AAGUID:       make([]byte, 16),
+				SignCount:    0,
+				CloneWarning: false,
+			},
+			args{
+				authDataCount: 0,
+			},
+			false,
+		},
+		{
+			"Counter returned to zero",
+			fields{
+				AAGUID:       make([]byte, 16),
+				SignCount:    1,
+				CloneWarning: false,
+			},
+			args{
+				authDataCount: 0,
 			},
 			true,
 		},
@@ -55,8 +91,8 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 				CloneWarning: tt.fields.CloneWarning,
 			}
 			a.UpdateCounter(tt.args.authDataCount)
-			if !tt.wantWarning && a.CloneWarning {
-				t.Errorf("Got clone warning when it should be false")
+			if a.CloneWarning != tt.wantWarning {
+				t.Errorf("Clone warning result [%v] does not match expectation: [%v]", a.CloneWarning, tt.wantWarning)
 				return
 			}
 		})
