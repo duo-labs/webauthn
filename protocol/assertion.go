@@ -100,7 +100,7 @@ func ParseCredentialRequestResponseBody(body io.Reader) (*ParsedCredentialAssert
 // Follow the remaining steps outlined in §7.2 Verifying an authentication assertion
 // (https://www.w3.org/TR/webauthn/#verifying-assertion) and return an error if there
 // is a failure during each step.
-func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPartyID, relyingPartyOrigin string, verifyUser bool, credentialBytes []byte) error {
+func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPartyID, relyingPartyOrigin, u2fAppID string, verifyUser bool, credentialBytes []byte) error {
 
 	// Steps 4 through 6 in verifying the assertion data (https://www.w3.org/TR/webauthn/#verifying-assertion) are
 	// "assertive" steps, i.e "Let JSONtext be the result of running UTF-8 decode on the value of cData."
@@ -116,8 +116,13 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPa
 	// Begin Step 11. Verify that the rpIdHash in authData is the SHA-256 hash of the RP ID expected by the RP.
 	rpIDHash := sha256.Sum256([]byte(relyingPartyID))
 
+	var appIDHash [32]byte
+	if u2fAppID != "" {
+		appIDHash = sha256.Sum256([]byte(u2fAppID))
+	}
+
 	// Handle steps 11 through 14, verifying the authenticator data.
-	validError = p.Response.AuthenticatorData.Verify(rpIDHash[:], verifyUser)
+	validError = p.Response.AuthenticatorData.Verify(rpIDHash[:], appIDHash[:], verifyUser)
 	if validError != nil {
 		return ErrAuthData.WithInfo(validError.Error())
 	}
