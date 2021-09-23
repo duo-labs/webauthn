@@ -14,7 +14,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // Metadata is a map of authenticator AAGUIDs to corresponding metadata statements
