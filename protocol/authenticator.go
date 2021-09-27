@@ -200,7 +200,8 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) {
 func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
 	var m interface{}
 	cbor.Unmarshal(keyBytes, &m)
-	rawBytes, _ := cbor.Marshal(m)
+	encMode, _ := cbor.CTAP2EncOptions().EncMode()
+	rawBytes, _ := encMode.Marshal(m)
 	return rawBytes
 }
 
