@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-
-	"github.com/fxamacker/cbor/v2"
 )
 
 var minAuthDataLength = 37
@@ -193,16 +191,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) {
 	a.AttData.AAGUID = rawAuthData[37:53]
 	idLength := binary.BigEndian.Uint16(rawAuthData[53:55])
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
-	a.AttData.CredentialPublicKey = unmarshalCredentialPublicKey(rawAuthData[55+idLength:])
-}
-
-// Unmarshall the credential's Public Key into CBOR encoding
-func unmarshalCredentialPublicKey(keyBytes []byte) []byte {
-	var m interface{}
-	cbor.Unmarshal(keyBytes, &m)
-	encMode, _ := cbor.CTAP2EncOptions().EncMode()
-	rawBytes, _ := encMode.Marshal(m)
-	return rawBytes
+	a.AttData.CredentialPublicKey = rawAuthData[55+idLength:]
 }
 
 // ResidentKeyRequired - Require that the key be private key resident to the client device
