@@ -10,7 +10,7 @@ import (
 
 	"github.com/duo-labs/webauthn/metadata"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/mitchellh/mapstructure"
 )
 
