@@ -90,9 +90,23 @@ func TestAuthenticator_UpdateCounter(t *testing.T) {
 				SignCount:    tt.fields.SignCount,
 				CloneWarning: tt.fields.CloneWarning,
 			}
+
+			previousSignCount := a.SignCount
 			a.UpdateCounter(tt.args.authDataCount)
 			if a.CloneWarning != tt.wantWarning {
 				t.Errorf("Clone warning result [%v] does not match expectation: [%v]", a.CloneWarning, tt.wantWarning)
+				return
+			}
+
+			// If there's no clone warning then, assert that the SignCount is updated
+			if !a.CloneWarning && a.SignCount != tt.args.authDataCount {
+				t.Errorf("Sign Count value [%v] does not match expectation [%v]", a.SignCount, tt.args.authDataCount)
+				return
+			}
+
+			// If there's clone warning then, assert that the Sign Count remains unchanged
+			if a.CloneWarning && a.SignCount != previousSignCount {
+				t.Errorf("Sign Count value [%v] does not match expectation [%v]", a.SignCount, tt.args.authDataCount)
 				return
 			}
 		})
