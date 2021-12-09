@@ -160,3 +160,50 @@ func (pcc *ParsedCredentialCreationData) Verify(storedChallenge string, verifyUs
 
 	return nil
 }
+
+// GetAppID takes a AuthenticationExtensions object or nil. It then performs the following checks in order:
+//
+// 1. Check that the Session Data's AuthenticationExtensions has been provided and if it hasn't return an error.
+// 2. Check that the AuthenticationExtensionsClientOutputs contains the extensions output and return an empty string if it doesn't.
+// 3. Check that the AuthenticationExtensionsClientOutputs contains the appid key and if it doesn't return an empty string.
+// 4. Check that the AuthenticationExtensionsClientOutputs appid is a bool and if it isn't return an error.
+// 5. Check that the appid output is true and if it isn't return an empty string.
+// 6. Check that the Session Data has an appid extension defined and if it doesn't return an error.
+// 6. Check that the appid extension in Session Data is a string and if it isn't return an error.
+// 7. Return the appid extension value from the Session data.
+func (ppkc ParsedPublicKeyCredential) GetAppID(authExt AuthenticationExtensions) (appID string, err error) {
+	var (
+		value, clientValue interface{}
+		enableAppID, ok    bool
+	)
+
+	if authExt == nil {
+		return "", ErrBadRequest.WithDetails("Session Data was not provided")
+	}
+
+	if ppkc.Extensions == nil {
+		return "", nil
+	}
+
+	if clientValue, ok = ppkc.Extensions["appid"]; ok {
+		if enableAppID, ok = clientValue.(bool); !ok {
+			return "", ErrBadRequest.WithDetails("Client Output appid did not have the expected type")
+		}
+
+		if !enableAppID {
+			return "", nil
+		}
+
+		if value, ok = authExt["appid"]; !ok {
+			return "", ErrBadRequest.WithDetails("Session Data does not have an appid but Client Output indicates it should be set")
+		}
+
+		if appID, ok = value.(string); !ok {
+			return "", ErrBadRequest.WithDetails("Session Data appid did not have the expected type")
+		}
+
+		return appID, nil
+	}
+
+	return "", nil
+}

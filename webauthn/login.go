@@ -59,6 +59,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 		UserID:               user.WebAuthnID(),
 		AllowedCredentialIDs: requestOptions.GetAllowedCredentialIDs(),
 		UserVerification:     requestOptions.UserVerification,
+		Extensions:           requestOptions.Extensions,
 	}
 
 	response := protocol.CredentialAssertion{requestOptions}
@@ -169,12 +170,9 @@ func (webauthn *WebAuthn) ValidateLogin(user User, session SessionData, parsedRe
 	rpID := webauthn.Config.RPID
 	rpOrigin := webauthn.Config.RPOrigin
 
-	var appID string
-
-	if url, ok := parsedResponse.Extensions["appid"]; ok {
-		if u, ok2 := url.(string); ok2 {
-			appID = u
-		}
+	appID, err := parsedResponse.GetAppID(session.Extensions)
+	if err != nil {
+		return nil, err
 	}
 
 	// Handle steps 4 through 16
