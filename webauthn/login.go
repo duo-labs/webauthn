@@ -169,8 +169,16 @@ func (webauthn *WebAuthn) ValidateLogin(user User, session SessionData, parsedRe
 	rpID := webauthn.Config.RPID
 	rpOrigin := webauthn.Config.RPOrigin
 
+	var appID string
+
+	if url, ok := parsedResponse.Extensions["appid"]; ok {
+		if u, ok2 := url.(string); ok2 {
+			appID = u
+		}
+	}
+
 	// Handle steps 4 through 16
-	validError := parsedResponse.Verify(session.Challenge, rpID, rpOrigin, shouldVerifyUser, loginCredential.PublicKey)
+	validError := parsedResponse.Verify(session.Challenge, rpID, rpOrigin, appID, shouldVerifyUser, loginCredential.PublicKey)
 	if validError != nil {
 		return nil, validError
 	}

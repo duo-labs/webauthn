@@ -11,10 +11,9 @@ import (
 	"net/http"
 
 	"github.com/cloudflare/cfssl/revoke"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
 	uuid "github.com/satori/go.uuid"
-
-	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // Metadata is a map of authenticator AAGUIDs to corresponding metadata statements

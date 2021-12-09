@@ -253,7 +253,7 @@ func TestAuthenticatorData_Verify(t *testing.T) {
 				AttData:  tt.fields.AttData,
 				ExtData:  tt.fields.ExtData,
 			}
-			if err := a.Verify(tt.args.rpIdHash, tt.args.userVerificationRequired); (err != nil) != tt.wantErr {
+			if err := a.Verify(tt.args.rpIdHash, nil, tt.args.userVerificationRequired); (err != nil) != tt.wantErr {
 				t.Errorf("AuthenticatorData.Verify() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

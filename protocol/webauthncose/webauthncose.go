@@ -12,9 +12,8 @@ import (
 	"hash"
 	"math/big"
 
-	"golang.org/x/crypto/ed25519"
-
 	"github.com/fxamacker/cbor/v2"
+	"golang.org/x/crypto/ed25519"
 )
 
 // PublicKeyData The public key portion of a Relying Party-specific credential key pair, generated
@@ -182,6 +181,19 @@ func ParsePublicKey(keyBytes []byte) (interface{}, error) {
 	}
 }
 
+// ParseFIDOPublicKey is only used when the appID extension is configured by the assertion response.
+func ParseFIDOPublicKey(keyBytes []byte) (EC2PublicKeyData, error) {
+	x, y := elliptic.Unmarshal(elliptic.P256(), keyBytes)
+
+	return EC2PublicKeyData{
+		PublicKeyData: PublicKeyData{
+			Algorithm: int64(AlgES256),
+		},
+		XCoord: x.Bytes(),
+		YCoord: y.Bytes(),
+	}, nil
+}
+
 // COSEAlgorithmIdentifier From §5.10.5. A number identifying a cryptographic algorithm. The algorithm
 // identifiers SHOULD be values registered in the IANA COSE Algorithms registry
 // [https://www.w3.org/TR/webauthn/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256"
@@ -227,7 +239,7 @@ const (
 
 func VerifySignature(key interface{}, data []byte, sig []byte) (bool, error) {
 
-	switch key.(type) {
+	switch t := key.(type) {
 	case OKPPublicKeyData:
 		o := key.(OKPPublicKeyData)
 		return o.Verify(data, sig)
@@ -372,7 +384,7 @@ var (
 		Details: "Unsupported public key algorithm",
 	}
 	ErrSigNotProvidedOrInvalid = &Error{
-		Type: "signature_not_provided_or_invalid",
+		Type:    "signature_not_provided_or_invalid",
 		Details: "Signature invalid or not provided",
 	}
 )
