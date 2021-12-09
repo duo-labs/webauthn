@@ -239,7 +239,7 @@ const (
 
 func VerifySignature(key interface{}, data []byte, sig []byte) (bool, error) {
 
-	switch t := key.(type) {
+	switch key.(type) {
 	case OKPPublicKeyData:
 		o := key.(OKPPublicKeyData)
 		return o.Verify(data, sig)
