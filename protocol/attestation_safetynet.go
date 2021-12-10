@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/duo-labs/webauthn/metadata"
-
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/duo-labs/webauthn/metadata"
 )
 
 var safetyNetAttestationKey = "android-safetynet"

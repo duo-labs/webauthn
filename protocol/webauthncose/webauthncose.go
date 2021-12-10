@@ -12,9 +12,8 @@ import (
 	"hash"
 	"math/big"
 
-	"golang.org/x/crypto/ed25519"
-
 	"github.com/fxamacker/cbor/v2"
+	"golang.org/x/crypto/ed25519"
 )
 
 // PublicKeyData The public key portion of a Relying Party-specific credential key pair, generated
@@ -372,7 +371,7 @@ var (
 		Details: "Unsupported public key algorithm",
 	}
 	ErrSigNotProvidedOrInvalid = &Error{
-		Type: "signature_not_provided_or_invalid",
+		Type:    "signature_not_provided_or_invalid",
 		Details: "Signature invalid or not provided",
 	}
 )

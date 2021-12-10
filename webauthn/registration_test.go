@@ -6,7 +6,6 @@ import (
 	"github.com/duo-labs/webauthn/protocol"
 )
 
-
 func TestRegistration_FinishRegistrationFailure(t *testing.T) {
 	user := &defaultUser{
 		id: []byte("123"),

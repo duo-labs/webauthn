@@ -13,7 +13,7 @@ type URLEncodedBase64 []byte
 
 // UnmarshalJSON base64 decodes a URL-encoded value, storing the result in the
 // provided byte slice.
-func (dest *URLEncodedBase64) UnmarshalJSON(data []byte) error {
+func (e *URLEncodedBase64) UnmarshalJSON(data []byte) error {
 	if bytes.Equal(data, []byte("null")) {
 		return nil
 	}
@@ -26,16 +26,16 @@ func (dest *URLEncodedBase64) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	v := reflect.ValueOf(dest).Elem()
+	v := reflect.ValueOf(e).Elem()
 	v.SetBytes(out[:n])
 	return nil
 }
 
 // MarshalJSON base64 encodes a non URL-encoded value, storing the result in the
 // provided byte slice.
-func (data URLEncodedBase64) MarshalJSON() ([]byte, error) {
-	if data == nil {
+func (e URLEncodedBase64) MarshalJSON() ([]byte, error) {
+	if e == nil {
 		return []byte("null"), nil
 	}
-	return []byte(`"` + base64.RawURLEncoding.EncodeToString(data) + `"`), nil
+	return []byte(`"` + base64.RawURLEncoding.EncodeToString(e) + `"`), nil
 }
