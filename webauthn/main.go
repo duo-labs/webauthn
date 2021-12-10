@@ -57,6 +57,15 @@ func (config *Config) validate() error {
 		config.RPOrigin = protocol.FullyQualifiedOrigin(u)
 	}
 
+	if config.AuthenticatorSelection.RequireResidentKey == nil {
+		rrk := false
+		config.AuthenticatorSelection.RequireResidentKey = &rrk
+	}
+
+	if config.AuthenticatorSelection.UserVerification == "" {
+		config.AuthenticatorSelection.UserVerification = protocol.VerificationPreferred
+	}
+
 	return nil
 }
 
