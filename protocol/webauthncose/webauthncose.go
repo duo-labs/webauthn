@@ -181,6 +181,19 @@ func ParsePublicKey(keyBytes []byte) (interface{}, error) {
 	}
 }
 
+func ParseFIDOPublicKey(keyBytes []byte) (EC2PublicKeyData, error) {
+	x, y := elliptic.Unmarshal(elliptic.P256(), keyBytes)
+
+	return EC2PublicKeyData{
+		PublicKeyData: PublicKeyData{
+			Algorithm: int64(AlgES256),
+			KeyType:   int64(EllipticKey),
+		},
+		XCoord: x.Bytes(),
+		YCoord: y.Bytes(),
+	}, nil
+}
+
 // COSEAlgorithmIdentifier From §5.10.5. A number identifying a cryptographic algorithm. The algorithm
 // identifiers SHOULD be values registered in the IANA COSE Algorithms registry
 // [https://www.w3.org/TR/webauthn/#biblio-iana-cose-algs-reg], for instance, -7 for "ES256"

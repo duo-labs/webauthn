@@ -45,7 +45,7 @@ type ParsedAssertionResponse struct {
 
 // Parse the credential request response into a format that is either required by the specification
 // or makes the assertion verification steps easier to complete. This takes an http.Request that contains
-// the attestation response data in a raw, mostly base64 encoded format, and parses the data into
+// the assertion response data in a raw, mostly base64 encoded format, and parses the data into
 // manageable structures
 func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAssertionData, error) {
 	if response == nil || response.Body == nil {
@@ -56,7 +56,7 @@ func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAs
 
 // Parse the credential request response into a format that is either required by the specification
 // or makes the assertion verification steps easier to complete. This takes an io.Reader that contains
-// the attestation response data in a raw, mostly base64 encoded format, and parses the data into
+// the assertion response data in a raw, mostly base64 encoded format, and parses the data into
 // manageable structures
 func ParseCredentialRequestResponseBody(body io.Reader) (*ParsedCredentialAssertionData, error) {
 	var car CredentialAssertionResponse
@@ -77,7 +77,7 @@ func ParseCredentialRequestResponseBody(body io.Reader) (*ParsedCredentialAssert
 		return nil, ErrBadRequest.WithDetails("CredentialAssertionResponse with bad type")
 	}
 	var par ParsedCredentialAssertionData
-	par.ID, par.RawID, par.Type = car.ID, car.RawID, car.Type
+	par.ID, par.RawID, par.Type, par.ClientExtensionResults = car.ID, car.RawID, car.Type, car.ClientExtensionResults
 	par.Raw = car
 
 	par.Response.Signature = car.AssertionResponse.Signature
@@ -100,7 +100,7 @@ func ParseCredentialRequestResponseBody(body io.Reader) (*ParsedCredentialAssert
 // Follow the remaining steps outlined in §7.2 Verifying an authentication assertion
 // (https://www.w3.org/TR/webauthn/#verifying-assertion) and return an error if there
 // is a failure during each step.
-func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPartyID, relyingPartyOrigin string, verifyUser bool, credentialBytes []byte) error {
+func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPartyID, relyingPartyOrigin, appID string, verifyUser bool, credentialBytes []byte) error {
 
 	// Steps 4 through 6 in verifying the assertion data (https://www.w3.org/TR/webauthn/#verifying-assertion) are
 	// "assertive" steps, i.e "Let JSONtext be the result of running UTF-8 decode on the value of cData."
@@ -116,8 +116,13 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPa
 	// Begin Step 11. Verify that the rpIdHash in authData is the SHA-256 hash of the RP ID expected by the RP.
 	rpIDHash := sha256.Sum256([]byte(relyingPartyID))
 
+	var appIDHash [32]byte
+	if appID != "" {
+		appIDHash = sha256.Sum256([]byte(appID))
+	}
+
 	// Handle steps 11 through 14, verifying the authenticator data.
-	validError = p.Response.AuthenticatorData.Verify(rpIDHash[:], verifyUser)
+	validError = p.Response.AuthenticatorData.Verify(rpIDHash[:], appIDHash[:], verifyUser)
 	if validError != nil {
 		return ErrAuthData.WithInfo(validError.Error())
 	}
@@ -132,7 +137,18 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPa
 
 	sigData := append(p.Raw.AssertionResponse.AuthenticatorData, clientDataHash[:]...)
 
-	key, err := webauthncose.ParsePublicKey(credentialBytes)
+	var (
+		key interface{}
+		err error
+	)
+
+	// If the Session Data does not contain the appID extension or it wasn't reported as used by the Client/RP then we
+	// use the standard CTAP2 public key parser.
+	if appID == "" {
+		key, err = webauthncose.ParsePublicKey(credentialBytes)
+	} else {
+		key, err = webauthncose.ParseFIDOPublicKey(credentialBytes)
+	}
 
 	valid, err := webauthncose.VerifySignature(key, sigData, p.Response.Signature)
 	if !valid {

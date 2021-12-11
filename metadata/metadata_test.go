@@ -52,7 +52,9 @@ func TestMetadataTOCParsing(t *testing.T) {
 			b, _ := ioutil.ReadFile(tt.file)
 			_, _, err := unmarshalMDSTOC(b, *httpClient)
 			failed := true
-			if err != nil {
+			if tt.wantErr == nil {
+				failed = err != nil
+			} else if err != nil {
 				failed = (err.Error() != tt.wantErr.Error())
 			} else {
 				failed = tt.wantErr != nil
