@@ -85,7 +85,7 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 	}
 
 	var pcc ParsedCredentialCreationData
-	pcc.ID, pcc.RawID, pcc.Type = ccr.ID, ccr.RawID, ccr.Type
+	pcc.ID, pcc.RawID, pcc.Type, pcc.ClientExtensionResults = ccr.ID, ccr.RawID, ccr.Type, ccr.ClientExtensionResults
 	pcc.Raw = ccr
 
 	parsedAttestationResponse, err := ccr.AttestationResponse.Parse()
