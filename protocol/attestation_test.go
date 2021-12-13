@@ -19,7 +19,7 @@ func TestAttestationVerify(t *testing.T) {
 				t.Fatal(err)
 			}
 			var pcc ParsedCredentialCreationData
-			pcc.ID, pcc.RawID, pcc.Type = ccr.ID, ccr.RawID, ccr.Type
+			pcc.ID, pcc.RawID, pcc.Type, pcc.ClientExtensionResults = ccr.ID, ccr.RawID, ccr.Type, ccr.ClientExtensionResults
 			pcc.Raw = ccr
 
 			parsedAttestationResponse, err := ccr.AttestationResponse.Parse()
@@ -52,7 +52,7 @@ func attestationTestUnpackResponse(t *testing.T, response string) ParsedCredenti
 		t.Fatal(err)
 	}
 	var pcc ParsedCredentialCreationData
-	pcc.ID, pcc.RawID, pcc.Type = ccr.ID, ccr.RawID, ccr.Type
+	pcc.ID, pcc.RawID, pcc.Type, pcc.ClientExtensionResults = ccr.ID, ccr.RawID, ccr.Type, ccr.ClientExtensionResults
 	pcc.Raw = ccr
 
 	parsedAttestationResponse, err := ccr.AttestationResponse.Parse()
