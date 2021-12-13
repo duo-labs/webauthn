@@ -15,6 +15,8 @@ type Credential struct {
 	PublicKey []byte
 	// The attestation format used (if any) by the authenticator when creating the credential.
 	AttestationType string
+	// The transport types the authenticator supports.
+	Transport []protocol.AuthenticatorTransport
 	// The Authenticator information for a given certificate
 	Authenticator Authenticator
 }
@@ -25,6 +27,7 @@ func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*Credential, e
 		ID:              c.Response.AttestationObject.AuthData.AttData.CredentialID,
 		PublicKey:       c.Response.AttestationObject.AuthData.AttData.CredentialPublicKey,
 		AttestationType: c.Response.AttestationObject.Format,
+		Transport:       c.Transport,
 		Authenticator: Authenticator{
 			AAGUID:    c.Response.AttestationObject.AuthData.AttData.AAGUID,
 			SignCount: c.Response.AttestationObject.AuthData.Counter,
