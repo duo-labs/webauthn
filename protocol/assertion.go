@@ -45,7 +45,7 @@ type ParsedAssertionResponse struct {
 
 // Parse the credential request response into a format that is either required by the specification
 // or makes the assertion verification steps easier to complete. This takes an http.Request that contains
-// the attestation response data in a raw, mostly base64 encoded format, and parses the data into
+// the assertion response data in a raw, mostly base64 encoded format, and parses the data into
 // manageable structures
 func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAssertionData, error) {
 	if response == nil || response.Body == nil {
@@ -56,7 +56,7 @@ func ParseCredentialRequestResponse(response *http.Request) (*ParsedCredentialAs
 
 // Parse the credential request response into a format that is either required by the specification
 // or makes the assertion verification steps easier to complete. This takes an io.Reader that contains
-// the attestation response data in a raw, mostly base64 encoded format, and parses the data into
+// the assertion response data in a raw, mostly base64 encoded format, and parses the data into
 // manageable structures
 func ParseCredentialRequestResponseBody(body io.Reader) (*ParsedCredentialAssertionData, error) {
 	var car CredentialAssertionResponse
