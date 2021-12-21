@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/duo-labs/webauthn/metadata"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 
 	"github.com/duo-labs/webauthn/protocol/webauthncose"
 )
