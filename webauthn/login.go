@@ -170,7 +170,7 @@ func (webauthn *WebAuthn) ValidateLogin(user User, session SessionData, parsedRe
 	rpID := webauthn.Config.RPID
 	rpOrigin := webauthn.Config.RPOrigin
 
-	appID, err := parsedResponse.GetAppID(session.Extensions)
+	appID, err := parsedResponse.GetAppID(session.Extensions, loginCredential.AttestationType)
 	if err != nil {
 		return nil, err
 	}

@@ -94,8 +94,8 @@ func TestParseCredentialRequestResponse(t *testing.T) {
 				t.Errorf("ParseCredentialRequestResponse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.Extensions, tt.want.Extensions) {
-				t.Errorf("Extensions = %v \n want: %v", got, tt.want)
+			if !reflect.DeepEqual(got.ClientExtensionResults, tt.want.ClientExtensionResults) {
+				t.Errorf("ClientExtensionResults = %v \n want: %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got.ID, tt.want.ID) {
 				t.Errorf("ID = %v \n want: %v", got.ID, tt.want.ID)
@@ -104,7 +104,7 @@ func TestParseCredentialRequestResponse(t *testing.T) {
 				t.Errorf("ParsedCredential = %v \n want: %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got.ParsedPublicKeyCredential, tt.want.ParsedPublicKeyCredential) {
-				t.Errorf("ParsedPublicKeyCredential = %v \n want: %v", got.ParsedPublicKeyCredential.Extensions, tt.want.ParsedPublicKeyCredential.Extensions)
+				t.Errorf("ParsedPublicKeyCredential = %v \n want: %v", got.ParsedPublicKeyCredential.ClientExtensionResults, tt.want.ParsedPublicKeyCredential.ClientExtensionResults)
 			}
 			if !reflect.DeepEqual(got.Raw, tt.want.Raw) {
 				t.Errorf("Raw = %+v \n want: %+v", got.Raw, tt.want.Raw)
