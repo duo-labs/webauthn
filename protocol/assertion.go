@@ -100,8 +100,7 @@ func ParseCredentialRequestResponseBody(body io.Reader) (*ParsedCredentialAssert
 // Follow the remaining steps outlined in §7.2 Verifying an authentication assertion
 // (https://www.w3.org/TR/webauthn/#verifying-assertion) and return an error if there
 // is a failure during each step.
-func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPartyID, relyingPartyOrigin, appID string, verifyUser bool, credentialBytes []byte) error {
-
+func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPartyID, relyingPartyOrigin, appID, attestationType string, verifyUser bool, credentialBytes []byte) error {
 	// Steps 4 through 6 in verifying the assertion data (https://www.w3.org/TR/webauthn/#verifying-assertion) are
 	// "assertive" steps, i.e "Let JSONtext be the result of running UTF-8 decode on the value of cData."
 	// We handle these steps in part as we verify but also beforehand
@@ -142,7 +141,7 @@ func (p *ParsedCredentialAssertionData) Verify(storedChallenge string, relyingPa
 		err error
 	)
 
-	if appID == "" {
+	if appID == "" || attestationType != "fido-u2f" {
 		key, err = webauthncose.ParsePublicKey(credentialBytes)
 	} else {
 		key, err = webauthncose.ParseFIDOPublicKey(credentialBytes)
