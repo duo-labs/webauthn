@@ -2,9 +2,9 @@ package webauthncose
 
 import (
 	"crypto/rand"
+	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 	"testing"
 
-	"github.com/fxamacker/cbor/v2"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -58,7 +58,7 @@ MCowBQYDK2VwAyEAe4gQJK3JgtOAuHceO5v45LOZi8fQWDBmAs5NDy/kt4E=
 		},
 	}
 	// Get the CBOR-encoded representation of the OKPPublicKeyData
-	buf, _ := cbor.Marshal(key)
+	buf, _ := webauthncbor.Marshal(key)
 
 	got := DisplayPublicKey(buf)
 	if got != expected {
