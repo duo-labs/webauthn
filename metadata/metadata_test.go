@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -53,7 +54,11 @@ func TestMetadataTOCParsing(t *testing.T) {
 			_, _, err := unmarshalMDSTOC(b, *httpClient)
 			failed := true
 			if err != nil {
-				failed = (err.Error() != tt.wantErr.Error())
+				if tt.wantErr == nil {
+					failed = true
+				} else {
+					failed = !errors.Is(err, tt.wantErr)
+				}
 			} else {
 				failed = tt.wantErr != nil
 			}
