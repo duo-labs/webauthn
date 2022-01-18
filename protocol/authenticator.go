@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 )
 
@@ -223,7 +224,7 @@ func (a *AuthenticatorData) Verify(rpIdHash, appIDHash []byte, userVerificationR
 	// Verify that the RP ID hash in authData is indeed the SHA-256
 	// hash of the RP ID expected by the RP.
 	if !bytes.Equal(a.RPIDHash[:], rpIdHash) && !bytes.Equal(a.RPIDHash[:], appIDHash) {
-		return ErrVerification.WithInfo(fmt.Sprintf("RP Hash mismatch. Expected %s and Received %s\n", a.RPIDHash, rpIdHash))
+		return ErrVerification.WithInfo(fmt.Sprintf("RP Hash mismatch. Expected %x and Received %x\n", a.RPIDHash, rpIdHash))
 	}
 
 	// Registration Step 10 & Assertion Step 12
