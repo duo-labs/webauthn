@@ -91,7 +91,7 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 				t.Errorf("ParseCredentialCreationResponse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.Extensions, tt.want.Extensions) {
+			if !reflect.DeepEqual(got.ClientExtensionResults, tt.want.ClientExtensionResults) {
 				t.Errorf("Extensions = %v \n want: %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got.ID, tt.want.ID) {
