@@ -2,8 +2,9 @@ package webauthncose
 
 import (
 	"crypto/rand"
-	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 	"testing"
+
+	"github.com/Unotechsoftware/webauthn/protocol/webauthncbor"
 
 	"golang.org/x/crypto/ed25519"
 )

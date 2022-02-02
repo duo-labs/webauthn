@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/duo-labs/webauthn/metadata"
+	"github.com/Unotechsoftware/webauthn/metadata"
 	"github.com/google/uuid"
 
-	"github.com/duo-labs/webauthn/protocol/webauthncose"
+	"github.com/Unotechsoftware/webauthn/protocol/webauthncose"
 )
 
 var packedAttestationKey = "packed"

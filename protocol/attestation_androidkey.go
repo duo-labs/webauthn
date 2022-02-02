@@ -6,7 +6,7 @@ import (
 	"encoding/asn1"
 	"fmt"
 
-	"github.com/duo-labs/webauthn/protocol/webauthncose"
+	"github.com/Unotechsoftware/webauthn/protocol/webauthncose"
 )
 
 var androidAttestationKey = "android-key"

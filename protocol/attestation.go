@@ -4,7 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/duo-labs/webauthn/protocol/webauthncbor"
+
+	"github.com/Unotechsoftware/webauthn/protocol/webauthncbor"
 )
 
 // From §5.2.1 (https://www.w3.org/TR/webauthn/#authenticatorattestationresponse)
