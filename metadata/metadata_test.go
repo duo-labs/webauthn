@@ -53,7 +53,7 @@ func TestMetadataTOCParsing(t *testing.T) {
 			_, _, err := unmarshalMDSTOC(b, *httpClient)
 			failed := true
 			if err != nil {
-				failed = (err.Error() != tt.wantErr.Error())
+				failed = (tt.wantErr == nil || err.Error() != tt.wantErr.Error())
 			} else {
 				failed = tt.wantErr != nil
 			}
