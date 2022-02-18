@@ -36,10 +36,7 @@ func (webauthn *WebAuthn) BeginLogin(user User, opts ...LoginOption) (*protocol.
 	var allowedCredentials = make([]protocol.CredentialDescriptor, len(credentials))
 
 	for i, credential := range credentials {
-		var credentialDescriptor protocol.CredentialDescriptor
-		credentialDescriptor.CredentialID = credential.ID
-		credentialDescriptor.Type = protocol.PublicKeyCredentialType
-		allowedCredentials[i] = credentialDescriptor
+		allowedCredentials[i] = credential.Descriptor()
 	}
 
 	requestOptions := protocol.PublicKeyCredentialRequestOptions{

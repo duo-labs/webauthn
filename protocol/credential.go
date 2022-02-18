@@ -45,12 +45,14 @@ type ParsedPublicKeyCredential struct {
 type CredentialCreationResponse struct {
 	PublicKeyCredential
 	AttestationResponse AuthenticatorAttestationResponse `json:"response"`
+	Transports          []string                         `json:"transports,omitempty"`
 }
 
 type ParsedCredentialCreationData struct {
 	ParsedPublicKeyCredential
-	Response ParsedAttestationResponse
-	Raw      CredentialCreationResponse
+	Response   ParsedAttestationResponse
+	Transports []AuthenticatorTransport
+	Raw        CredentialCreationResponse
 }
 
 func ParseCredentialCreationResponse(response *http.Request) (*ParsedCredentialCreationData, error) {
@@ -87,6 +89,10 @@ func ParseCredentialCreationResponseBody(body io.Reader) (*ParsedCredentialCreat
 	var pcc ParsedCredentialCreationData
 	pcc.ID, pcc.RawID, pcc.Type = ccr.ID, ccr.RawID, ccr.Type
 	pcc.Raw = ccr
+
+	for _, t := range ccr.Transports {
+		pcc.Transports = append(pcc.Transports, AuthenticatorTransport(t))
+	}
 
 	parsedAttestationResponse, err := ccr.AttestationResponse.Parse()
 	if err != nil {

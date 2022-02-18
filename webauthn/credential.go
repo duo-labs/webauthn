@@ -15,8 +15,19 @@ type Credential struct {
 	PublicKey []byte
 	// The attestation format used (if any) by the authenticator when creating the credential.
 	AttestationType string
+	// Transport types this credential supports.
+	Transport []protocol.AuthenticatorTransport
 	// The Authenticator information for a given certificate
 	Authenticator Authenticator
+}
+
+// Descriptor provides the relevant protocol.CredentialDescriptor of this webauthn.Credential.
+func (c Credential) Descriptor() protocol.CredentialDescriptor {
+	return protocol.CredentialDescriptor{
+		Type:         protocol.PublicKeyCredentialType,
+		CredentialID: c.ID,
+		Transport:    c.Transport,
+	}
 }
 
 // MakeNewCredential will return a credential pointer on successful validation of a registration response
@@ -25,6 +36,7 @@ func MakeNewCredential(c *protocol.ParsedCredentialCreationData) (*Credential, e
 		ID:              c.Response.AttestationObject.AuthData.AttData.CredentialID,
 		PublicKey:       c.Response.AttestationObject.AuthData.AttData.CredentialPublicKey,
 		AttestationType: c.Response.AttestationObject.Format,
+		Transport:       c.Transports,
 		Authenticator: Authenticator{
 			AAGUID:    c.Response.AttestationObject.AuthData.AttData.AAGUID,
 			SignCount: c.Response.AttestationObject.AuthData.Counter,

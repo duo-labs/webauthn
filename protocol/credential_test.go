@@ -3,11 +3,12 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 )
 
 func TestParseCredentialCreationResponse(t *testing.T) {
@@ -43,6 +44,7 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 					},
 					RawID: byteID,
 				},
+				Transports: []AuthenticatorTransport{USB, NFC, "fake"},
 				Response: ParsedAttestationResponse{
 					CollectedClientData: CollectedClientData{
 						Type:      CeremonyType("webauthn.create"),
@@ -78,6 +80,7 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 						},
 						AttestationObject: byteAttObject,
 					},
+					Transports: []string{"usb", "nfc", "fake"},
 				},
 			},
 			wantErr: false,
@@ -92,22 +95,25 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got.ClientExtensionResults, tt.want.ClientExtensionResults) {
-				t.Errorf("Extensions = %v \n want: %v", got, tt.want)
+				t.Errorf("Extensions = %v \n want: %v", got.ClientExtensionResults, tt.want.ClientExtensionResults)
+			}
+			if !reflect.DeepEqual(got.Transports, tt.want.Transports) {
+				t.Errorf("Transports = %v \n want: %v", got.Transports, tt.want.Transports)
 			}
 			if !reflect.DeepEqual(got.ID, tt.want.ID) {
 				t.Errorf("ID = %v \n want: %v", got, tt.want)
 			}
 			if !reflect.DeepEqual(got.ParsedCredential, tt.want.ParsedCredential) {
-				t.Errorf("ParsedCredential = %v \n want: %v", got, tt.want)
+				t.Errorf("ParsedCredential = %v \n want: %v", got.ParsedCredential, tt.want.ParsedCredential)
 			}
 			if !reflect.DeepEqual(got.ParsedPublicKeyCredential, tt.want.ParsedPublicKeyCredential) {
-				t.Errorf("ParsedPublicKeyCredential = %v \n want: %v", got, tt.want)
+				t.Errorf("ParsedPublicKeyCredential = %v \n want: %v", got.ParsedPublicKeyCredential, tt.want.ParsedPublicKeyCredential)
 			}
 			if !reflect.DeepEqual(got.Raw, tt.want.Raw) {
-				t.Errorf("Raw = %v \n want: %v", got, tt.want)
+				t.Errorf("Raw = %v \n want: %v", got.Raw, tt.want.Raw)
 			}
 			if !reflect.DeepEqual(got.RawID, tt.want.RawID) {
-				t.Errorf("RawID = %v \n want: %v", got, tt.want)
+				t.Errorf("RawID = %v \n want: %v", got.RawID, tt.want.RawID)
 			}
 			// Unmarshall CredentialPublicKey
 			var pkWant interface{}
@@ -235,6 +241,7 @@ var testCredentialRequestBody = `{
 	"id":"6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
 	"rawId":"6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
 	"type":"public-key",
+	"transports":["usb","nfc","fake"],
 	"response":{
 		"attestationObject":"o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjEdKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvBBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQOsa7QYSUFukFOLTmgeK6x2ktirNMgwy_6vIwwtegxI2flS1X-JAkZL5dsadg-9bEz2J7PnsbB0B08txvsyUSvKlAQIDJiABIVggLKF5xS0_BntttUIrm2Z2tgZ4uQDwllbdIfrrBMABCNciWCDHwin8Zdkr56iSIh0MrB5qZiEzYLQpEOREhMUkY6q4Vw",
 		"clientDataJSON":"eyJjaGFsbGVuZ2UiOiJXOEd6RlU4cEdqaG9SYldyTERsYW1BZnFfeTRTMUNaRzFWdW9lUkxBUnJFIiwib3JpZ2luIjoiaHR0cHM6Ly93ZWJhdXRobi5pbyIsInR5cGUiOiJ3ZWJhdXRobi5jcmVhdGUifQ"
