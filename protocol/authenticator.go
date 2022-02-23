@@ -47,7 +47,7 @@ type AttestedCredentialData struct {
 	CredentialPublicKey []byte `json:"public_key"`
 }
 
-// AuthenticatorAttachment https://www.w3.org/TR/webauthn/#platform-attachment
+// AuthenticatorAttachment https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-authenticatorattachment
 type AuthenticatorAttachment string
 
 const (
@@ -60,6 +60,21 @@ const (
 	// among, client devices. A public key credential bound to a roaming authenticator is called a
 	// roaming credential.
 	CrossPlatform AuthenticatorAttachment = "cross-platform"
+)
+
+// ResidentKeyRequirement https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey
+type ResidentKeyRequirement string
+
+const (
+	// ResidentKeyRequirementDiscouraged indicates to the client we do not want a discoverable credential. This is the default.
+	ResidentKeyRequirementDiscouraged ResidentKeyRequirement = "discouraged"
+
+	// ResidentKeyRequirementPreferred indicates to the client we would prefer a discoverable credential.
+	ResidentKeyRequirementPreferred ResidentKeyRequirement = "preferred"
+
+	// ResidentKeyRequirementRequired indicates to the client we require a discoverable credential and that it should
+	// fail if the credential does not support this feature.
+	ResidentKeyRequirementRequired ResidentKeyRequirement = "required"
 )
 
 // Authenticators may implement various transports for communicating with clients. This enumeration defines

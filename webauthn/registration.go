@@ -97,6 +97,20 @@ func WithExtensions(extension protocol.AuthenticationExtensions) RegistrationOpt
 	}
 }
 
+// WithResidentKeyRequirement sets both the resident key and require resident key protocol options. This could conflict
+// with webauthn.WithAuthenticatorSelection if it doesn't come after it.
+func WithResidentKeyRequirement(requirement protocol.ResidentKeyRequirement) RegistrationOption {
+	return func(cco *protocol.PublicKeyCredentialCreationOptions) {
+		cco.AuthenticatorSelection.ResidentKey = requirement
+		switch requirement {
+		case protocol.ResidentKeyRequirementRequired:
+			cco.AuthenticatorSelection.RequireResidentKey = protocol.ResidentKeyRequired()
+		default:
+			cco.AuthenticatorSelection.RequireResidentKey = protocol.ResidentKeyUnrequired()
+		}
+	}
+}
+
 // Take the response from the authenticator and client and verify the credential against the user's credentials and
 // session data.
 func (webauthn *WebAuthn) FinishRegistration(user User, session SessionData, response *http.Request) (*Credential, error) {
@@ -126,43 +140,43 @@ func (webauthn *WebAuthn) CreateCredential(user User, session SessionData, parse
 
 func defaultRegistrationCredentialParameters() []protocol.CredentialParameter {
 	return []protocol.CredentialParameter{
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgES256,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgES384,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgES512,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgRS256,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgRS384,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgRS512,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgPS256,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgPS384,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgPS512,
 		},
-		protocol.CredentialParameter{
+		{
 			Type:      protocol.PublicKeyCredentialType,
 			Algorithm: webauthncose.AlgEdDSA,
 		},
