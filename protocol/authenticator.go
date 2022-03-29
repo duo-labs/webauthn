@@ -8,7 +8,7 @@ import (
 	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 )
 
-var (
+const (
 	minAuthDataLength     = 37
 	minAttestedAuthLength = 55
 )
