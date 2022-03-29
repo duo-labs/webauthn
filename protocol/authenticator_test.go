@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"reflect"
 	"testing"
 )
@@ -133,6 +134,14 @@ func TestAuthenticatorData_Unmarshal(t *testing.T) {
 	noneAuthData, _ := base64.StdEncoding.DecodeString("pkLSG3xtVeHOI8U5mCjSx0m/am7y/gPMnhDN9O1TCItBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQMAxl6G32ykWaLrv/ouCs5HoGsvONqBtOb7ZmyMs8K8PccnwyyqPzWn/yZuyQmQBguvjYSvH6gDBlFG65quUDCSlAQIDJiABIVggyJGP+ra/u/eVjqN4OeYXUShRWxrEeC6Sb5/bZmJ9q8MiWCCHIkRdg5oRb1RHoFVYUpogcjlObCKFsV1ls1T+uUc6rA==")
 	attAuthData, _ := base64.StdEncoding.DecodeString("lWkIjx7O4yMpVANdvRDXyuORMFonUbVZu4/Xy7IpvdRBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIniszxcGnhupdPFOHJIm6dscrWCC2h8xHicBMu91THD0kdOdB0QQtkaEn+6KfsfT1o3NmmFT8YfXrG734WfVSmlAQIDJiABIVggyoHHeiUw5aSbt8/GsL9zaqZGRzV26A4y3CnCGUhVXu4iWCBMnc8za5xgPzIygngAv9W+vZTMGJwwZcM4sjiqkcb/1g==")
 
+	attAuthDataIDExceedsBounds := make([]byte, len(attAuthData))
+	copy(attAuthDataIDExceedsBounds, attAuthData)
+	binary.BigEndian.PutUint16(attAuthDataIDExceedsBounds[53:], 256)
+
+	attAuthDataIDIsTooLarge := make([]byte, len(attAuthData)+2048)
+	copy(attAuthDataIDIsTooLarge, attAuthData)
+	binary.BigEndian.PutUint16(attAuthDataIDIsTooLarge[53:], maxCredentialIDLength+1)
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -154,6 +163,22 @@ func TestAuthenticatorData_Unmarshal(t *testing.T) {
 				attAuthData,
 			},
 			false,
+		},
+		{
+			"Attestation data says the ID length is too large - extending beyond the buffer we're given",
+			fields{},
+			args{
+				attAuthDataIDExceedsBounds,
+			},
+			true,
+		},
+		{
+			"Attestation data says the ID length is too large - violates spec",
+			fields{},
+			args{
+				attAuthDataIDIsTooLarge,
+			},
+			true,
 		},
 	}
 	for _, tt := range tests {
