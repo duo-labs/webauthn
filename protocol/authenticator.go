@@ -11,6 +11,9 @@ import (
 const (
 	minAuthDataLength     = 37
 	minAttestedAuthLength = 55
+
+	// https://w3c.github.io/webauthn/#attested-credential-data
+	maxCredentialIDLength = 1023
 )
 
 // Authenticators respond to Relying Party requests by returning an object derived from the
@@ -216,7 +219,7 @@ func (a *AuthenticatorData) unmarshalAttestedData(rawAuthData []byte) error {
 	if len(rawAuthData) < int(55+idLength) {
 		return ErrBadRequest.WithDetails("Authenticator attestation data length too short")
 	}
-	if idLength > 1023 {
+	if idLength > maxCredentialIDLength {
 		return ErrBadRequest.WithDetails("Authenticator attestation data credential id length too long")
 	}
 	a.AttData.CredentialID = rawAuthData[55 : 55+idLength]
