@@ -14,8 +14,8 @@ import (
 
 	"golang.org/x/crypto/ed25519"
 
-	"github.com/duo-labs/webauthn/protocol/googletpm"
 	"github.com/duo-labs/webauthn/protocol/webauthncbor"
+	"github.com/google/go-tpm/tpm2"
 )
 
 // PublicKeyData The public key portion of a Relying Party-specific credential key pair, generated
@@ -263,16 +263,16 @@ const (
 	secp256k1 COSEEllipticCurve = 8
 )
 
-func (k *EC2PublicKeyData) TPMCurveID() googletpm.EllipticCurve {
+func (k *EC2PublicKeyData) TPMCurveID() tpm2.EllipticCurve {
 	switch COSEEllipticCurve(k.Curve) {
 	case P256:
-		return googletpm.CurveNISTP256 // TPM_ECC_NIST_P256
+		return tpm2.CurveNISTP256 // TPM_ECC_NIST_P256
 	case P384:
-		return googletpm.CurveNISTP384 // TPM_ECC_NIST_P384
+		return tpm2.CurveNISTP384 // TPM_ECC_NIST_P384
 	case P521:
-		return googletpm.CurveNISTP521 // TPM_ECC_NIST_P521
+		return tpm2.CurveNISTP521 // TPM_ECC_NIST_P521
 	default:
-		return googletpm.EllipticCurve(0) // TPM_ECC_NONE
+		return tpm2.EllipticCurve(0) // TPM_ECC_NONE
 	}
 }
 
