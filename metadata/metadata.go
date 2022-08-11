@@ -458,9 +458,9 @@ func unmarshalMDSTOC(body []byte, c http.Client) (MetadataTOCPayload, string, er
 func getMetdataTOCSigningTrustAnchor(c http.Client) ([]byte, error) {
 	rooturl := ""
 	if Conformance {
-		rooturl = "https://fidoalliance.co.nz/mds/pki/MDSROOT.crt"
+		rooturl = "https://mds3.certinfra.fidoalliance.org/pki/MDS3ROOT.crt"
 	} else {
-		rooturl = "https://mds.fidoalliance.org/Root.cer"
+		rooturl = "https://secure.globalsign.com/cacert/root-r3.crt"
 	}
 
 	return downloadBytes(rooturl, c)
