@@ -7,19 +7,16 @@ import (
 	"encoding/asn1"
 	"errors"
 	"fmt"
-	"math/big"
 	"strings"
 
 	"github.com/duo-labs/webauthn/protocol/webauthncose"
-
-	"github.com/duo-labs/webauthn/protocol/googletpm"
+	"github.com/google/go-tpm/tpm2"
 )
 
 var tpmAttestationKey = "tpm"
 
 func init() {
 	RegisterAttestationFormat(tpmAttestationKey, verifyTPMFormat)
-	googletpm.UseTPM20LengthPrefixSize()
 }
 
 func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []interface{}, error) {
@@ -73,7 +70,7 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 
 	// Verify that the public key specified by the parameters and unique fields of pubArea
 	// is identical to the credentialPublicKey in the attestedCredentialData in authenticatorData.
-	pubArea, err := googletpm.DecodePublic(pubAreaBytes)
+	pubArea, err := tpm2.DecodePublic(pubAreaBytes)
 	if err != nil {
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Unable to decode TPMT_PUBLIC in attestation statement")
 	}
@@ -85,15 +82,14 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	switch key := key.(type) {
 	case webauthncose.EC2PublicKeyData:
 		if pubArea.ECCParameters.CurveID != key.TPMCurveID() ||
-			pubArea.ECCParameters.Point.X.Cmp(new(big.Int).SetBytes(key.XCoord)) != 0 ||
-			pubArea.ECCParameters.Point.Y.Cmp(new(big.Int).SetBytes(key.YCoord)) != 0 {
+			!bytes.Equal(pubArea.ECCParameters.Point.XRaw, key.XCoord) ||
+			!bytes.Equal(pubArea.ECCParameters.Point.YRaw, key.YCoord) {
 			return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Mismatch between ECCParameters in pubArea and credentialPublicKey")
 		}
 	case webauthncose.RSAPublicKeyData:
-		mod := new(big.Int).SetBytes(key.Modulus)
 		exp := uint32(key.Exponent[0]) + uint32(key.Exponent[1])<<8 + uint32(key.Exponent[2])<<16
-		if pubArea.RSAParameters.Modulus.Cmp(mod) != 0 ||
-			pubArea.RSAParameters.Exponent != exp {
+		if !bytes.Equal(pubArea.RSAParameters.ModulusRaw, key.Modulus) ||
+			pubArea.RSAParameters.Exponent() != exp {
 			return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Mismatch between RSAParameters in pubArea and credentialPublicKey")
 		}
 	default:
@@ -104,7 +100,7 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	attToBeSigned := append(att.RawAuthData, clientDataHash...)
 
 	// Validate that certInfo is valid:
-	certInfo, err := googletpm.DecodeAttestationData(certInfoBytes)
+	certInfo, err := tpm2.DecodeAttestationData(certInfoBytes)
 	if err != nil {
 		return tpmAttestationKey, nil, err
 	}
@@ -113,7 +109,7 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Magic is not set to TPM_GENERATED_VALUE")
 	}
 	// 2/4 Verify that type is set to TPM_ST_ATTEST_CERTIFY.
-	if certInfo.Type != googletpm.TagAttestCertify {
+	if certInfo.Type != tpm2.TagAttestCertify {
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Type is not set to TPM_ST_ATTEST_CERTIFY")
 	}
 	// 3/4 Verify that extraData is set to the hash of attToBeSigned using the hash algorithm employed in "alg".
@@ -127,10 +123,12 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	// [TPMv2-Part2] section 10.12.3, whose name field contains a valid Name for pubArea,
 	// as computed using the algorithm in the nameAlg field of pubArea
 	// using the procedure specified in [TPMv2-Part1] section 16.
-	f, err = certInfo.AttestedCertifyInfo.Name.Digest.Alg.HashConstructor()
-	h = f()
-	h.Write(pubAreaBytes)
-	if !bytes.Equal(h.Sum(nil), certInfo.AttestedCertifyInfo.Name.Digest.Value) {
+	matches, err := certInfo.AttestedCertifyInfo.Name.MatchesPublic(pubArea)
+	if err != nil {
+		return tpmAttestationKey, nil, err
+	}
+
+	if !matches {
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Hash value mismatch attested and pubArea")
 	}
 
