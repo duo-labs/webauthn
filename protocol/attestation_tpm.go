@@ -100,14 +100,12 @@ func verifyTPMFormat(att AttestationObject, clientDataHash []byte) (string, []in
 	attToBeSigned := append(att.RawAuthData, clientDataHash...)
 
 	// Validate that certInfo is valid:
+	// 1/4 Verify that magic is set to TPM_GENERATED_VALUE, handled here
 	certInfo, err := tpm2.DecodeAttestationData(certInfoBytes)
 	if err != nil {
 		return tpmAttestationKey, nil, err
 	}
-	// 1/4 Verify that magic is set to TPM_GENERATED_VALUE.
-	if certInfo.Magic != 0xff544347 {
-		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Magic is not set to TPM_GENERATED_VALUE")
-	}
+
 	// 2/4 Verify that type is set to TPM_ST_ATTEST_CERTIFY.
 	if certInfo.Type != tpm2.TagAttestCertify {
 		return tpmAttestationKey, nil, ErrAttestationFormat.WithDetails("Type is not set to TPM_ST_ATTEST_CERTIFY")

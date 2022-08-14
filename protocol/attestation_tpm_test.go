@@ -164,7 +164,7 @@ var (
 	}
 )
 
-var defaultAttStatement = map[string]interface{}{"ver": "2.0", "alg": int64(0), "x5c": []interface{}{}, "sig": []byte{}, "certInfo": []byte{}, "pubArea": []byte{}}
+var defaultAttStatement = map[string]interface{}{"ver": "2.0", "alg": int64(-257), "x5c": []interface{}{}, "sig": []byte{}, "certInfo": []byte{}, "pubArea": []byte{}}
 
 type CredentialPublicKey struct {
 	KeyType   int64  `cbor:"1,keyasint" json:"kty"`
@@ -191,10 +191,10 @@ func uint32ToBytes(i uint32) []byte {
 	return o
 }
 
-func TestTPMAttestationVerificationFailPubArea(t *testing.T) {
+func getTPMAttestionKeys() ([]byte, []byte, []byte, rsa.PrivateKey, ecdsa.PrivateKey, error) {
 	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		t.Fatal(err)
+		return nil, nil, nil, rsa.PrivateKey{}, ecdsa.PrivateKey{}, err
 	}
 
 	r := webauthncose.RSAPublicKeyData{
@@ -208,7 +208,7 @@ func TestTPMAttestationVerificationFailPubArea(t *testing.T) {
 
 	eccKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		t.Fatal(err)
+		return nil, nil, nil, rsa.PrivateKey{}, ecdsa.PrivateKey{}, err
 	}
 
 	c := CredentialPublicKey{
@@ -231,7 +231,7 @@ func TestTPMAttestationVerificationFailPubArea(t *testing.T) {
 
 	okpKey, _, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		t.Fatal(err)
+		return nil, nil, nil, rsa.PrivateKey{}, ecdsa.PrivateKey{}, err
 	}
 	o := webauthncose.OKPPublicKeyData{
 		PublicKeyData: webauthncose.PublicKeyData{
@@ -242,9 +242,24 @@ func TestTPMAttestationVerificationFailPubArea(t *testing.T) {
 		XCoord: okpKey,
 	}
 
-	epk, _ := webauthncbor.Marshal(e)
-	rpk, _ := webauthncbor.Marshal(r)
-	opk, _ := webauthncbor.Marshal(o)
+	epk, err := webauthncbor.Marshal(e)
+	if err != nil {
+		return nil, nil, nil, rsa.PrivateKey{}, ecdsa.PrivateKey{}, err
+	}
+	rpk, err := webauthncbor.Marshal(r)
+	if err != nil {
+		return nil, nil, nil, rsa.PrivateKey{}, ecdsa.PrivateKey{}, err
+	}
+	opk, err := webauthncbor.Marshal(o)
+	return epk, rpk, opk, *rsaKey, *eccKey, err
+}
+
+func TestTPMAttestationVerificationFailPubArea(t *testing.T) {
+
+	epk, rpk, opk, rsaKey, eccKey, err := getTPMAttestionKeys()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		name      string
@@ -344,14 +359,83 @@ func TestTPMAttestationVerificationFailPubArea(t *testing.T) {
 }
 
 func TestTPMAttestationVerificationFailCertInfo(t *testing.T) {
+	attStmt := make(map[string]interface{}, len(defaultAttStatement))
+	for id, v := range defaultAttStatement {
+		attStmt[id] = v
+	}
+	rsaKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+
+	r := webauthncose.RSAPublicKeyData{
+		PublicKeyData: webauthncose.PublicKeyData{
+			KeyType:   int64(webauthncose.RSAKey),
+			Algorithm: int64(webauthncose.AlgRS256),
+		},
+		Modulus:  rsaKey.N.Bytes(),
+		Exponent: uint32ToBytes(uint32(rsaKey.E)),
+	}
+
+	public := defaultRSAPublic
+	public.RSAParameters.ExponentRaw = uint32(rsaKey.E)
+	public.RSAParameters.ModulusRaw = rsaKey.N.Bytes()
+	attStmt["pubArea"], _ = public.Encode()
+	rpk, _ := webauthncbor.Marshal(r)
+	att := AttestationObject{
+		AttStatement: attStmt,
+		AuthData: AuthenticatorData{
+			AttData: AttestedCredentialData{
+				CredentialPublicKey: rpk,
+			},
+		},
+	}
+
+	f := webauthncose.HasherFromCOSEAlg(webauthncose.AlgRS256)
+	h := f()
+	h.Write(att.RawAuthData)
+	extraData := h.Sum(nil)
+
 	tests := []struct {
-		name           string
-		att            AttestationObject
-		clientDataHash [32]byte
-		wantErr        string
-	}{}
+		name     string
+		certInfo tpm2.AttestationData
+		wantErr  string
+	}{
+		{
+			"TPM Negative Test CertInfo invalid certInfo",
+			tpm2.AttestationData{},
+			"decoding Magic/Type: EOF",
+		},
+		{
+			"TPM Negative Test CertInfo magic value not 0xff544347",
+			tpm2.AttestationData{Magic: 42, Type: tpm2.TagAttestCreation, AttestedCreationInfo: &tpm2.CreationInfo{}},
+			"incorrect magic value: 2a",
+		},
+		{
+			"TPM Negative Test CertInfo type not TagAttestCertify",
+			tpm2.AttestationData{Magic: 0xff544347, Type: tpm2.TagAttestCreation, AttestedCreationInfo: &tpm2.CreationInfo{}},
+			"Type is not set to TPM_ST_ATTEST_CERTIFY",
+		},
+		{
+			"TPM Negative Test CertInfo type not TagAttestCertify",
+			tpm2.AttestationData{Magic: 0xff544347, Type: tpm2.TagAttestCertify, AttestedCertifyInfo: &tpm2.CertifyInfo{}},
+			"ExtraData is not set to hash of attToBeSigned",
+		},
+		{
+			"TPM Negative Test CertInfo Name/pubArea mismatch",
+			tpm2.AttestationData{Magic: 0xff544347, Type: tpm2.TagAttestCertify, AttestedCertifyInfo: &tpm2.CertifyInfo{Name: tpm2.Name{Digest: nil}}, ExtraData: extraData},
+			"Name doesn't have a Digest, can't compare to Public",
+		},
+		{
+			"TPM Negative Test CertInfo Name/pubArea mismatch",
+			tpm2.AttestationData{Magic: 0xff544347, Type: tpm2.TagAttestCertify, AttestedCertifyInfo: &tpm2.CertifyInfo{Name: tpm2.Name{Digest: &tpm2.HashValue{Alg: tpm2.AlgSHA256, Value: extraData}}}, ExtraData: h.Sum(nil)},
+			"Hash value mismatch attested and pubArea",
+		},
+	}
 	for _, tt := range tests {
-		attestationKey, _, err := verifyTPMFormat(tt.att, tt.clientDataHash[:])
+		certInfo, err := tt.certInfo.Encode()
+		if tt.certInfo.Magic != 0 && err != nil {
+			t.Fatal(err)
+		}
+		att.AttStatement["certInfo"] = certInfo
+		attestationKey, _, err := verifyTPMFormat(att, nil)
 		if tt.wantErr != "" {
 			assert.Contains(t, err.Error(), tt.wantErr)
 		} else {
