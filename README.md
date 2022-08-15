@@ -117,7 +117,7 @@ func beginRegistration() {
 
     // Updating the ConveyencePreference options. 
     // See the struct declarations for values
-    conveyencePref := protocol.ConveyancePreference(protocol.PreferNoAttestation)
+    conveyancePref := protocol.ConveyancePreference(protocol.PreferNoAttestation)
 
     user := datastore.GetUser() // Get the user  
     opts, sessionData, err webAuthnHandler.BeginRegistration(&user, webauthn.WithAuthenticatorSelection(authSelect), webauthn.WithConveyancePreference(conveyancePref))
