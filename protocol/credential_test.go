@@ -3,11 +3,12 @@ package protocol
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 )
 
 func TestParseCredentialCreationResponse(t *testing.T) {
@@ -41,6 +42,9 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 						ID:   "6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
 						Type: "public-key",
 					},
+					ClientExtensionResults: AuthenticationExtensionsClientOutputs{
+						"appid": true,
+					},
 					RawID: byteID,
 				},
 				Response: ParsedAttestationResponse{
@@ -69,6 +73,9 @@ func TestParseCredentialCreationResponse(t *testing.T) {
 						Credential: Credential{
 							Type: "public-key",
 							ID:   "6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
+						},
+						ClientExtensionResults: AuthenticationExtensionsClientOutputs{
+							"appid": true,
 						},
 						RawID: byteID,
 					},
@@ -235,6 +242,9 @@ var testCredentialRequestBody = `{
 	"id":"6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
 	"rawId":"6xrtBhJQW6QU4tOaB4rrHaS2Ks0yDDL_q8jDC16DEjZ-VLVf4kCRkvl2xp2D71sTPYns-exsHQHTy3G-zJRK8g",
 	"type":"public-key",
+	"clientExtensionResults":{
+		"appid":true
+	},
 	"response":{
 		"attestationObject":"o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjEdKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvBBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQOsa7QYSUFukFOLTmgeK6x2ktirNMgwy_6vIwwtegxI2flS1X-JAkZL5dsadg-9bEz2J7PnsbB0B08txvsyUSvKlAQIDJiABIVggLKF5xS0_BntttUIrm2Z2tgZ4uQDwllbdIfrrBMABCNciWCDHwin8Zdkr56iSIh0MrB5qZiEzYLQpEOREhMUkY6q4Vw",
 		"clientDataJSON":"eyJjaGFsbGVuZ2UiOiJXOEd6RlU4cEdqaG9SYldyTERsYW1BZnFfeTRTMUNaRzFWdW9lUkxBUnJFIiwib3JpZ2luIjoiaHR0cHM6Ly93ZWJhdXRobi5pbyIsInR5cGUiOiJ3ZWJhdXRobi5jcmVhdGUifQ"
