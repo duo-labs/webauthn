@@ -3,7 +3,7 @@ package metadata
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -24,7 +24,7 @@ func getEndpoints(c http.Client) ([]string, error) {
 		return nil, err
 	}
 	defer req.Body.Close()
-	body, _ := ioutil.ReadAll(req.Body)
+	body, _ := io.ReadAll(req.Body)
 
 	var resp MDSGetEndpointsResponse
 
@@ -46,7 +46,7 @@ func getTestMetadata(s string, c http.Client) (MetadataStatement, error) {
 	}
 
 	defer req.Body.Close()
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		return statement, err
 	}
@@ -60,7 +60,22 @@ func getTestMetadata(s string, c http.Client) (MetadataStatement, error) {
 	return statement, err
 }
 
-func TestMetadataTOCParsing(t *testing.T) {
+func TestProductionMetadataTOCParsing(t *testing.T) {
+	Conformance = false
+	httpClient := &http.Client{
+		Timeout: time.Second * 30,
+	}
+	bytes, err := downloadBytes("https://mds.fidoalliance.org/", *httpClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = unmarshalMDSBLOB(bytes, *httpClient)
+	if err != nil {
+		t.Fail()
+	}
+}
+
+func TestConformanceMetadataTOCParsing(t *testing.T) {
 	Conformance = true
 	httpClient := &http.Client{
 		Timeout: time.Second * 30,
@@ -107,7 +122,7 @@ func TestMetadataTOCParsing(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		blob, _, err := unmarshalMDSTOC(bytes, *httpClient)
+		blob, err := unmarshalMDSBLOB(bytes, *httpClient)
 		if err != nil {
 			if me, ok := err.(*MetadataError); ok {
 				t.Log(me.Details)

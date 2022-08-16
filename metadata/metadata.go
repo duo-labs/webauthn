@@ -4,14 +4,25 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/cloudflare/cfssl/revoke"
+	"github.com/duo-labs/webauthn/protocol/webauthncose"
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
 
 	jwt "github.com/golang-jwt/jwt/v4"
+)
+
+type PublicKeyCredentialParameters struct {
+	Type string                               `json:"type"`
+	Alg  webauthncose.COSEAlgorithmIdentifier `json:"alg"`
+}
+
+const (
+	ProductionMDSRoot  = "MIIDXzCCAkegAwIBAgILBAAAAAABIVhTCKIwDQYJKoZIhvcNAQELBQAwTDEgMB4GA1UECxMXR2xvYmFsU2lnbiBSb290IENBIC0gUjMxEzARBgNVBAoTCkdsb2JhbFNpZ24xEzARBgNVBAMTCkdsb2JhbFNpZ24wHhcNMDkwMzE4MTAwMDAwWhcNMjkwMzE4MTAwMDAwWjBMMSAwHgYDVQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzETMBEGA1UEChMKR2xvYmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMwldpB5BngiFvXAg7aEyiie/QV2EcWtiHL8RgJDx7KKnQRfJMsuS+FggkbhUqsMgUdwbN1k0ev1LKMPgj0MK66X17YUhhB5uzsTgHeMCOFJ0mpiLx9e+pZo34knlTifBtc+ycsmWQ1z3rDI6SYOgxXG71uL0gRgykmmKPZpO/bLyCiR5Z2KYVc3rHQU3HTgOu5yLy6c+9C7v/U9AOEGM+iCK65TpjoWc4zdQQ4gOsC0p6Hpsk+QLjJg6VfLuQSSaGjlOCZgdbKfd/+RFO+uIEn8rUAVSNECMWEZXriX7613t2Saer9fwRPvm2L7DWzgVGkWqQPabumDk3F2xmmFghcCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFI/wS3+oLkUkrk1Q+mOai97i3Ru8MA0GCSqGSIb3DQEBCwUAA4IBAQBLQNvAUKr+yAzv95ZURUm7lgAJQayzE4aGKAczymvmdLm6AC2upArT9fHxD4q/c2dKg8dEe3jgr25sbwMpjjM5RcOO5LlXbKr8EpbsU8Yt5CRsuZRj+9xTaGdWPoO4zzUhw8lo/s7awlOqzJCK6fBdRoyV3XpYKBovHd7NADdBj+1EbddTKJd+82cEHhXXipa0095MJ6RMG3NzdvQXmcIfeg7jLQitChws/zyrVQ4PkX4268NXSb7hLi18YIvDQVETI53O9zJrlAGomecsMx86OyXShkDOOyyGeMlhLxS67ttVb9+E7gUJTb0o2HLO02JQZR7rkpeDMdmztcpHWD9f"
+	ConformanceMDSRoot = "MIICaDCCAe6gAwIBAgIPBCqih0DiJLW7+UHXx/o1MAoGCCqGSM49BAMDMGcxCzAJBgNVBAYTAlVTMRYwFAYDVQQKDA1GSURPIEFsbGlhbmNlMScwJQYDVQQLDB5GQUtFIE1ldGFkYXRhIDMgQkxPQiBST09UIEZBS0UxFzAVBgNVBAMMDkZBS0UgUm9vdCBGQUtFMB4XDTE3MDIwMTAwMDAwMFoXDTQ1MDEzMTIzNTk1OVowZzELMAkGA1UEBhMCVVMxFjAUBgNVBAoMDUZJRE8gQWxsaWFuY2UxJzAlBgNVBAsMHkZBS0UgTWV0YWRhdGEgMyBCTE9CIFJPT1QgRkFLRTEXMBUGA1UEAwwORkFLRSBSb290IEZBS0UwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASKYiz3YltC6+lmxhPKwA1WFZlIqnX8yL5RybSLTKFAPEQeTD9O6mOz+tg8wcSdnVxHzwnXiQKJwhrav70rKc2ierQi/4QUrdsPes8TEirZOkCVJurpDFbXZOgs++pa4XmjYDBeMAsGA1UdDwQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQGcfeCs0Y8D+lh6U5B2xSrR74eHTAfBgNVHSMEGDAWgBQGcfeCs0Y8D+lh6U5B2xSrR74eHTAKBggqhkjOPQQDAwNoADBlAjEA/xFsgri0xubSa3y3v5ormpPqCwfqn9s0MLBAtzCIgxQ/zkzPKctkiwoPtDzI51KnAjAmeMygX2S5Ht8+e+EQnezLJBJXtnkRWY+Zt491wgt/AwSs5PHHMv5QgjELOuMxQBc="
 )
 
 // Metadata is a map of authenticator AAGUIDs to corresponding metadata statements
@@ -31,9 +42,11 @@ const (
 	// Ecdaa - Indicates use of elliptic curve based direct anonymous attestation as defined in [FIDOEcdaaAlgorithm]. Support for this attestation type is optional at this time. It might be required by FIDO Certification.
 	Ecdaa AuthenticatorAttestationType = "ecdaa"
 	// AttCA - Indicates PrivacyCA attestation as defined in [TCG-CMCProfile-AIKCertEnroll]. Support for this attestation type is optional at this time. It might be required by FIDO Certification.
-	AttCA  AuthenticatorAttestationType = "attca"
+	AttCA AuthenticatorAttestationType = "attca"
+	// AnonCA In this case, the authenticator uses an Anonymization CA which dynamically generates per-credential attestation certificates such that the attestation statements presented to Relying Parties do not provide uniquely identifiable information, e.g., that might be used for tracking purposes. The applicable [WebAuthn] attestation formats "fmt" are Google SafetyNet Attestation "android-safetynet", Android Keystore Attestation "android-key", Apple Anonymous Attestation "apple", and Apple Application Attestation "apple-appattest".
 	AnonCA AuthenticatorAttestationType = "anonca"
-	None   AuthenticatorAttestationType = "none"
+	// None - Indicates absence of attestation
+	None AuthenticatorAttestationType = "none"
 )
 
 // AuthenticatorStatus - This enumeration describes the status of an authenticator model as identified by its AAID and potentially some additional information (such as a specific attestation key).
@@ -94,7 +107,7 @@ func IsUndesiredAuthenticatorStatus(status AuthenticatorStatus) bool {
 // StatusReport - Contains the current BiometricStatusReport of one of the authenticator's biometric component.
 type StatusReport struct {
 	// Status of the authenticator. Additional fields MAY be set depending on this value.
-	Status string `json:"status"`
+	Status AuthenticatorStatus `json:"status"`
 	// ISO-8601 formatted date since when the status code was set, if applicable. If no date is given, the status is assumed to be effective while present.
 	EffectiveDate string `json:"effectiveDate"`
 	// Base64-encoded [RFC4648] (not base64url!) DER [ITU-X690-2008] PKIX certificate value related to the current status, if applicable.
@@ -224,7 +237,7 @@ type PatternAccuracyDescriptor struct {
 // VerificationMethodDescriptor - A descriptor for a specific base user verification method as implemented by the authenticator.
 type VerificationMethodDescriptor struct {
 	// a single USER_VERIFY constant (see [FIDORegistry]), not a bit flag combination. This value MUST be non-zero.
-	UserVerification string `json:"userVerification"`
+	UserVerificationMethod string `json:"userVerification"`
 	// May optionally be used in the case of method USER_VERIFY_PASSCODE.
 	CaDesc CodeAccuracyDescriptor `json:"caDesc"`
 	// May optionally be used in the case of method USER_VERIFY_FINGERPRINT, USER_VERIFY_VOICEPRINT, USER_VERIFY_FACEPRINT, USER_VERIFY_EYEPRINT, or USER_VERIFY_HANDPRINT.
@@ -237,7 +250,7 @@ type VerificationMethodDescriptor struct {
 type VerificationMethodANDCombinations struct {
 	//This list will contain only a single entry if using a single user verification method is sufficient.
 	// If this list contains multiple entries, then all of the listed user verification methods MUST be passed as part of the user verification process.
-	VerificationMethodAndCombinations []VerificationMethodDescriptor `json:"verificationMethodANDCombinations"`
+	VerificationMethodAndCombinations []VerificationMethodDescriptor
 }
 
 // The rgbPaletteEntry is an RGB three-sample tuple palette entry
@@ -273,9 +286,9 @@ type DisplayPNGCharacteristicsDescriptor struct {
 // EcdaaTrustAnchor - In the case of ECDAA attestation, the ECDAA-Issuer's trust anchor MUST be specified in this field.
 type EcdaaTrustAnchor struct {
 	// base64url encoding of the result of ECPoint2ToB of the ECPoint2 X
-	X string `json:"x"`
+	X string `json:"X"`
 	// base64url encoding of the result of ECPoint2ToB of the ECPoint2 Y
-	Y string `json:"y"`
+	Y string `json:"Y"`
 	// base64url encoding of the result of BigNumberToB(c)
 	C string `json:"c"`
 	// base64url encoding of the result of BigNumberToB(sx)
@@ -313,7 +326,7 @@ type MetadataStatement struct {
 	// A list of human-readable short descriptions of the authenticator in different languages.
 	AlternativeDescriptions map[string]string `json:"alternativeDescriptions"`
 	// Earliest (i.e. lowest) trustworthy authenticatorVersion meeting the requirements specified in this metadata statement.
-	AuthenticatorVersion uint16 `json:"authenticatorVersion"`
+	AuthenticatorVersion uint32 `json:"authenticatorVersion"`
 	// The FIDO protocol family. The values "uaf", "u2f", and "fido2" are supported.
 	ProtocolFamily string `json:"protocolFamily"`
 	// The FIDO unified protocol version(s) (related to the specific protocol family) supported by this authenticator.
@@ -357,6 +370,32 @@ type MetadataStatement struct {
 	Icon string `json:"icon"`
 	// List of extensions supported by the authenticator.
 	SupportedExtensions []ExtensionDescriptor `json:"supportedExtensions"`
+	// Describes supported versions, extensions, AAGUID of the device and its capabilities
+	AuthenticatorGetInfo AuthenticatorGetInfo `json:"authenticatorGetInfo"`
+}
+
+type AuthenticatorGetInfo struct {
+	Versions                         []string                        `json:"versions"`
+	Extensions                       []string                        `json:"extensions"`
+	AaGUID                           string                          `json:"aaguid"`
+	Options                          map[string]bool                 `json:"options"`
+	MaxMsgSize                       uint                            `json:"maxMsgSize"`
+	PivUvAuthProtocols               []uint                          `json:"pinUvAuthProtocols"`
+	MaxCredentialCountInList         uint                            `json:"maxCredentialCountInList"`
+	MaxCredentialIdLength            uint                            `json:"maxCredentialLength"`
+	Transports                       []string                        `json:"transports"`
+	Algorithms                       []PublicKeyCredentialParameters `json:"algorithms"`
+	MaxSerializedLargeBlobArray      uint                            `json:"maxSerializedLargeBlobArray"`
+	ForcePINChange                   bool                            `json:"forcePINChange"`
+	MinPINLength                     uint                            `json:"minPINLength"`
+	FirmwareVersion                  uint                            `json:"firmwareVersion"`
+	MaxCredBlobLength                uint                            `json:"maxCredBlobLength"`
+	MaxRPIDsForSetMinPINLength       uint                            `json:"maxRPIDsForSetMinPINLength"`
+	PreferredPlatformUvAttempts      uint                            `json:"preferredPlatformUvAttempts"`
+	UvModality                       uint                            `json:"uvModality"`
+	Certifications                   map[string]float64              `json:"certifications"`
+	RemainingDiscoverableCredentials uint                            `json:"remainingDiscoverableCredentials"`
+	VendorPrototypeConfigCommands    []uint                          `json:"vendorPrototypeConfigCommands"`
 }
 
 // MDSGetEndpointsRequest is the request sent to the conformance metadata getEndpoints endpoint
@@ -373,8 +412,7 @@ type MDSGetEndpointsResponse struct {
 	Result []string `json:"result"`
 }
 
-func unmarshalMDSTOC(body []byte, c http.Client) (MetadataBLOBPayload, string, error) {
-	var tocAlg string
+func unmarshalMDSBLOB(body []byte, c http.Client) (MetadataBLOBPayload, error) {
 	var payload MetadataBLOBPayload
 	token, err := jwt.Parse(string(body), func(token *jwt.Token) (interface{}, error) {
 		// 2. If the x5u attribute is present in the JWT Header, then
@@ -387,7 +425,7 @@ func unmarshalMDSTOC(body []byte, c http.Client) (MetadataBLOBPayload, string, e
 
 		if x5c, ok := token.Header["x5c"].([]interface{}); !ok {
 			// If that attribute is missing as well, Metadata TOC signing trust anchor is considered the TOC signing certificate chain.
-			root, err := getMetdataTOCSigningTrustAnchor(c)
+			root, err := getMetdataBLOBSigningTrustAnchor()
 			if nil != err {
 				return nil, err
 			}
@@ -420,38 +458,44 @@ func unmarshalMDSTOC(body []byte, c http.Client) (MetadataBLOBPayload, string, e
 		return cert.PublicKey, err
 	})
 	if err != nil {
-		return payload, tocAlg, err
+		return payload, err
 	}
 
-	tocAlg = token.Header["alg"].(string)
 	err = mapstructure.Decode(token.Claims, &payload)
 
-	return payload, tocAlg, err
+	return payload, err
 }
 
-func getMetdataTOCSigningTrustAnchor(c http.Client) ([]byte, error) {
-	rooturl := ""
+func getMetdataBLOBSigningTrustAnchor() ([]byte, error) {
+	var root string
 	if Conformance {
-		rooturl = "https://mds3.certinfra.fidoalliance.org/pki/MDS3ROOT.crt"
+		root = ConformanceMDSRoot
 	} else {
-		rooturl = "https://secure.globalsign.com/cacert/root-r3.crt"
+		root = ProductionMDSRoot
 	}
 
-	return downloadBytes(rooturl, c)
+	rootbytes, err := base64.StdEncoding.DecodeString(root)
+	if err != nil {
+		return nil, err
+	}
+
+	return rootbytes, err
 }
 
 func validateChain(chain []interface{}, c http.Client) (bool, error) {
-	root, err := getMetdataTOCSigningTrustAnchor(c)
+	root, err := getMetdataBLOBSigningTrustAnchor()
+	if err != nil {
+		return false, err
+	}
+
+	rootcert, err := x509.ParseCertificate(root)
 	if err != nil {
 		return false, err
 	}
 
 	roots := x509.NewCertPool()
 
-	ok := roots.AppendCertsFromPEM(root)
-	if !ok {
-		return false, err
-	}
+	roots.AddCert(rootcert)
 
 	o := make([]byte, base64.StdEncoding.DecodedLen(len(chain[1].(string))))
 	n, err := base64.StdEncoding.Decode(o, []byte(chain[1].(string)))
@@ -464,7 +508,10 @@ func validateChain(chain []interface{}, c http.Client) (bool, error) {
 	}
 
 	if revoked, ok := revoke.VerifyCertificate(intcert); !ok {
-		return false, errCRLUnavailable
+		issuer := intcert.IssuingCertificateURL
+		if issuer != nil {
+			return false, errCRLUnavailable
+		}
 	} else if revoked {
 		return false, errIntermediateCertRevoked
 	}
@@ -501,7 +548,7 @@ func downloadBytes(url string, c http.Client) ([]byte, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
+	body, _ := io.ReadAll(res.Body)
 	return body, err
 }
 
