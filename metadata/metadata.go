@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/cloudflare/cfssl/revoke"
@@ -21,8 +20,12 @@ type PublicKeyCredentialParameters struct {
 }
 
 const (
-	ProductionMDSRoot  = "MIIDXzCCAkegAwIBAgILBAAAAAABIVhTCKIwDQYJKoZIhvcNAQELBQAwTDEgMB4GA1UECxMXR2xvYmFsU2lnbiBSb290IENBIC0gUjMxEzARBgNVBAoTCkdsb2JhbFNpZ24xEzARBgNVBAMTCkdsb2JhbFNpZ24wHhcNMDkwMzE4MTAwMDAwWhcNMjkwMzE4MTAwMDAwWjBMMSAwHgYDVQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzETMBEGA1UEChMKR2xvYmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMwldpB5BngiFvXAg7aEyiie/QV2EcWtiHL8RgJDx7KKnQRfJMsuS+FggkbhUqsMgUdwbN1k0ev1LKMPgj0MK66X17YUhhB5uzsTgHeMCOFJ0mpiLx9e+pZo34knlTifBtc+ycsmWQ1z3rDI6SYOgxXG71uL0gRgykmmKPZpO/bLyCiR5Z2KYVc3rHQU3HTgOu5yLy6c+9C7v/U9AOEGM+iCK65TpjoWc4zdQQ4gOsC0p6Hpsk+QLjJg6VfLuQSSaGjlOCZgdbKfd/+RFO+uIEn8rUAVSNECMWEZXriX7613t2Saer9fwRPvm2L7DWzgVGkWqQPabumDk3F2xmmFghcCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFI/wS3+oLkUkrk1Q+mOai97i3Ru8MA0GCSqGSIb3DQEBCwUAA4IBAQBLQNvAUKr+yAzv95ZURUm7lgAJQayzE4aGKAczymvmdLm6AC2upArT9fHxD4q/c2dKg8dEe3jgr25sbwMpjjM5RcOO5LlXbKr8EpbsU8Yt5CRsuZRj+9xTaGdWPoO4zzUhw8lo/s7awlOqzJCK6fBdRoyV3XpYKBovHd7NADdBj+1EbddTKJd+82cEHhXXipa0095MJ6RMG3NzdvQXmcIfeg7jLQitChws/zyrVQ4PkX4268NXSb7hLi18YIvDQVETI53O9zJrlAGomecsMx86OyXShkDOOyyGeMlhLxS67ttVb9+E7gUJTb0o2HLO02JQZR7rkpeDMdmztcpHWD9f"
+	// https://secure.globalsign.com/cacert/root-r3.crt
+	ProductionMDSRoot = "MIIDXzCCAkegAwIBAgILBAAAAAABIVhTCKIwDQYJKoZIhvcNAQELBQAwTDEgMB4GA1UECxMXR2xvYmFsU2lnbiBSb290IENBIC0gUjMxEzARBgNVBAoTCkdsb2JhbFNpZ24xEzARBgNVBAMTCkdsb2JhbFNpZ24wHhcNMDkwMzE4MTAwMDAwWhcNMjkwMzE4MTAwMDAwWjBMMSAwHgYDVQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzETMBEGA1UEChMKR2xvYmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMwldpB5BngiFvXAg7aEyiie/QV2EcWtiHL8RgJDx7KKnQRfJMsuS+FggkbhUqsMgUdwbN1k0ev1LKMPgj0MK66X17YUhhB5uzsTgHeMCOFJ0mpiLx9e+pZo34knlTifBtc+ycsmWQ1z3rDI6SYOgxXG71uL0gRgykmmKPZpO/bLyCiR5Z2KYVc3rHQU3HTgOu5yLy6c+9C7v/U9AOEGM+iCK65TpjoWc4zdQQ4gOsC0p6Hpsk+QLjJg6VfLuQSSaGjlOCZgdbKfd/+RFO+uIEn8rUAVSNECMWEZXriX7613t2Saer9fwRPvm2L7DWzgVGkWqQPabumDk3F2xmmFghcCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFI/wS3+oLkUkrk1Q+mOai97i3Ru8MA0GCSqGSIb3DQEBCwUAA4IBAQBLQNvAUKr+yAzv95ZURUm7lgAJQayzE4aGKAczymvmdLm6AC2upArT9fHxD4q/c2dKg8dEe3jgr25sbwMpjjM5RcOO5LlXbKr8EpbsU8Yt5CRsuZRj+9xTaGdWPoO4zzUhw8lo/s7awlOqzJCK6fBdRoyV3XpYKBovHd7NADdBj+1EbddTKJd+82cEHhXXipa0095MJ6RMG3NzdvQXmcIfeg7jLQitChws/zyrVQ4PkX4268NXSb7hLi18YIvDQVETI53O9zJrlAGomecsMx86OyXShkDOOyyGeMlhLxS67ttVb9+E7gUJTb0o2HLO02JQZR7rkpeDMdmztcpHWD9f"
+	// https://mds3.certinfra.fidoalliance.org/pki/MDS3ROOT.crt
 	ConformanceMDSRoot = "MIICaDCCAe6gAwIBAgIPBCqih0DiJLW7+UHXx/o1MAoGCCqGSM49BAMDMGcxCzAJBgNVBAYTAlVTMRYwFAYDVQQKDA1GSURPIEFsbGlhbmNlMScwJQYDVQQLDB5GQUtFIE1ldGFkYXRhIDMgQkxPQiBST09UIEZBS0UxFzAVBgNVBAMMDkZBS0UgUm9vdCBGQUtFMB4XDTE3MDIwMTAwMDAwMFoXDTQ1MDEzMTIzNTk1OVowZzELMAkGA1UEBhMCVVMxFjAUBgNVBAoMDUZJRE8gQWxsaWFuY2UxJzAlBgNVBAsMHkZBS0UgTWV0YWRhdGEgMyBCTE9CIFJPT1QgRkFLRTEXMBUGA1UEAwwORkFLRSBSb290IEZBS0UwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASKYiz3YltC6+lmxhPKwA1WFZlIqnX8yL5RybSLTKFAPEQeTD9O6mOz+tg8wcSdnVxHzwnXiQKJwhrav70rKc2ierQi/4QUrdsPes8TEirZOkCVJurpDFbXZOgs++pa4XmjYDBeMAsGA1UdDwQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQGcfeCs0Y8D+lh6U5B2xSrR74eHTAfBgNVHSMEGDAWgBQGcfeCs0Y8D+lh6U5B2xSrR74eHTAKBggqhkjOPQQDAwNoADBlAjEA/xFsgri0xubSa3y3v5ormpPqCwfqn9s0MLBAtzCIgxQ/zkzPKctkiwoPtDzI51KnAjAmeMygX2S5Ht8+e+EQnezLJBJXtnkRWY+Zt491wgt/AwSs5PHHMv5QgjELOuMxQBc="
+	// Example from https://fidoalliance.org/specs/mds/fido-metadata-service-v3.0-ps-20210518.html
+	ExampleMDSRoot = "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"
 )
 
 // Metadata is a map of authenticator AAGUIDs to corresponding metadata statements
@@ -30,6 +33,73 @@ var Metadata = make(map[uuid.UUID]MetadataBLOBPayloadEntry)
 
 // Conformance indicates if test metadata is currently being used
 var Conformance = false
+
+var MDSRoot = ProductionMDSRoot
+
+// MetadataBLOBPayloadEntry - Represents the MetadataBLOBPayloadEntry
+// https://fidoalliance.org/specs/mds/fido-metadata-service-v3.0-ps-20210518.html#metadata-blob-payload-entry-dictionary
+type MetadataBLOBPayloadEntry struct {
+	// The Authenticator Attestation ID.
+	Aaid string `json:"aaid"`
+	// The Authenticator Attestation GUID.
+	AaGUID string `json:"aaguid"`
+	// A list of the attestation certificate public key identifiers encoded as hex string.
+	AttestationCertificateKeyIdentifiers []string `json:"attestationCertificateKeyIdentifiers"`
+	// The metadataStatement JSON object as defined in FIDOMetadataStatement.
+	MetadataStatement MetadataStatement `json:"metadataStatement"`
+	// Status of the FIDO Biometric Certification of one or more biometric components of the Authenticator
+	BiometricStatusReports []BiometricStatusReport `json:"biometricStatusReports"`
+	// An array of status reports applicable to this authenticator.
+	StatusReports []StatusReport `json:"statusReports"`
+	// ISO-8601 formatted date since when the status report array was set to the current value.
+	TimeOfLastStatusChange string `json:"timeOfLastStatusChange"`
+	// URL of a list of rogue (i.e. untrusted) individual authenticators.
+	RogueListURL string `json:"rogueListURL"`
+	// The hash value computed over the Base64url encoding of the UTF-8 representation of the JSON encoded rogueList available at rogueListURL (with type rogueListEntry[]).
+	RogueListHash string `json:"rogueListHash"`
+}
+
+// https://fidoalliance.org/specs/mds/fido-metadata-service-v3.0-ps-20210518.html#biometricstatusreport-dictionary
+// BiometricStatusReport - Contains the current BiometricStatusReport of one of the authenticator's biometric component.
+type BiometricStatusReport struct {
+	// Achieved level of the biometric certification of this biometric component of the authenticator
+	CertLevel uint16 `json:"certLevel"`
+	// A single USER_VERIFY constant indicating the modality of the biometric component
+	Modality string `json:"modality"`
+	// ISO-8601 formatted date since when the certLevel achieved, if applicable. If no date is given, the status is assumed to be effective while present.
+	EffectiveDate string `json:"effectiveDate"`
+	// Describes the externally visible aspects of the Biometric Certification evaluation.
+	CertificationDescriptor string `json:"certificationDescriptor"`
+	// The unique identifier for the issued Biometric Certification.
+	CertificateNumber string `json:"certificateNumber"`
+	// The version of the Biometric Certification Policy the implementation is Certified to, e.g. "1.0.0".
+	CertificationPolicyVersion string `json:"certificationPolicyVersion"`
+	// The version of the Biometric Requirements [FIDOBiometricsRequirements] the implementation is certified to, e.g. "1.0.0".
+	CertificationRequirementsVersion string `json:"certificationRequirementsVersion"`
+}
+
+// StatusReport - Contains the current BiometricStatusReport of one of the authenticator's biometric component.
+// https://fidoalliance.org/specs/mds/fido-metadata-service-v3.0-ps-20210518.html#statusreport-dictionary
+type StatusReport struct {
+	// Status of the authenticator. Additional fields MAY be set depending on this value.
+	Status AuthenticatorStatus `json:"status"`
+	// ISO-8601 formatted date since when the status code was set, if applicable. If no date is given, the status is assumed to be effective while present.
+	EffectiveDate string `json:"effectiveDate"`
+	// The authenticatorVersion that this status report relates to. In the case of FIDO_CERTIFIED* status values, the status applies to higher authenticatorVersions until there is a new statusReport.
+	AuthenticatorVersion uint32 `json:"authenticatorVersion"`
+	// Base64-encoded [RFC4648] (not base64url!) DER [ITU-X690-2008] PKIX certificate value related to the current status, if applicable.
+	Certificate string `json:"certificate"`
+	// HTTPS URL where additional information may be found related to the current status, if applicable.
+	URL string `json:"url"`
+	// Describes the externally visible aspects of the Authenticator Certification evaluation.
+	CertificationDescriptor string `json:"certificationDescriptor"`
+	// The unique identifier for the issued Certification.
+	CertificateNumber string `json:"certificateNumber"`
+	// The version of the Authenticator Certification Policy the implementation is Certified to, e.g. "1.0.0".
+	CertificationPolicyVersion string `json:"certificationPolicyVersion"`
+	// The Document Version of the Authenticator Security Requirements (DV) [FIDOAuthenticatorSecurityRequirements] the implementation is certified to, e.g. "1.2.0".
+	CertificationRequirementsVersion string `json:"certificationRequirementsVersion"`
+}
 
 // AuthenticatorAttestationType - The ATTESTATION constants are 16 bit long integers indicating the specific attestation that authenticator supports.
 type AuthenticatorAttestationType string
@@ -50,6 +120,7 @@ const (
 )
 
 // AuthenticatorStatus - This enumeration describes the status of an authenticator model as identified by its AAID and potentially some additional information (such as a specific attestation key).
+// https://fidoalliance.org/specs/mds/fido-metadata-service-v3.0-ps-20210518.html#authenticatorstatus-enum
 type AuthenticatorStatus string
 
 const (
@@ -104,44 +175,6 @@ func IsUndesiredAuthenticatorStatus(status AuthenticatorStatus) bool {
 	return false
 }
 
-// StatusReport - Contains the current BiometricStatusReport of one of the authenticator's biometric component.
-type StatusReport struct {
-	// Status of the authenticator. Additional fields MAY be set depending on this value.
-	Status AuthenticatorStatus `json:"status"`
-	// ISO-8601 formatted date since when the status code was set, if applicable. If no date is given, the status is assumed to be effective while present.
-	EffectiveDate string `json:"effectiveDate"`
-	// Base64-encoded [RFC4648] (not base64url!) DER [ITU-X690-2008] PKIX certificate value related to the current status, if applicable.
-	Certificate string `json:"certificate"`
-	// HTTPS URL where additional information may be found related to the current status, if applicable.
-	URL string `json:"url"`
-	// Describes the externally visible aspects of the Authenticator Certification evaluation.
-	CertificationDescriptor string `json:"certificationDescriptor"`
-	// The unique identifier for the issued Certification.
-	CertificateNumber string `json:"certificateNumber"`
-	// The version of the Authenticator Certification Policy the implementation is Certified to, e.g. "1.0.0".
-	CertificationPolicyVersion string `json:"certificationPolicyVersion"`
-	// The Document Version of the Authenticator Security Requirements (DV) [FIDOAuthenticatorSecurityRequirements] the implementation is certified to, e.g. "1.2.0".
-	CertificationRequirementsVersion string `json:"certificationRequirementsVersion"`
-}
-
-// BiometricStatusReport - Contains the current BiometricStatusReport of one of the authenticator's biometric component.
-type BiometricStatusReport struct {
-	// Achieved level of the biometric certification of this biometric component of the authenticator
-	CertLevel uint16 `json:"certLevel"`
-	// A single USER_VERIFY constant indicating the modality of the biometric component
-	Modality uint32 `json:"modality"`
-	// ISO-8601 formatted date since when the certLevel achieved, if applicable. If no date is given, the status is assumed to be effective while present.
-	EffectiveDate string `json:"effectiveDate"`
-	// Describes the externally visible aspects of the Biometric Certification evaluation.
-	CertificationDescriptor string `json:"certificationDescriptor"`
-	// The unique identifier for the issued Biometric Certification.
-	CertificateNumber string `json:"certificateNumber"`
-	// The version of the Biometric Certification Policy the implementation is Certified to, e.g. "1.0.0".
-	CertificationPolicyVersion string `json:"certificationPolicyVersion"`
-	// The version of the Biometric Requirements [FIDOBiometricsRequirements] the implementation is certified to, e.g. "1.0.0".
-	CertificationRequirementsVersion string `json:"certificationRequirementsVersion"`
-}
-
 // RogueListEntry - Contains a list of individual authenticators known to be rogue
 type RogueListEntry struct {
 	// Base64url encoding of the rogue authenticator's secret key
@@ -160,36 +193,6 @@ type MetadataBLOBPayload struct {
 	NextUpdate string `json:"nextUpdate"`
 	// List of zero or more MetadataTOCPayloadEntry objects.
 	Entries []MetadataBLOBPayloadEntry `json:"entries"`
-}
-
-// MetadataBLOBPayloadEntry - Represents the MetadataBLOBPayloadEntry
-type MetadataBLOBPayloadEntry struct {
-	// The Authenticator Attestation ID.
-	Aaid string `json:"aaid"`
-	// The Authenticator Attestation GUID.
-	AaGUID string `json:"aaguid"`
-	// A list of the attestation certificate public key identifiers encoded as hex string.
-	AttestationCertificateKeyIdentifiers []string `json:"attestationCertificateKeyIdentifiers"`
-	// The metadataStatement JSON object as defined in FIDOMetadataStatement.
-	MetadataStatement MetadataStatement
-	// Status of the FIDO Biometric Certification of one or more biometric components of the Authenticator
-	BiometricStatusReports []BiometricStatusReport `json:"biometricStatusReports"`
-	// An array of status reports applicable to this authenticator.
-	StatusReports []StatusReport `json:"statusReports"`
-	// ISO-8601 formatted date since when the status report array was set to the current value.
-	TimeOfLastStatusChange string `json:"timeOfLastStatusChange"`
-	// URL of a list of rogue (i.e. untrusted) individual authenticators.
-	RogueListURL string `json:"rogueListURL"`
-	// The hash value computed over the Base64url encoding of the UTF-8 representation of the JSON encoded rogueList available at rogueListURL (with type rogueListEntry[]).
-	RogueListHash string `json:"rogueListHash"`
-}
-
-// Version - Represents a generic version with major and minor fields.
-type Version struct {
-	// Major version.
-	Major uint16 `json:"major"`
-	// Minor version.
-	Minor uint16 `json:"minor"`
 }
 
 // CodeAccuracyDescriptor describes the relevant accuracy/complexity aspects of passcode user verification methods.
@@ -244,13 +247,6 @@ type VerificationMethodDescriptor struct {
 	BaDesc BiometricAccuracyDescriptor `json:"baDesc"`
 	// May optionally be used in case of method USER_VERIFY_PATTERN.
 	PaDesc PatternAccuracyDescriptor `json:"paDesc"`
-}
-
-// VerificationMethodANDCombinations MUST be non-empty. It is a list containing the base user verification methods which must be passed as part of a successful user verification.
-type VerificationMethodANDCombinations struct {
-	//This list will contain only a single entry if using a single user verification method is sufficient.
-	// If this list contains multiple entries, then all of the listed user verification methods MUST be passed as part of the user verification process.
-	VerificationMethodAndCombinations []VerificationMethodDescriptor
 }
 
 // The rgbPaletteEntry is an RGB three-sample tuple palette entry
@@ -374,28 +370,57 @@ type MetadataStatement struct {
 	AuthenticatorGetInfo AuthenticatorGetInfo `json:"authenticatorGetInfo"`
 }
 
+// Version - Represents a generic version with major and minor fields.
+type Version struct {
+	// Major version.
+	Major uint16 `json:"major"`
+	// Minor version.
+	Minor uint16 `json:"minor"`
+}
+
 type AuthenticatorGetInfo struct {
-	Versions                         []string                        `json:"versions"`
-	Extensions                       []string                        `json:"extensions"`
-	AaGUID                           string                          `json:"aaguid"`
-	Options                          map[string]bool                 `json:"options"`
-	MaxMsgSize                       uint                            `json:"maxMsgSize"`
-	PivUvAuthProtocols               []uint                          `json:"pinUvAuthProtocols"`
-	MaxCredentialCountInList         uint                            `json:"maxCredentialCountInList"`
-	MaxCredentialIdLength            uint                            `json:"maxCredentialLength"`
-	Transports                       []string                        `json:"transports"`
-	Algorithms                       []PublicKeyCredentialParameters `json:"algorithms"`
-	MaxSerializedLargeBlobArray      uint                            `json:"maxSerializedLargeBlobArray"`
-	ForcePINChange                   bool                            `json:"forcePINChange"`
-	MinPINLength                     uint                            `json:"minPINLength"`
-	FirmwareVersion                  uint                            `json:"firmwareVersion"`
-	MaxCredBlobLength                uint                            `json:"maxCredBlobLength"`
-	MaxRPIDsForSetMinPINLength       uint                            `json:"maxRPIDsForSetMinPINLength"`
-	PreferredPlatformUvAttempts      uint                            `json:"preferredPlatformUvAttempts"`
-	UvModality                       uint                            `json:"uvModality"`
-	Certifications                   map[string]float64              `json:"certifications"`
-	RemainingDiscoverableCredentials uint                            `json:"remainingDiscoverableCredentials"`
-	VendorPrototypeConfigCommands    []uint                          `json:"vendorPrototypeConfigCommands"`
+	// List of supported versions.
+	Versions []string `json:"versions"`
+	// List of supported extensions.
+	Extensions []string `json:"extensions"`
+	// The claimed AAGUID.
+	AaGUID string `json:"aaguid"`
+	// List of supported options.
+	Options map[string]bool `json:"options"`
+	// Maximum message size supported by the authenticator.
+	MaxMsgSize uint `json:"maxMsgSize"`
+	// List of supported PIN/UV auth protocols in order of decreasing authenticator preference.
+	PivUvAuthProtocols []uint `json:"pinUvAuthProtocols"`
+	// Maximum number of credentials supported in credentialID list at a time by the authenticator.
+	MaxCredentialCountInList uint `json:"maxCredentialCountInList"`
+	// Maximum Credential ID Length supported by the authenticator.
+	MaxCredentialIdLength uint `json:"maxCredentialLength"`
+	// List of supported transports.
+	Transports []string `json:"transports"`
+	// List of supported algorithms for credential generation, as specified in WebAuthn.
+	Algorithms []PublicKeyCredentialParameters `json:"algorithms"`
+	// The maximum size, in bytes, of the serialized large-blob array that this authenticator can store.
+	MaxSerializedLargeBlobArray uint `json:"maxSerializedLargeBlobArray"`
+	// If this member is present and set to true, the PIN must be changed.
+	ForcePINChange bool `json:"forcePINChange"`
+	// This specifies the current minimum PIN length, in Unicode code points, the authenticator enforces for ClientPIN.
+	MinPINLength uint `json:"minPINLength"`
+	// Indicates the firmware version of the authenticator model identified by AAGUID.
+	FirmwareVersion uint `json:"firmwareVersion"`
+	// Maximum credBlob length in bytes supported by the authenticator.
+	MaxCredBlobLength uint `json:"maxCredBlobLength"`
+	// This specifies the max number of RP IDs that authenticator can set via setMinPINLength subcommand.
+	MaxRPIDsForSetMinPINLength uint `json:"maxRPIDsForSetMinPINLength"`
+	// This specifies the preferred number of invocations of the getPinUvAuthTokenUsingUvWithPermissions subCommand the platform may attempt before falling back to the getPinUvAuthTokenUsingPinWithPermissions subCommand or displaying an error.
+	PreferredPlatformUvAttempts uint `json:"preferredPlatformUvAttempts"`
+	// This specifies the user verification modality supported by the authenticator via authenticatorClientPIN's getPinUvAuthTokenUsingUvWithPermissions subcommand.
+	UvModality uint `json:"uvModality"`
+	// This specifies a list of authenticator certifications.
+	Certifications map[string]float64 `json:"certifications"`
+	// If this member is present it indicates the estimated number of additional discoverable credentials that can be stored.
+	RemainingDiscoverableCredentials uint `json:"remainingDiscoverableCredentials"`
+	// If present the authenticator supports the authenticatorConfig vendorPrototype subcommand, and its value is a list of authenticatorConfig vendorCommandId values supported, which MAY be empty.
+	VendorPrototypeConfigCommands []uint `json:"vendorPrototypeConfigCommands"`
 }
 
 // MDSGetEndpointsRequest is the request sent to the conformance metadata getEndpoints endpoint
@@ -467,14 +492,7 @@ func unmarshalMDSBLOB(body []byte, c http.Client) (MetadataBLOBPayload, error) {
 }
 
 func getMetdataBLOBSigningTrustAnchor() ([]byte, error) {
-	var root string
-	if Conformance {
-		root = ConformanceMDSRoot
-	} else {
-		root = ProductionMDSRoot
-	}
-
-	rootbytes, err := base64.StdEncoding.DecodeString(root)
+	rootbytes, err := base64.StdEncoding.DecodeString(MDSRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -540,16 +558,6 @@ func validateChain(chain []interface{}, c http.Client) (bool, error) {
 	}
 	_, err = leafcert.Verify(opts)
 	return err == nil, err
-}
-
-func downloadBytes(url string, c http.Client) ([]byte, error) {
-	res, err := c.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	body, _ := io.ReadAll(res.Body)
-	return body, err
 }
 
 type MetadataError struct {
