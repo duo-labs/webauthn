@@ -22,20 +22,21 @@ func init() {
 
 // From §8.2. https://www.w3.org/TR/webauthn/#packed-attestation
 // The packed attestation statement looks like:
-//		packedStmtFormat = {
-//		 	alg: COSEAlgorithmIdentifier,
-//		 	sig: bytes,
-//		 	x5c: [ attestnCert: bytes, * (caCert: bytes) ]
-//		 } OR
-//		 {
-//		 	alg: COSEAlgorithmIdentifier, (-260 for ED256 / -261 for ED512)
-//		 	sig: bytes,
-//		 	ecdaaKeyId: bytes
-//		 } OR
-//		 {
-//		 	alg: COSEAlgorithmIdentifier
-//		 	sig: bytes,
-//		 }
+//
+//	packedStmtFormat = {
+//	 	alg: COSEAlgorithmIdentifier,
+//	 	sig: bytes,
+//	 	x5c: [ attestnCert: bytes, * (caCert: bytes) ]
+//	 } OR
+//	 {
+//	 	alg: COSEAlgorithmIdentifier, (-260 for ED256 / -261 for ED512)
+//	 	sig: bytes,
+//	 	ecdaaKeyId: bytes
+//	 } OR
+//	 {
+//	 	alg: COSEAlgorithmIdentifier
+//	 	sig: bytes,
+//	 }
 func verifyPackedFormat(att AttestationObject, clientDataHash []byte) (string, []interface{}, error) {
 	// Step 1. Verify that attStmt is valid CBOR conforming to the syntax defined
 	// above and perform CBOR decoding on it to extract the contained fields.
@@ -184,7 +185,7 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 
 	if meta, ok := metadata.Metadata[uuid]; ok {
 		for _, s := range meta.StatusReports {
-			if metadata.IsUndesiredAuthenticatorStatus(metadata.AuthenticatorStatus(s.Status)) {
+			if metadata.IsUndesiredAuthenticatorStatus(s.Status) {
 				return attestationType, x5c, ErrInvalidAttestation.WithDetails("Authenticator with undesirable status encountered")
 			}
 		}
@@ -192,7 +193,7 @@ func handleBasicAttestation(signature, clientDataHash, authData, aaguid []byte, 
 		if attCert.Subject.CommonName != attCert.Issuer.CommonName {
 			var hasBasicFull = false
 			for _, a := range meta.MetadataStatement.AttestationTypes {
-				if metadata.AuthenticatorAttestationType(a) == metadata.AuthenticatorAttestationType(metadata.BasicFull) {
+				if metadata.AuthenticatorAttestationType(a) == metadata.BasicFull {
 					hasBasicFull = true
 				}
 			}

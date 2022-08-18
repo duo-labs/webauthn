@@ -125,35 +125,35 @@ type AuthenticatorStatus string
 
 const (
 	// NotFidoCertified - This authenticator is not FIDO certified.
-	NotFidoCertified = "NOT_FIDO_CERTIFIED"
+	NotFidoCertified AuthenticatorStatus = "NOT_FIDO_CERTIFIED"
 	// FidoCertified - This authenticator has passed FIDO functional certification. This certification scheme is phased out and will be replaced by FIDO_CERTIFIED_L1.
-	FidoCertified = "FIDO_CERTIFIED"
+	FidoCertified AuthenticatorStatus = "FIDO_CERTIFIED"
 	// UserVerificationBypass - Indicates that malware is able to bypass the user verification. This means that the authenticator could be used without the user's consent and potentially even without the user's knowledge.
-	UserVerificationBypass = "USER_VERIFICATION_BYPASS"
+	UserVerificationBypass AuthenticatorStatus = "USER_VERIFICATION_BYPASS"
 	// AttestationKeyCompromise - Indicates that an attestation key for this authenticator is known to be compromised. Additional data should be supplied, including the key identifier and the date of compromise, if known.
-	AttestationKeyCompromise = "ATTESTATION_KEY_COMPROMISE"
+	AttestationKeyCompromise AuthenticatorStatus = "ATTESTATION_KEY_COMPROMISE"
 	// UserKeyRemoteCompromise - This authenticator has identified weaknesses that allow registered keys to be compromised and should not be trusted. This would include both, e.g. weak entropy that causes predictable keys to be generated or side channels that allow keys or signatures to be forged, guessed or extracted.
-	UserKeyRemoteCompromise = "USER_KEY_REMOTE_COMPROMISE"
+	UserKeyRemoteCompromise AuthenticatorStatus = "USER_KEY_REMOTE_COMPROMISE"
 	// UserKeyPhysicalCompromise - This authenticator has known weaknesses in its key protection mechanism(s) that allow user keys to be extracted by an adversary in physical possession of the device.
-	UserKeyPhysicalCompromise = "USER_KEY_PHYSICAL_COMPROMISE"
+	UserKeyPhysicalCompromise AuthenticatorStatus = "USER_KEY_PHYSICAL_COMPROMISE"
 	// UpdateAvailable - A software or firmware update is available for the device. Additional data should be supplied including a URL where users can obtain an update and the date the update was published.
-	UpdateAvailable = "UPDATE_AVAILABLE"
+	UpdateAvailable AuthenticatorStatus = "UPDATE_AVAILABLE"
 	// Revoked - The FIDO Alliance has determined that this authenticator should not be trusted for any reason, for example if it is known to be a fraudulent product or contain a deliberate backdoor.
-	Revoked = "REVOKED"
+	Revoked AuthenticatorStatus = "REVOKED"
 	// SelfAssertionSubmitted - The authenticator vendor has completed and submitted the self-certification checklist to the FIDO Alliance. If this completed checklist is publicly available, the URL will be specified in StatusReport.url.
-	SelfAssertionSubmitted = "SELF_ASSERTION_SUBMITTED"
+	SelfAssertionSubmitted AuthenticatorStatus = "SELF_ASSERTION_SUBMITTED"
 	// FidoCertifiedL1 - The authenticator has passed FIDO Authenticator certification at level 1. This level is the more strict successor of FIDO_CERTIFIED.
-	FidoCertifiedL1 = "FIDO_CERTIFIED_L1"
+	FidoCertifiedL1 AuthenticatorStatus = "FIDO_CERTIFIED_L1"
 	// FidoCertifiedL1plus - The authenticator has passed FIDO Authenticator certification at level 1+. This level is the more than level 1.
-	FidoCertifiedL1plus = "FIDO_CERTIFIED_L1plus"
+	FidoCertifiedL1plus AuthenticatorStatus = "FIDO_CERTIFIED_L1plus"
 	// FidoCertifiedL2 - The authenticator has passed FIDO Authenticator certification at level 2. This level is more strict than level 1+.
-	FidoCertifiedL2 = "FIDO_CERTIFIED_L2"
+	FidoCertifiedL2 AuthenticatorStatus = "FIDO_CERTIFIED_L2"
 	// FidoCertifiedL2plus - The authenticator has passed FIDO Authenticator certification at level 2+. This level is more strict than level 2.
-	FidoCertifiedL2plus = "FIDO_CERTIFIED_L2plus"
+	FidoCertifiedL2plus AuthenticatorStatus = "FIDO_CERTIFIED_L2plus"
 	// FidoCertifiedL3 - The authenticator has passed FIDO Authenticator certification at level 3. This level is more strict than level 2+.
-	FidoCertifiedL3 = "FIDO_CERTIFIED_L3"
+	FidoCertifiedL3 AuthenticatorStatus = "FIDO_CERTIFIED_L3"
 	// FidoCertifiedL3plus - The authenticator has passed FIDO Authenticator certification at level 3+. This level is more strict than level 3.
-	FidoCertifiedL3plus = "FIDO_CERTIFIED_L3plus"
+	FidoCertifiedL3plus AuthenticatorStatus = "FIDO_CERTIFIED_L3plus"
 )
 
 // UndesiredAuthenticatorStatus is an array of undesirable authenticator statuses
@@ -328,11 +328,11 @@ type MetadataStatement struct {
 	// The FIDO unified protocol version(s) (related to the specific protocol family) supported by this authenticator.
 	Upv []Version `json:"upv"`
 	// The list of authentication algorithms supported by the authenticator.
-	AuthenticationAlgorithms []string `json:"authenticationAlgorithms"`
+	AuthenticationAlgorithms []AuthenticationAlgorithm `json:"authenticationAlgorithms"`
 	// The list of public key formats supported by the authenticator during registration operations.
-	PublicKeyAlgAndEncodings []string `json:"publicKeyAlgAndEncodings"`
+	PublicKeyAlgAndEncodings []PublicKeyAlgAndEncoding `json:"publicKeyAlgAndEncodings"`
 	// The supported attestation type(s).
-	AttestationTypes []string `json:"attestationTypes"`
+	AttestationTypes []AuthenticatorAttestationType `json:"attestationTypes"`
 	// A list of alternative VerificationMethodANDCombinations.
 	UserVerificationDetails [][]VerificationMethodDescriptor `json:"userVerificationDetails"`
 	// A 16-bit number representing the bit fields defined by the KEY_PROTECTION constants in the FIDO Registry of Predefined Values
@@ -369,6 +369,108 @@ type MetadataStatement struct {
 	// Describes supported versions, extensions, AAGUID of the device and its capabilities
 	AuthenticatorGetInfo AuthenticatorGetInfo `json:"authenticatorGetInfo"`
 }
+
+type AuthenticationAlgorithm string
+
+const (
+	// An ECDSA signature on the NIST secp256r1 curve which must have raw R and S buffers, encoded in big-endian order.
+	ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW AuthenticationAlgorithm = "secp256r1_ecdsa_sha256_raw"
+	// DER ITU-X690-2008 encoded ECDSA signature RFC5480 on the NIST secp256r1 curve.
+	ALG_SIGN_SECP256R1_ECDSA_SHA256_DER AuthenticationAlgorithm = "secp256r1_ecdsa_sha256_der"
+	// RSASSA-PSS RFC3447 signature must have raw S buffers, encoded in big-endian order RFC4055 RFC4056.
+	ALG_SIGN_RSASSA_PSS_SHA256_RAW AuthenticationAlgorithm = "rsassa_pss_sha256_raw"
+	// DER ITU-X690-2008 encoded OCTET STRING (not BIT STRING!) containing the RSASSA-PSS RFC3447 signature RFC4055 RFC4056.
+	ALG_SIGN_RSASSA_PSS_SHA256_DER AuthenticationAlgorithm = "rsassa_pss_sha256_der"
+	// An ECDSA signature on the secp256k1 curve which must have raw R and S buffers, encoded in big-endian order.
+	ALG_SIGN_SECP256K1_ECDSA_SHA256_RAW AuthenticationAlgorithm = "secp256k1_ecdsa_sha256_raw"
+	// DER ITU-X690-2008 encoded ECDSA signature RFC5480 on the secp256k1 curve.
+	ALG_SIGN_SECP256K1_ECDSA_SHA256_DER AuthenticationAlgorithm = "secp256k1_ecdsa_sha256_der"
+	// Chinese SM2 elliptic curve based signature algorithm combined with SM3 hash algorithm OSCCA-SM2 OSCCA-SM3.
+	ALG_SIGN_SM2_SM3_RAW AuthenticationAlgorithm = "sm2_sm3_raw"
+	// This is the EMSA-PKCS1-v1_5 signature as defined in RFC3447.
+	ALG_SIGN_RSA_EMSA_PKCS1_SHA256_RAW AuthenticationAlgorithm = "rsa_emsa_pkcs1_sha256_raw"
+	// DER ITU-X690-2008 encoded OCTET STRING (not BIT STRING!) containing the EMSA-PKCS1-v1_5 signature as defined in RFC3447.
+	ALG_SIGN_RSA_EMSA_PKCS1_SHA256_DER AuthenticationAlgorithm = "rsa_emsa_pkcs1_sha256_der"
+	// RSASSA-PSS RFC3447 signature must have raw S buffers, encoded in big-endian order RFC4055 RFC4056.
+	ALG_SIGN_RSASSA_PSS_SHA384_RAW AuthenticationAlgorithm = "rsassa_pss_sha384_raw"
+	// RSASSA-PSS RFC3447 signature must have raw S buffers, encoded in big-endian order RFC4055 RFC4056.
+	ALG_SIGN_RSASSA_PSS_SHA512_RAW AuthenticationAlgorithm = "rsassa_pss_sha512_raw"
+	// RSASSA-PKCS1-v1_5 RFC3447 with SHA256(aka RS256) signature must have raw S buffers, encoded in big-endian order RFC8017 RFC4056
+	ALG_SIGN_RSASSA_PKCSV15_SHA256_RAW AuthenticationAlgorithm = "rsassa_pkcsv15_sha256_raw"
+	// RSASSA-PKCS1-v1_5 RFC3447 with SHA384(aka RS384) signature must have raw S buffers, encoded in big-endian order RFC8017 RFC4056
+	ALG_SIGN_RSASSA_PKCSV15_SHA384_RAW AuthenticationAlgorithm = "rsassa_pkcsv15_sha384_raw"
+	// RSASSA-PKCS1-v1_5 RFC3447 with SHA512(aka RS512) signature must have raw S buffers, encoded in big-endian order RFC8017 RFC4056
+	ALG_SIGN_RSASSA_PKCSV15_SHA512_RAW AuthenticationAlgorithm = "rsassa_pkcsv15_sha512_raw"
+	// RSASSA-PKCS1-v1_5 RFC3447 with SHA1(aka RS1) signature must have raw S buffers, encoded in big-endian order RFC8017 RFC4056
+	ALG_SIGN_RSASSA_PKCSV15_SHA1_RAW AuthenticationAlgorithm = "rsassa_pkcsv15_sha1_raw"
+	// An ECDSA signature on the NIST secp384r1 curve with SHA384(aka: ES384) which must have raw R and S buffers, encoded in big-endian order.
+	ALG_SIGN_SECP384R1_ECDSA_SHA384_RAW AuthenticationAlgorithm = "secp384r1_ecdsa_sha384_raw"
+	// An ECDSA signature on the NIST secp512r1 curve with SHA512(aka: ES512) which must have raw R and S buffers, encoded in big-endian order.
+	ALG_SIGN_SECP521R1_ECDSA_SHA512_RAW AuthenticationAlgorithm = "secp521r1_ecdsa_sha512_raw"
+	// An EdDSA signature on the curve 25519, which must have raw R and S buffers, encoded in big-endian order.
+	ALG_SIGN_ED25519_EDDSA_SHA512_RAW AuthenticationAlgorithm = "ed25519_eddsa_sha512_raw"
+	// An EdDSA signature on the curve Ed448, which must have raw R and S buffers, encoded in big-endian order.
+	ALG_SIGN_ED448_EDDSA_SHA512_RAW AuthenticationAlgorithm = "ed448_eddsa_sha512_raw"
+)
+
+// TODO: this goes away after webauthncose.CredentialPublicKey gets implemented
+type algKeyCose struct {
+	KeyType   webauthncose.COSEKeyType
+	Algorithm webauthncose.COSEAlgorithmIdentifier
+	Curve     webauthncose.COSEEllipticCurve
+}
+
+func algKeyCoseDictionary() func(AuthenticationAlgorithm) algKeyCose {
+	mapping := map[AuthenticationAlgorithm]algKeyCose{
+		ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW: {KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES256, Curve: webauthncose.P256},
+		ALG_SIGN_SECP256R1_ECDSA_SHA256_DER: {KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES256, Curve: webauthncose.P256},
+		ALG_SIGN_RSASSA_PSS_SHA256_RAW:      {KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgPS256},
+		ALG_SIGN_RSASSA_PSS_SHA256_DER:      {KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgPS256},
+		ALG_SIGN_SECP256K1_ECDSA_SHA256_RAW: {KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES256K, Curve: webauthncose.Secp256k1},
+		ALG_SIGN_SECP256K1_ECDSA_SHA256_DER: {KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES256K, Curve: webauthncose.Secp256k1},
+		ALG_SIGN_RSASSA_PSS_SHA384_RAW:      {KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgPS384},
+		ALG_SIGN_RSASSA_PSS_SHA512_RAW:      {KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgPS512},
+		ALG_SIGN_RSASSA_PKCSV15_SHA256_RAW:  {KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgRS256},
+		ALG_SIGN_RSASSA_PKCSV15_SHA384_RAW:  {KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgRS384},
+		ALG_SIGN_RSASSA_PKCSV15_SHA512_RAW:  {KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgRS512},
+		ALG_SIGN_RSASSA_PKCSV15_SHA1_RAW:    {KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgRS1},
+		ALG_SIGN_SECP384R1_ECDSA_SHA384_RAW: {KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES384, Curve: webauthncose.P384},
+		ALG_SIGN_SECP521R1_ECDSA_SHA512_RAW: {KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES512, Curve: webauthncose.P521},
+		ALG_SIGN_ED25519_EDDSA_SHA512_RAW:   {KeyType: webauthncose.OctetKey, Algorithm: webauthncose.AlgEdDSA, Curve: webauthncose.Ed25519},
+		ALG_SIGN_ED448_EDDSA_SHA512_RAW:     {KeyType: webauthncose.OctetKey, Algorithm: webauthncose.AlgEdDSA, Curve: webauthncose.Ed448},
+	}
+	return func(key AuthenticationAlgorithm) algKeyCose {
+		return mapping[key]
+	}
+}
+
+func isSameAlgKey(this algKeyCose, that algKeyCose) bool {
+	return this.Algorithm == that.Algorithm && this.Curve == that.Curve && this.KeyType == that.KeyType
+}
+
+func AlgKeyMatch(key algKeyCose, algs []AuthenticationAlgorithm) bool {
+	for _, alg := range algs {
+		if isSameAlgKey(algKeyCoseDictionary()(alg), key) {
+			return true
+		}
+	}
+	return false
+}
+
+type PublicKeyAlgAndEncoding string
+
+const (
+	// Raw ANSI X9.62 formatted Elliptic Curve public key.
+	ALG_KEY_ECC_X962_RAW PublicKeyAlgAndEncoding = "ecc_x962_raw"
+	// DER ITU-X690-2008 encoded ANSI X.9.62 formatted SubjectPublicKeyInfo RFC5480 specifying an elliptic curve public key.
+	ALG_KEY_ECC_X962_DER PublicKeyAlgAndEncoding = "ecc_x962_der"
+	// Raw encoded 2048-bit RSA public key RFC3447.
+	ALG_KEY_RSA_2048_RAW PublicKeyAlgAndEncoding = "rsa_2048_raw"
+	// ASN.1 DER [ITU-X690-2008] encoded 2048-bit RSA RFC3447 public key RFC4055.
+	ALG_KEY_RSA_2048_DER PublicKeyAlgAndEncoding = "rsa_2048_der"
+	// COSE_Key format, as defined in Section 7 of RFC8152. This encoding includes its own field for indicating the public key algorithm.
+	ALG_KEY_COSE PublicKeyAlgAndEncoding = "cose"
+)
 
 // Version - Represents a generic version with major and minor fields.
 type Version struct {

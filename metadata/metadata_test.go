@@ -202,3 +202,79 @@ func TestExampleMetadataTOCParsing(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestIsUndesiredAuthenticatorStatus(t *testing.T) {
+	tests := []struct {
+		status AuthenticatorStatus
+		fail   bool
+	}{
+		{
+			NotFidoCertified,
+			false,
+		},
+		{
+			FidoCertified,
+			false,
+		},
+		{
+			UserVerificationBypass,
+			true,
+		},
+		{
+			AttestationKeyCompromise,
+			true,
+		},
+		{
+			UserKeyRemoteCompromise,
+			true,
+		},
+		{
+			UserKeyPhysicalCompromise,
+			true,
+		},
+		{
+			UpdateAvailable,
+			false,
+		},
+		{
+			Revoked,
+			true,
+		},
+		{
+			SelfAssertionSubmitted,
+			false,
+		},
+		{
+			FidoCertifiedL1,
+			false,
+		},
+		{
+			FidoCertifiedL1plus,
+			false,
+		},
+		{
+			FidoCertifiedL2,
+			false,
+		},
+		{
+			FidoCertifiedL2plus,
+			false,
+		},
+		{
+			FidoCertifiedL3,
+			false,
+		},
+		{
+			FidoCertifiedL3plus,
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.status), func(t *testing.T) {
+			if tt.fail != IsUndesiredAuthenticatorStatus(tt.status) {
+				t.Fail()
+			}
+		})
+	}
+}
