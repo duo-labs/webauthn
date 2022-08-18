@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/crypto/ed25519"
 
+	"github.com/duo-labs/webauthn/protocol/googletpm"
 	"github.com/duo-labs/webauthn/protocol/webauthncbor"
 )
 
@@ -248,7 +249,8 @@ const (
 	// WalnutDSA public key
 )
 
-// The Elliptic Curves derived from the IANA COSE Curves
+// The COSE Elliptic Curves
+// https://www.iana.org/assignments/cose/cose.xhtml#elliptic-curves
 type COSEEllipticCurve int
 
 const (
@@ -271,6 +273,19 @@ const (
 	// SECG secp256k1 curve
 	Secp256k1
 )
+
+func (k *EC2PublicKeyData) TPMCurveID() googletpm.EllipticCurve {
+	switch COSEEllipticCurve(k.Curve) {
+	case P256:
+		return googletpm.CurveNISTP256 // TPM_ECC_NIST_P256
+	case P384:
+		return googletpm.CurveNISTP384 // TPM_ECC_NIST_P384
+	case P521:
+		return googletpm.CurveNISTP521 // TPM_ECC_NIST_P521
+	default:
+		return googletpm.EllipticCurve(0) // TPM_ECC_NONE
+	}
+}
 
 func VerifySignature(key interface{}, data []byte, sig []byte) (bool, error) {
 
