@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/duo-labs/webauthn/protocol/webauthncose"
 	"github.com/google/uuid"
 )
 
@@ -273,6 +274,71 @@ func TestIsUndesiredAuthenticatorStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(string(tt.status), func(t *testing.T) {
 			if tt.fail != IsUndesiredAuthenticatorStatus(tt.status) {
+				t.Fail()
+			}
+		})
+	}
+}
+
+func TestAlgKeyMatch(t *testing.T) {
+	tests := []struct {
+		name string
+		alg  algKeyCose
+		algs []AuthenticationAlgorithm
+		fail bool
+	}{
+		{
+			"Positive match RS256",
+			algKeyCose{KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgRS256},
+			[]AuthenticationAlgorithm{ALG_SIGN_RSASSA_PKCSV15_SHA256_RAW},
+			true,
+		},
+		{
+			"Positive match ES256",
+			algKeyCose{KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES256, Curve: webauthncose.P256},
+			[]AuthenticationAlgorithm{ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW, ALG_SIGN_SECP256R1_ECDSA_SHA256_DER},
+			true,
+		},
+		{
+			"Positive match Ed25519",
+			algKeyCose{KeyType: webauthncose.OctetKey, Algorithm: webauthncose.AlgEdDSA, Curve: webauthncose.Ed25519},
+			[]AuthenticationAlgorithm{ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW, ALG_SIGN_ED25519_EDDSA_SHA512_RAW},
+			true,
+		},
+		{
+			"Negative match Ed25519, array missing Ed25519",
+			algKeyCose{KeyType: webauthncose.OctetKey, Algorithm: webauthncose.AlgEdDSA, Curve: webauthncose.Ed25519},
+			[]AuthenticationAlgorithm{ALG_SIGN_RSASSA_PKCSV15_SHA256_RAW, ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW, ALG_SIGN_SECP256R1_ECDSA_SHA256_DER},
+			false,
+		},
+		{
+			"Negative match RS256, array missing RS256",
+			algKeyCose{KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgRS256},
+			[]AuthenticationAlgorithm{ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW, ALG_SIGN_SECP256R1_ECDSA_SHA256_DER, ALG_SIGN_ED25519_EDDSA_SHA512_RAW},
+			false,
+		},
+		{
+			"Negative match ES256, array missing ES256",
+			algKeyCose{KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES256},
+			[]AuthenticationAlgorithm{ALG_SIGN_RSASSA_PKCSV15_SHA256_RAW, ALG_SIGN_ED25519_EDDSA_SHA512_RAW},
+			false,
+		},
+		{
+			"Negative match, curve/alg mismatch",
+			algKeyCose{KeyType: webauthncose.EllipticKey, Algorithm: webauthncose.AlgES256, Curve: webauthncose.P384},
+			[]AuthenticationAlgorithm{ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW, ALG_SIGN_SECP256R1_ECDSA_SHA256_DER, ALG_SIGN_SECP384R1_ECDSA_SHA384_RAW},
+			false,
+		},
+		{
+			"Negative match, kty/crv mismatch",
+			algKeyCose{KeyType: webauthncose.RSAKey, Algorithm: webauthncose.AlgRS256, Curve: webauthncose.P256},
+			[]AuthenticationAlgorithm{ALG_SIGN_SECP256R1_ECDSA_SHA256_RAW, ALG_SIGN_SECP256R1_ECDSA_SHA256_DER, ALG_SIGN_SECP384R1_ECDSA_SHA384_RAW},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.name), func(t *testing.T) {
+			if tt.fail != AlgKeyMatch(tt.alg, tt.algs) {
 				t.Fail()
 			}
 		})

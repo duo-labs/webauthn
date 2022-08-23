@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"reflect"
 
 	"github.com/cloudflare/cfssl/revoke"
 	"github.com/duo-labs/webauthn/protocol/webauthncose"
@@ -102,6 +103,7 @@ type StatusReport struct {
 }
 
 // AuthenticatorAttestationType - The ATTESTATION constants are 16 bit long integers indicating the specific attestation that authenticator supports.
+// Each constant has a case-sensitive string representation (in quotes), which is used in the authoritative metadata for FIDO authenticators.
 type AuthenticatorAttestationType string
 
 const (
@@ -444,13 +446,9 @@ func algKeyCoseDictionary() func(AuthenticationAlgorithm) algKeyCose {
 	}
 }
 
-func isSameAlgKey(this algKeyCose, that algKeyCose) bool {
-	return this.Algorithm == that.Algorithm && this.Curve == that.Curve && this.KeyType == that.KeyType
-}
-
 func AlgKeyMatch(key algKeyCose, algs []AuthenticationAlgorithm) bool {
 	for _, alg := range algs {
-		if isSameAlgKey(algKeyCoseDictionary()(alg), key) {
+		if reflect.DeepEqual(algKeyCoseDictionary()(alg), key) {
 			return true
 		}
 	}
@@ -552,11 +550,7 @@ func unmarshalMDSBLOB(body []byte, c http.Client) (MetadataBLOBPayload, error) {
 
 		if x5c, ok := token.Header["x5c"].([]interface{}); !ok {
 			// If that attribute is missing as well, Metadata TOC signing trust anchor is considered the TOC signing certificate chain.
-			root, err := getMetdataBLOBSigningTrustAnchor()
-			if nil != err {
-				return nil, err
-			}
-			chain[0] = root
+			chain[0] = MDSRoot
 		} else {
 			chain = x5c
 		}
@@ -593,22 +587,13 @@ func unmarshalMDSBLOB(body []byte, c http.Client) (MetadataBLOBPayload, error) {
 	return payload, err
 }
 
-func getMetdataBLOBSigningTrustAnchor() ([]byte, error) {
-	rootbytes, err := base64.StdEncoding.DecodeString(MDSRoot)
-	if err != nil {
-		return nil, err
-	}
-
-	return rootbytes, err
-}
-
 func validateChain(chain []interface{}, c http.Client) (bool, error) {
-	root, err := getMetdataBLOBSigningTrustAnchor()
+	oRoot := make([]byte, base64.StdEncoding.DecodedLen(len(MDSRoot)))
+	nRoot, err := base64.StdEncoding.Decode(oRoot, []byte(MDSRoot))
 	if err != nil {
 		return false, err
 	}
-
-	rootcert, err := x509.ParseCertificate(root)
+	rootcert, err := x509.ParseCertificate(oRoot[:nRoot])
 	if err != nil {
 		return false, err
 	}
