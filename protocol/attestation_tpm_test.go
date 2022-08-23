@@ -7,7 +7,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/binary"
+	"math/big"
 	"testing"
 
 	"github.com/duo-labs/webauthn/protocol/webauthncbor"
@@ -444,15 +448,110 @@ func TestTPMAttestationVerificationFailCertInfo(t *testing.T) {
 	}
 }
 
+var (
+	x5cTemplate = x509.Certificate{
+		SerialNumber: big.NewInt(0),
+		Version:      3,
+		Subject: pkix.Name{
+			Country:            []string{"US"},
+			Organization:       []string{"Duo Labs"},
+			OrganizationalUnit: []string{"Authenticator Attestation"},
+			CommonName:         "WebAuthn.io",
+		},
+		Extensions: []pkix.Extension{
+			{
+				Id:       asn1.ObjectIdentifier([]int{1, 3, 6, 1, 4, 1, 45724, 1, 1, 4}),
+				Critical: false,
+				Value: []byte{
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				},
+			},
+		},
+		IsCA: false,
+	}
+)
+
 func TestTPMAttestationVerificationFailX5c(t *testing.T) {
+	attStmt := make(map[string]interface{}, len(defaultAttStatement))
+	for id, v := range defaultAttStatement {
+		attStmt[id] = v
+	}
+	rsaKey, _ := rsa.GenerateKey(rand.Reader, 2048)
+
+	r := webauthncose.RSAPublicKeyData{
+		PublicKeyData: webauthncose.PublicKeyData{
+			KeyType:   int64(webauthncose.RSAKey),
+			Algorithm: int64(webauthncose.AlgRS256),
+		},
+		Modulus:  rsaKey.N.Bytes(),
+		Exponent: uint32ToBytes(uint32(rsaKey.E)),
+	}
+
+	public := defaultRSAPublic
+	public.RSAParameters.ExponentRaw = uint32(rsaKey.E)
+	public.RSAParameters.ModulusRaw = rsaKey.N.Bytes()
+	pubBytes, _ := public.Encode()
+	attStmt["pubArea"] = pubBytes
+	rpk, _ := webauthncbor.Marshal(r)
+	att := AttestationObject{
+		AttStatement: attStmt,
+		AuthData: AuthenticatorData{
+			AttData: AttestedCredentialData{
+				CredentialPublicKey: rpk,
+			},
+		},
+	}
+
+	f := webauthncose.HasherFromCOSEAlg(webauthncose.AlgRS256)
+	h := f()
+	h.Write(att.RawAuthData)
+	extraData := h.Sum(nil)
+
+	h.Reset()
+	h.Write(pubBytes)
+	pubName := h.Sum(nil)
+
+	certInfo := tpm2.AttestationData{
+		Magic: 0xff544347,
+		Type:  tpm2.TagAttestCertify,
+		AttestedCertifyInfo: &tpm2.CertifyInfo{
+			Name: tpm2.Name{
+				Digest: &tpm2.HashValue{
+					Alg:   tpm2.AlgSHA256,
+					Value: pubName,
+				},
+			},
+		},
+		ExtraData: extraData,
+	}
+	attStmt["certInfo"], _ = certInfo.Encode()
+
+	makeX5c := func(b []byte) []interface{} {
+		q := make([]interface{}, 1)
+		q[0] = b
+		return q
+	}
+
 	tests := []struct {
-		name           string
-		att            AttestationObject
-		clientDataHash [32]byte
-		wantErr        string
-	}{}
+		name    string
+		x5c     []interface{}
+		wantErr string
+	}{
+		{
+			"TPM Negative Test x5c empty",
+			make([]interface{}, 1),
+			"Error getting certificate from x5c cert chain",
+		},
+		{
+			"TPM Negative Test x5c can't parse",
+			makeX5c(make([]byte, 1)),
+			"Error parsing certificate from ASN.1",
+		},
+	}
 	for _, tt := range tests {
-		attestationKey, _, err := verifyTPMFormat(tt.att, tt.clientDataHash[:])
+		att.AttStatement["x5c"] = tt.x5c
+		attestationKey, _, err := verifyTPMFormat(att, nil)
 		if tt.wantErr != "" {
 			assert.Contains(t, err.Error(), tt.wantErr)
 		} else {
