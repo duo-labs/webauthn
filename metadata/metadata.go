@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/cloudflare/cfssl/revoke"
+	"github.com/Isolus/cfssl-revoke/revoke"
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
 
