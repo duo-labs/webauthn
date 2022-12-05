@@ -8,6 +8,13 @@ WebAuthn Library
 This library is meant to handle [Web Authentication](https://w3c.github.io/webauthn) for Go apps that wish to implement a passwordless solution for users. While the specification is currently in Candidate Recommendation, this library conforms as much as possible to 
 the guidelines and implementation procedures outlined by the document.
 
+### Deprecated
+This library is deprecated. While it will remain available it is very unlikely to receive further maintenance.
+
+The library has been forked as [github.com/go-webauthn/webauthn](https://github.com/go-webauthn/webauthn). We recommend this library as a natural successor, and it has migration documentation available.
+
+See the [Migration Guide](https://github.com/go-webauthn/webauthn/blob/master/MIGRATION.md) for more information.
+
 ### Demo at webauthn.io
 An implementation of this library can be used at [webauthn.io](https://webauthn.io) and the code for this website can be found in the Duo Labs repository [`webauthn-io`](https://github.com/duo-labs/webauthn.io).
 

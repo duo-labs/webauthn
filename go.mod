@@ -1,3 +1,4 @@
+// Deprecated: use github.com/go-webauthn/webauthn instead.
 module github.com/duo-labs/webauthn
 
 go 1.18
