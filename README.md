@@ -1,19 +1,18 @@
-WebAuthn Library
+# THIS LIBRARY IS DEPRECATED
+
+Projects using this library should consider migrating to the community-maintained fork over at [github.com/go-webauthn/webauthn](https://github.com/go-webauthn/webauthn). See the [Migration Guide](https://github.com/go-webauthn/webauthn/blob/master/MIGRATION.md) for more information.
+
+The original README continues below.
+
+# WebAuthn Library
 =============
 [![GoDoc](https://godoc.org/github.com/duo-labs/webauthn?status.svg)](https://godoc.org/github.com/duo-labs/webauthn)
 ![Build Status](https://github.com/duo-labs/webauthn/workflows/Go/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/duo-labs/webauthn)](https://goreportcard.com/report/github.com/duo-labs/webauthn)
 
 
-This library is meant to handle [Web Authentication](https://w3c.github.io/webauthn) for Go apps that wish to implement a passwordless solution for users. While the specification is currently in Candidate Recommendation, this library conforms as much as possible to 
+This library is meant to handle [Web Authentication](https://w3c.github.io/webauthn) for Go apps that wish to implement a passwordless solution for users. While the specification is currently in Candidate Recommendation, this library conforms as much as possible to
 the guidelines and implementation procedures outlined by the document.
-
-### Deprecated
-This library is deprecated. While it will remain available it is very unlikely to receive further maintenance.
-
-The library has been forked as [github.com/go-webauthn/webauthn](https://github.com/go-webauthn/webauthn). We recommend this library as a natural successor, and it has migration documentation available.
-
-See the [Migration Guide](https://github.com/go-webauthn/webauthn/blob/master/MIGRATION.md) for more information.
 
 ### Demo at webauthn.io
 An implementation of this library can be used at [webauthn.io](https://webauthn.io) and the code for this website can be found in the Duo Labs repository [`webauthn-io`](https://github.com/duo-labs/webauthn.io).
@@ -23,7 +22,7 @@ A simplified demonstration of this library can be found [here](https://github.co
 
 Quickstart
 ----------
-`go get github.com/duo-labs/webauthn` and initialize it in your application with basic configuration values. 
+`go get github.com/duo-labs/webauthn` and initialize it in your application with basic configuration values.
 
 Make sure your `user` model is able to handle the interface functions laid out in `webauthn/user.go`. This means also supporting the storage and retrieval of the credential and authenticator structs in `webauthn/credential.go` and `webauthn/authenticator.go`, respectively.
 
@@ -55,16 +54,16 @@ func main() {
 
 ```golang
 func BeginRegistration(w http.ResponseWriter, r *http.Request) {
-    user := datastore.GetUser() // Find or create the new user  
+    user := datastore.GetUser() // Find or create the new user
     options, sessionData, err := web.BeginRegistration(&user)
     // handle errors if present
-    // store the sessionData values 
+    // store the sessionData values
     JSONResponse(w, options, http.StatusOK) // return the options generated
     // options.publicKey contain our registration options
 }
 
 func FinishRegistration(w http.ResponseWriter, r *http.Request) {
-    user := datastore.GetUser() // Get the user  
+    user := datastore.GetUser() // Get the user
     // Get the session data stored from the function above
     // using gorilla/sessions it could look like this
     sessionData := store.Get(r, "registration-session")
@@ -88,7 +87,7 @@ func BeginLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func FinishLogin(w http.ResponseWriter, r *http.Request) {
-    user := datastore.GetUser() // Get the user 
+    user := datastore.GetUser() // Get the user
     // Get the session data stored from the function above
     // using gorilla/sessions it could look like this
     sessionData := store.Get(r, "login-session")
@@ -102,7 +101,7 @@ func FinishLogin(w http.ResponseWriter, r *http.Request) {
 
 Modifying Credential Options
 ----------------------------
-You can modify the default credential creation options for registration and login by providing optional structs to the `BeginRegistration` and `BeginLogin` functions. 
+You can modify the default credential creation options for registration and login by providing optional structs to the `BeginRegistration` and `BeginLogin` functions.
 
 ### Registration modifiers
 You can modify the registration options in the following ways:
@@ -114,19 +113,19 @@ import "github.com/duo-labs/webauthn/webauthn"
 var webAuthnHandler webauthn.WebAuthn // init this in your init function
 
 func beginRegistration() {
-    // Updating the AuthenticatorSelection options. 
+    // Updating the AuthenticatorSelection options.
     // See the struct declarations for values
-    authSelect := protocol.AuthenticatorSelection{        
+    authSelect := protocol.AuthenticatorSelection{
 		AuthenticatorAttachment: protocol.AuthenticatorAttachment("platform"),
 		RequireResidentKey: protocol.ResidentKeyUnrequired(),
         UserVerification: protocol.VerificationRequired
     }
 
-    // Updating the ConveyencePreference options. 
+    // Updating the ConveyencePreference options.
     // See the struct declarations for values
     conveyancePref := protocol.ConveyancePreference(protocol.PreferNoAttestation)
 
-    user := datastore.GetUser() // Get the user  
+    user := datastore.GetUser() // Get the user
     opts, sessionData, err webAuthnHandler.BeginRegistration(&user, webauthn.WithAuthenticatorSelection(authSelect), webauthn.WithConveyancePreference(conveyancePref))
 
     // Handle next steps
@@ -144,7 +143,7 @@ import "github.com/duo-labs/webauthn/webauthn"
 var webAuthnHandler webauthn.WebAuthn // init this in your init function
 
 func beginLogin() {
-    // Updating the AuthenticatorSelection options. 
+    // Updating the AuthenticatorSelection options.
     // See the struct declarations for values
     allowList := make([]protocol.CredentialDescriptor, 1)
     allowList[0] = protocol.CredentialDescriptor{
@@ -152,7 +151,7 @@ func beginLogin() {
         Type: protocol.CredentialType("public-key"),
     }
 
-    user := datastore.GetUser() // Get the user  
+    user := datastore.GetUser() // Get the user
 
     opts, sessionData, err := webAuthnHandler.BeginLogin(&user, webauthn.wat.WithAllowedCredentials(allowList))
 
